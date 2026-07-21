@@ -10,22 +10,17 @@
        Semua style murni buatan sendiri tanpa framework eksternal
        ========================================================================= */
     :root {
-      --color-primary-brown: #6F4E37;
-      --color-bg-cream: #FDF8F4;
-      --color-accent-gold: #F59E0B;
-      --color-accent-gold-hover: #D97706;
-      --color-danger-red: #B91C1C;
-      --color-text-dark: #3E2723;
-      --color-text-muted: #795548;
-      --color-white: #FFFFFF;
-      --color-light-brown: #D7CCC8;
-      --font-title: 'Georgia', serif;
-      --font-body: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      --shadow-bold: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      --rounded-box: 12px;
-      --rounded-btn: 8px;
-    }
+  --color-primary: #6F4E37; /* Coklat Majesty */
+  --color-bg: #FDF8F4; /* Krem */
+  --color-accent: #F59E0B; /* Emas */
+  --color-danger: #B91C1C; /* Merah Marun */
+  --color-text: #3D2B1F;
+  --radius: 12px;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+body { background: var(--color-bg); color: var(--color-text); }
+.btn-primary { background: var(--color-primary); color: white; }
+.btn-accent { background: var(--color-accent); color: var(--color-text); }
 
     * {
       box-sizing: border-box;
@@ -580,29 +575,34 @@
     <p id="loader-text">Memproses data...</p>
   </div>
 
-  <!-- SCREEN LOGIN -->
-  <div id="login-screen">
-    <div class="login-box">
-      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA/blob/0c664ba4e2828e8a5e524978eb20742f5ad256ab/logo.png?raw=true" alt="Logo SIAP WANAMSKA">
-      <h1>SIAP WANAMSKA</h1>
-      <p>Sistem Informasi & Absensi Penggalang Wanamska</p>
-      
-      <div class="form-group">
-        <label for="login-username">User ID</label>
-        <input type="text" id="login-username" class="form-control" placeholder="Masukkan ID Anggota">
-      </div>
-      
-      <div class="form-group">
-        <label for="login-password">Password</label>
-        <input type="password" id="login-password" class="form-control" placeholder="Masukkan Password">
-      </div>
-      
-      <button class="btn btn-gold btn-full" onclick="actionLogin()">MASUK APLIKASI</button>
+  <!-- ==========================================
+     PATCH 3A: HTML LOGIN SCREEN (CLEAN & FIXED)
+     ========================================== -->
+<div id="login-screen">
+  <div class="login-box">
+    <!-- Logo SIAP WANAMSKA -->
+    <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA/blob/0c664ba4e2828e8a5e524978eb20742f5ad256ab/logo.png?raw=true" alt="Logo SIAP WANAMSKA">
+    <h1>SIAP WANAMSKA</h1>
+    <p>Sistem Informasi & Absensi Penggalang Wanamska</p>
+    
+    <!-- Form Input User ID -->
+    <div class="form-group">
+      <label for="userId">User ID</label>
+      <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required>
     </div>
+    
+    <!-- Form Input Password dengan Fitur Toggle Tampilkan/Sembunyikan -->
+    <div class="form-group">
+      <label for="password">Password</label>
+      <div style="position: relative;">
+        <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%; padding-right: 110px;">
+        <span id="togglePassText" onclick="togglePassword()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 12px; color: var(--color-primary); font-weight: 700; user-select: none; letter-spacing: 0.5px;">TAMPILKAN</span>
+      </div>
+    </div>
+    
+    <!-- Tombol Login -->
+    <button id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()">Login</button>
   </div>
-  <div style="position:relative; margin-bottom:15px;">
-  <input type="password" id="password" placeholder="Password" required>
-  <span onclick="togglePassword()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:12px; color:var(--color-primary); font-weight:600;">TAMPILKAN</span>
 </div>
 
   <!-- APP LAYOUT CONTAINER -->
@@ -1392,20 +1392,108 @@
       }
     }
 
-    function loadDashboard() {
-      google.script.run
-        .withSuccessHandler(function(res) {
-          if (res.success) {
-            document.getElementById('dash-total-anggota').innerText = res.totalAnggota;
-            document.getElementById('dash-hadir-hari-ini').innerText = res.hadirHariIni;
-            document.getElementById('dash-kegiatan-terbaru').innerText = res.kegiatanTerbaru;
-            if (res.saldoKas !== undefined) {
-              document.getElementById('dash-saldo-kas').innerText = "Rp " + res.saldoKas.toLocaleString('id-ID');
-            }
+    let sessionToken = sessionStorage.getItem('token');
+let currentUser = JSON.parse(sessionStorage.getItem('user'));
+
+// FUNGSI LOGIN
+function handleLogin() {
+  const userId = document.getElementById('userId').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.innerText = 'Memproses...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.success) {
+        sessionStorage.setItem('token', res.token);
+        sessionStorage.setItem('user', JSON.stringify(res.user)); // PENTING: .user
+        sessionToken = res.token;
+        currentUser = res.user;
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        document.getElementById('namaUser').innerText = res.user.nama_lengkap;
+        setupMenuByRole(res.user.role);
+        showDashboard();
+      } else {
+        showToast(res.message, 'error');
+        btn.disabled = false; btn.innerText = 'Login';
+      }
+    })
+    .withFailureHandler(function(err){
+      showToast('Error: ' + err.message, 'error');
+      btn.disabled = false; btn.innerText = 'Login';
+    })
+    .loginUser(userId, password);
+}
+
+// FUNGSI DASHBOARD - INI YG SUDAH DIFIX
+// PATCH 2: FIX DASHBOARD KEY
+function loadDashboard() {
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.success) {
+        // Mendukung format snake_case dan camelCase secara aman
+        const totalAnggota = res.total_anggota !== undefined ? res.total_anggota : res.totalAnggota;
+        const hadirHariIni = res.hadir_hari_ini !== undefined ? res.hadir_hari_ini : res.hadirHariIni;
+        const kegiatanTerbaru = res.kegiatan_terbaru !== undefined ? res.kegiatan_terbaru : res.kegiatanTerbaru;
+        const saldoKas = res.saldo_kas !== undefined ? res.saldo_kas : res.saldoKas;
+
+        document.getElementById('dash-total-anggota').innerText = totalAnggota !== undefined ? totalAnggota : 0;
+        document.getElementById('dash-hadir-hari-ini').innerText = hadirHariIni !== undefined ? hadirHariIni : 0;
+        document.getElementById('dash-kegiatan-terbaru').innerText = kegiatanTerbaru !== undefined ? kegiatanTerbaru : "-";
+        
+        const saldoEl = document.getElementById('dash-saldo-kas');
+        const cardKas = document.getElementById('card-dash-kas');
+        
+        if (saldoKas !== undefined && saldoKas !== null) {
+          if (saldoEl) {
+            saldoEl.innerText = "Rp " + Number(saldoKas).toLocaleString('id-ID');
           }
-        })
-        .getDashboardData(sessionToken);
-    }
+          if (cardKas) {
+            cardKas.style.display = 'flex';
+          }
+        } else {
+          if (cardKas) {
+            cardKas.style.display = 'none'; // Sembunyikan jika tidak ada akses saldo
+          }
+        }
+      } else {
+        showToast(res.message || "Gagal memuat dashboard", "error");
+      }
+    })
+    .withFailureHandler(function(err){
+      showToast("Error: " + err.message, "error");
+    })
+    .getDashboardData(sessionToken);
+}
+
+function showDashboard() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('dashboard-page').classList.add('active');
+  loadDashboard(); // Panggil fungsi yg sudah fix
+}
+
+// FUNGSI TOGGLE PASSWORD - BARU
+function togglePassword(){
+  const p = document.getElementById('password');
+  const s = document.getElementById('togglePassText');
+  if(p.type === 'password'){ 
+    p.type = 'text'; 
+    s.innerText = 'SEMBUNYIKAN'; 
+  } else { 
+    p.type = 'password'; 
+    s.innerText = 'LIHAT'; 
+  }
+}
+
+// FUNGSI TOAST SEDERHANA
+function showToast(msg, type='success'){
+  const t = document.createElement('div');
+  t.innerText = msg;
+  t.style = `position:fixed; bottom:20px; right:20px; background:${type==='error'? 'var(--color-danger)':'var(--color-primary)'}; color:white; padding:12px 18px; border-radius:var(--radius); z-index:9999; box-shadow:var(--shadow);`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
 
     function toggleMetodeAbsen() {
       const met = document.getElementById('absen-metode').value;
@@ -2249,6 +2337,28 @@
         })
         .getSystemLogs(sessionToken, filter);
     }
+    <!-- ==========================================
+     PATCH 3B: JS TOGGLE PASSWORD
+     ========================================== -->
+<script>
+  /**
+   * Mengubah tipe input password untuk menampilkan atau menyembunyikan teks sandi.
+   * Dipanggil ketika elemen teks TAMPILKAN/SEMBUNYIKAN diklik.
+   */
+  function togglePassword() {
+    const passwordInput = document.getElementById("password");
+    const toggleText = document.getElementById("togglePassText");
+    if (passwordInput && toggleText) {
+      if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        toggleText.innerText = "SEMBUNYIKAN";
+      } else {
+        passwordInput.type = "password";
+        toggleText.innerText = "TAMPILKAN";
+      }
+    }
+  }
+</script>
   </script>
 </body>
 </html>
