@@ -154,43 +154,42 @@ function validateSession(token, allowedRoles) {
 /**
  * LOGIN USER
  */
+// PATCH 1: FIX LOGIN RETURN
 function loginUser(userId, password) {
   try {
     initializeDatabase();
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_USERS);
     var data = sheet.getDataRange().getValues();
-    
+
     var uId = userId.trim().toLowerCase();
     var pHash = hashPassword(password);
-    
+
     for (var i = 1; i < data.length; i++) {
       if (data[i][0].toString().toLowerCase() === uId) {
         if (data[i][1] === pHash) {
           if (data[i][4] !== "Aktif") {
             return { success: false, message: "Status akun Anda tidak aktif." };
           }
-          
+
           var role = data[i][3];
           var namaLengkap = data[i][2];
-          
+
           var token = "SESSION-" + Utilities.getUuid();
           var sessionObj = { userId: uId, role: role, name: namaLengkap };
-          
           CacheService.getScriptCache().put(token, JSON.stringify(sessionObj), 21600);
-          
+
           writeLog(uId, "LOGIN", "Berhasil login ke sistem");
-          
+
           return {
-  success: true,
-  token: token,
-  user: { // <-- dibungkus
-    user_id: uId,
-    nama_lengkap: namaLengkap, // ambil dari sheet users kolom 3
-    role: role,
-    nta: "" // nta adanya di profile, bisa dikosongin dulu
-  }
-};
+            success: true,
+            token: token,
+            user: {
+              user_id: uId,
+              nama_lengkap: namaLengkap,
+              role: role
+            }
+          };
         } else {
           return { success: false, message: "Password salah." };
         }
