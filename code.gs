@@ -1,5 +1,6 @@
 const SPREADSHEET_ID = '107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg';
 
+// === MESIN LOGIN BARU V2 ===
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('index').setTitle('SIAP WANAMSKA V2');
 }
@@ -26,6 +27,13 @@ function loginUser(userId, password){
   }
 }
 
+function addUser(userId, password, namaLengkap, role){
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName('Users');
+  const hash = hashPassword(password);
+  sheet.appendRow([userId, hash, namaLengkap, role, 'Aktif', new Date()]);
+  return 'SUKSES: User '+userId+' dibuat dengan role '+role;
+}
 // Konstanta Nama Sheet
 const SHEET_USERS = "Users";
 const SHEET_PROFILE = "profile";
