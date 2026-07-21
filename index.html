@@ -72,7 +72,7 @@
     }
 
     /* CSS Wajib Toggle Password */
-    .toggle-password {
+    .password-toggle {
       position: absolute; 
       right: 12px; 
       top: 50%; 
@@ -92,7 +92,11 @@
       justify-content: center;
       gap: 10px;
     }
-    .foto-dev {
+    .logo {
+      width: 80px;
+      height: auto;
+    }
+    .developer-photo {
       width: 60px;
       height: 60px;
       border-radius: 50%;
@@ -104,6 +108,30 @@
       font-weight: 600;
       color: var(--color-text);
       margin: 0;
+    }
+
+    /* CSS Modul Developer di Dashboard */
+    .developer-card {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background-color: #ffffff;
+      padding: 15px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-top: 20px;
+      border-left: 5px solid var(--color-accent);
+    }
+    .developer-card h4 {
+      margin: 0;
+      color: var(--color-primary);
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    .developer-card p {
+      margin: 5px 0 0;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
     }
 
     /* TOAST NOTIFICATION */
@@ -633,7 +661,7 @@
   <div id="login-screen">
     <div class="login-box">
       <!-- Logo SIAP WANAMSKA V-2.0 -->
-      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/assets/logo.png?raw=true" alt="Logo SIAP WANAMSKA">
+      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo SIAP WANAMSKA">
       <h1>SIAP WANAMSKA</h1>
       <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi & Absensi Penggalang Wanamska</p>
       
@@ -648,7 +676,7 @@
         <label for="password">Password</label>
         <div style="position: relative;">
           <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%;">
-          <span class="toggle-password" onclick="togglePassword()">👁️</span>
+          <span class="password-toggle" id="eyeIcon" onclick="togglePassword()">👁️</span>
         </div>
       </div>
       
@@ -657,7 +685,7 @@
       
       <!-- Section Credit Developer Pengembang -->
       <div class="developer">
-        <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png?raw=true" class="foto-dev" alt="Foto Developer">
+        <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" class="foto-dev developer-photo" alt="Foto Developer">
         <p>Developed by Pembina</p>
       </div>
     </div>
@@ -670,7 +698,7 @@
     <header>
       <div class="header-logo">
         <span class="menu-toggle" onclick="toggleSidebar()">&#9776;</span>
-        <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA/blob/0c664ba4e2828e8a5e524978eb20742f5ad256ab/logo.png?raw=true" alt="Logo">
+        <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo">
         <div class="header-title">
           <h2>SIAP WANAMSKA</h2>
           <p>Sistem Informasi & Absensi Kwartir Wanamska</p>
@@ -756,7 +784,16 @@
             </button>
           </div>
           
-          <div class="card text-center">
+          <!-- MODUL DEVELOPER DI DASHBOARD -->
+          <div class="developer-card">
+            <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" class="developer-photo" alt="Developer SIAP WANAMSKA">
+            <div>
+              <h4>Arif Nuur Iswahyudi (Developer)</h4>
+              <p>Guru Matematika dan Pembina Pramuka</p>
+            </div>
+          </div>
+          
+          <div class="card text-center" style="margin-top: 25px;">
             <h2 style="font-family: var(--font-title); margin-bottom: 10px;">Selamat Datang di SIAP WANAMSKA</h2>
             <p>Sistem ini dirancang khusus untuk memonitor kedisiplinan absensi serta manajemen aktivitas Gerakan Pramuka Penggalang di lingkungan Wanamska. Silakan gunakan menu navigasi sebelah kiri untuk mengakses modul-modul sistem.</p>
           </div>
@@ -1094,7 +1131,7 @@
           </div>
           <div class="card">
             <div class="dev-profile">
-              <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png?raw=true" alt="Developer SIAP WANAMSKA">
+              <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" class="developer-photo" alt="Developer SIAP WANAMSKA">
               <div>
                 <h2 style="font-family: var(--font-title); color: var(--color-primary-brown);">Senior Apps Script Developer & UX Specialist</h2>
                 <p style="color: var(--color-accent-gold); font-weight: bold; margin-bottom: 15px;">Gerakan Pramuka Wanamska</p>
@@ -1476,11 +1513,11 @@
       google.script.run
         .withSuccessHandler(function(res){
           if(res.success){
-            sessionStorage.setItem('sessionToken', res.token);
+            sessionStorage.setItem('sessionToken', res.sessionToken);
             sessionStorage.setItem('user', JSON.stringify(res.user));
             
             // Set data sesi lokal
-            sessionToken = res.token;
+            sessionToken = res.sessionToken;
             currentUser = res.user;
             userRole = res.user.role;
             userId = res.user.user_id;
@@ -1595,16 +1632,16 @@
       showPage('dashboard-page');
     }
 
-    // LOGIKA TOGGLE PASSWORD (TAMPIL/SEMBUNYI)
+    // ==========================================
+    // PERBAIKAN 2: LOGIKA TOGGLE PASSWORD
+    // ==========================================
     function togglePassword() {
-      const p = document.getElementById('password');
-      const icon = event.target;
-      if (p.type === 'password') { 
-        p.type = 'text'; 
-        icon.innerText = '🙈'; 
-      } else { 
-        p.type = 'password'; 
-        icon.innerText = '👁️'; 
+      const passwordInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eyeIcon');
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text'; eyeIcon.innerHTML = '🙈';
+      } else {
+        passwordInput.type = 'password'; eyeIcon.innerHTML = '👁️';
       }
     }
 
@@ -1782,7 +1819,7 @@
             }
 
             res.list.forEach(keg => {
-              const defaultImg = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA/blob/0c664ba4e2828e8a5e524978eb20742f5ad256ab/logo.png?raw=true";
+              const defaultImg = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png";
               const showImg = keg.foto1 || defaultImg;
               
               let editBtn = "";
@@ -2219,7 +2256,7 @@
             if (p.foto_profil) {
               document.getElementById('prof-preview-img').src = p.foto_profil;
             } else {
-              document.getElementById('prof-preview-img').src = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA/blob/0c664ba4e2828e8a5e524978eb20742f5ad256ab/logo.png?raw=true";
+              document.getElementById('prof-preview-img').src = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png";
             }
           }
         })
