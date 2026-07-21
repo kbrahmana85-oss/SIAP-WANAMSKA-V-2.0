@@ -6,7 +6,7 @@
   <title>SIAP WANAMSKA</title>
   <style>
     /* ==========================================
-       // PATCH 1: CSS TEMA MAJESTY
+       TEMA VISUAL - MAJESTY THEME
        ========================================== */
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
@@ -19,7 +19,7 @@
       --radius: 12px;
       --shadow: 0 4px 12px rgba(0,0,0,0.08);
       
-      /* Tambahan variabel fallback dari template sebelumnya */
+      /* Variabel fallback pendukung modul */
       --color-primary-brown: #6F4E37;
       --color-bg-cream: #FDF8F4;
       --color-accent-gold: #F59E0B;
@@ -37,6 +37,12 @@
       --rounded-btn: 8px;
     }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       font-family: 'Poppins', sans-serif !important;
       background-color: var(--color-bg) !important;
@@ -44,13 +50,7 @@
       line-height: 1.5;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Modifikasi Class Login-Box agar Sesuai Spesifikasi */
+    /* Modifikasi Box Login */
     .login-box {
       background-color: #FFFFFF !important;
       padding: 30px !important;
@@ -71,15 +71,39 @@
       margin-bottom: 5px;
     }
 
-    /* Styling Ikon Mata Penebas Sandi */
-    .toggle-password-icon {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
+    /* CSS Wajib Toggle Password */
+    .toggle-password {
+      position: absolute; 
+      right: 12px; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      font-size: 18px; 
       cursor: pointer;
-      font-size: 18px;
       user-select: none;
+    }
+
+    /* CSS Foto Developer Login */
+    .developer {
+      margin-top: 25px;
+      border-top: 1px solid #E0E0E0;
+      padding-top: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .foto-dev {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--color-accent);
+    }
+    .developer p {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0;
     }
 
     /* TOAST NOTIFICATION */
@@ -195,12 +219,11 @@
       box-shadow: var(--shadow-soft);
     }
     .btn-primary {
-      background-color: var(--color-primary);
-      color: white;
+      background-color: var(--color-primary) !important;
+      color: white !important;
     }
-    .btn-accent {
-      background-color: var(--color-accent);
-      color: var(--color-text);
+    .btn-primary:hover {
+      background-color: #553C2A !important;
     }
     .btn-gold {
       background-color: var(--color-accent-gold);
@@ -605,37 +628,37 @@
   </div>
 
   <!-- ==========================================
-     PATCH 3A & HTML LOGIN SCREEN (PERBAIKAN TOTAL)
-     ========================================== -->
+       LOGIN SCREEN (PERBAIKAN TOTAL)
+       ========================================== -->
   <div id="login-screen">
     <div class="login-box">
       <!-- Logo SIAP WANAMSKA V-2.0 -->
-      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/assets/logo.png?raw=true" alt="Logo SIAP WANAMSKA" style="display: block; margin: 0 auto 15px; width: 80px;">
+      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/assets/logo.png?raw=true" alt="Logo SIAP WANAMSKA">
       <h1>SIAP WANAMSKA</h1>
-      <p style="color: var(--color-text-muted); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi & Absensi Penggalang Wanamska</p>
+      <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi & Absensi Penggalang Wanamska</p>
       
       <!-- Input User ID -->
-      <div class="form-group" style="text-align: left; margin-bottom: 20px;">
-        <label for="userId" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem;">User ID</label>
+      <div class="form-group">
+        <label for="userId">User ID</label>
         <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
       </div>
       
       <!-- Input Password dengan Ikon Interaktif -->
-      <div class="form-group" style="text-align: left; margin-bottom: 25px;">
-        <label for="password" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem;">Password</label>
+      <div class="form-group">
+        <label for="password">Password</label>
         <div style="position: relative;">
           <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%; padding: 10px 45px 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
-          <span class="toggle-password-icon" onclick="togglePassword()">👁️</span>
+          <span class="toggle-password" onclick="togglePassword()">👁️</span>
         </div>
       </div>
       
-      <!-- Tombol Submit (Hanya 1 Tombol, Bebas Bug Dobel) -->
-      <button id="loginBtn" type="button" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none; cursor: pointer;">Login</button>
+      <!-- Tombol Masuk Tunggal -->
+      <button type="button" id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none; cursor: pointer;">Login</button>
       
-      <!-- Section Developer Di Bawah Tombol Login -->
-      <div class="developer-credit" style="margin-top: 25px; border-top: 1px solid #E0E0E0; padding-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-        <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png?raw=true" alt="Developer" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-accent);">
-        <span style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">Developed by Pembina</span>
+      <!-- Section Credit Developer Pengembang -->
+      <div class="developer">
+        <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png?raw=true" class="foto-dev" alt="Foto Developer">
+        <p>Developed by Pembina</p>
       </div>
     </div>
   </div>
@@ -726,7 +749,7 @@
             </div>
           </div>
           
-          <!-- Tombol Input Kehadiran Anggota (Hanya 1 Kali di luar Grid-Dashboard agar Rapi) -->
+          <!-- Tombol Akses Fitur Kehadiran (Hanya 1 buah, bersih dari duplikasi) -->
           <div style="margin-top: 15px; margin-bottom: 25px;">
             <button class="btn btn-primary btn-gold" onclick="showAbsenPage()" style="padding: 12px 24px; font-weight: bold; border-radius: var(--radius); cursor: pointer;">
               Input Kehadiran Anggota
@@ -1088,7 +1111,7 @@
           </div>
         </section>
 
-        <!-- FITUR 4C HTML PAGE: HALAMAN ABSEN HARIAN -->
+        <!-- HALAMAN ABSEN HARIAN -->
         <section id="absen-page" class="app-section" style="display: none;">
           <div class="section-header">
             <h1>Input Kehadiran Harian</h1>
@@ -1353,7 +1376,7 @@
     let base64SelfieString = "";
 
     /**
-     * Helper Navigasi Halaman yang Menghubungkan SPA dengan lancar
+     * Manajemen Alur Tampilan SPA
      */
     function showPage(pageId) {
       if (pageId === 'login-page' || pageId === 'login-screen') {
@@ -1368,7 +1391,6 @@
         return;
       }
 
-      // Untuk sub-halaman/bagian dalam kontainer utama
       const sections = document.querySelectorAll('.app-section');
       sections.forEach(s => {
         s.classList.remove('active');
@@ -1444,38 +1466,37 @@
     }
 
     // ==========================================
-    // PERBAIKAN BUG FUNGSI LOGIN (PERNIH)
+    // FUNGSI UTAMA handleLogin() - GANTI TOTAL
     // ==========================================
     function handleLogin(){
       const userId = document.getElementById('userId').value.trim();
       const password = document.getElementById('password').value.trim();
-      
       if(!userId || !password){ showToast('User ID dan Password wajib diisi'); return; }
-      
       showToast('Sedang login...');
-      
       google.script.run
-        .withSuccessHandler(function(response){
-          if(response.success){
-            sessionStorage.setItem('sessionToken', response.token);
-            sessionStorage.setItem('user', JSON.stringify(response.user));
-            sessionToken = response.token;
-            currentUser = response.user;
-            userRole = response.user.role;
-            userId = response.user.user_id;
+        .withSuccessHandler(function(res){
+          if(res.success){
+            sessionStorage.setItem('sessionToken', res.token);
+            sessionStorage.setItem('user', JSON.stringify(res.user));
+            
+            // Set data sesi lokal
+            sessionToken = res.token;
+            currentUser = res.user;
+            userRole = res.user.role;
+            userId = res.user.user_id;
 
-            document.getElementById('user-display-name').innerText = response.user.nama_lengkap;
-            document.getElementById('user-display-role').innerText = response.user.role;
+            document.getElementById('user-display-name').innerText = res.user.nama_lengkap;
+            document.getElementById('user-display-role').innerText = res.user.role;
 
-            setupRBACUI(response.user.role);
-            showPage('dashboard-page');
+            setupRBACUI(res.user.role);
+            showPage('dashboard-page'); 
             loadDashboard();
-          } else {
-            showToast(response.message || 'Login gagal', true);
+          } else { 
+            showToast(res.message, true); 
           }
         })
-        .withFailureHandler(function(error){
-          showToast('Error: ' + error.message, true);
+        .withFailureHandler(function(err){ 
+          showToast('Error: ' + err.message, true); 
         })
         .loginUser(userId, password);
     }
@@ -1532,7 +1553,6 @@
       }
     }
 
-    // PATCH 2: FIX DASHBOARD KEY
     function loadDashboard() {
       google.script.run
         .withSuccessHandler(function(res) {
@@ -1575,7 +1595,7 @@
       showPage('dashboard-page');
     }
 
-    // FUNGSI TOGGLE PASSWORD
+    // LOGIKA TOGGLE PASSWORD (TAMPIL/SEMBUNYI)
     function togglePassword() {
       const p = document.getElementById('password');
       const icon = event.target;
@@ -2431,7 +2451,7 @@
         .getSystemLogs(sessionToken, filter);
     }
     
-    // FITUR 4D JS: LOGIKA INPUT ABSENSI
+    // LOGIKA FITUR INPUT ABSENSI HARIAN
     function showAbsenPage() {
       const pages = document.querySelectorAll('.app-section, .page');
       pages.forEach(p => {
