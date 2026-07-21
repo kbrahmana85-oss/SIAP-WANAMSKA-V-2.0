@@ -628,7 +628,7 @@
   </div>
 
   <!-- ==========================================
-       LOGIN SCREEN (PERBAIKAN TOTAL)
+       LOGIN SCREEN
        ========================================== -->
   <div id="login-screen">
     <div class="login-box">
@@ -640,14 +640,14 @@
       <!-- Input User ID -->
       <div class="form-group">
         <label for="userId">User ID</label>
-        <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
+        <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required style="width: 100%;">
       </div>
       
       <!-- Input Password dengan Ikon Interaktif -->
       <div class="form-group">
         <label for="password">Password</label>
         <div style="position: relative;">
-          <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%; padding: 10px 45px 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
+          <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%;">
           <span class="toggle-password" onclick="togglePassword()">👁️</span>
         </div>
       </div>
@@ -1492,11 +1492,11 @@
             showPage('dashboard-page'); 
             loadDashboard();
           } else { 
-            showToast(res.message, true); 
+            showToast(res.message); 
           }
         })
         .withFailureHandler(function(err){ 
-          showToast('Error: ' + err.message, true); 
+          showToast('Error: ' + err.message); 
         })
         .loginUser(userId, password);
     }
