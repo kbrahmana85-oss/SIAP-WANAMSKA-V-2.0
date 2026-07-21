@@ -72,7 +72,7 @@
     }
 
     /* CSS Wajib Toggle Password */
-    .toggle-password-icon {
+    .password-toggle {
       position: absolute; 
       right: 12px; 
       top: 50%; 
@@ -341,7 +341,7 @@
       align-items: center;
       gap: 12px;
       padding: 12px 25px;
-      color: var(--color-light-brown);
+      color: var(--light-brown);
       text-decoration: none;
       cursor: pointer;
       font-size: 0.95rem;
@@ -686,7 +686,7 @@
       <!-- Section Credit Developer Pengembang -->
       <div class="developer">
         <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" class="foto-dev developer-photo" alt="Foto Developer">
-        <p>@a_nuur03 Pembina Putra dan Guru Matematika</p>
+        <p>Developed by Pembina</p>
       </div>
     </div>
   </div>
@@ -701,7 +701,7 @@
         <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo">
         <div class="header-title">
           <h2>SIAP WANAMSKA</h2>
-          <p>Sistem Informasi & Absensi Penggalang Wanamska</p>
+          <p>Sistem Informasi & Absensi Kwartir Wanamska</p>
         </div>
       </div>
       <div class="header-user">
@@ -1502,10 +1502,13 @@
       else if (sectionId === 'section-logs') loadSystemLogs();
     }
 
+    // ==========================================
+    // LOGIKA LOGIN handleLogin()
+    // ==========================================
     function handleLogin(){
-      const userId = document.getElementById('userId').value.trim();
-      const password = document.getElementById('password').value.trim();
-      if(!userId || !password){ showToast('User ID dan Password wajib diisi'); return; }
+      const userIdInput = document.getElementById('userId').value.trim();
+      const passwordInput = document.getElementById('password').value.trim();
+      if(!userIdInput || !passwordInput){ showToast('User ID dan Password wajib diisi'); return; }
       showToast('Sedang login...');
       google.script.run
         .withSuccessHandler(function(res){
@@ -1526,13 +1529,13 @@
             showPage('dashboard-page'); 
             loadDashboard();
           } else { 
-            showToast(res.message); 
+            showToast(res.message, true); 
           }
         })
         .withFailureHandler(function(err){ 
-          showToast('Error: ' + err.message); 
+          showToast('Error: ' + err.message, true); 
         })
-        .loginUser(userId, password);
+        .loginUser(userIdInput, passwordInput);
     }
 
     function actionLogout() {
