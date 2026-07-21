@@ -1,1400 +1,1072 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SIAP WANAMSKA V2</title>
+/**
+ * SIAP WANAMSKA - Sistem Informasi & Absensi Penggalang Wanamska
+ * Backend Code (Google Apps Script)
+ * 
+ * Karakteristik:
+ * - Menggunakan Google Sheets sebagai database dengan 7 tabel utama.
+ * - Keamanan berbasis RBAC (Role-Based Access Control) yang divalidasi di sisi server.
+ * - Manajemen Sesi menggunakan CacheService dengan token unik.
+ * - Log aktivitas otomatis untuk setiap tindakan kritis.
+ */
+
+// Konstanta Nama Sheet
+const SHEET_USERS = "users";
+const SHEET_PROFILE = "profile";
+const SHEET_ABSENSI = "absensi";
+const SHEET_KEGIATAN = "kegiatan";
+const SHEET_INVENTARIS = "inventaris";
+const SHEET_KAS = "kas";
+const SHEET_LOG = "log";
+
+/**
+ * Fungsi doGet: Me-render halaman frontend index.html
+ */
+function doGet(e) {
+  // Pastikan database terinisialisasi sebelum digunakan
+  initializeDatabase();
   
-  <style>
-    /* UTILITY CUSTOM CSS - ALTERNATIF TAILWIND (TANPA CDN) */
-    :root {
-      --color-primary: #6F4E37; /* Coklat Pramuka */
-      --color-bg: #FDF8F4;      /* Krem */
-      --color-accent: #F59E0B;  /* Amber */
-      --color-text: #2D1E15;
-      --color-white: #FFFFFF;
-      --color-gray: #EEDCD0;
-      --color-danger: #DC2626;
-      --color-success: #16A34A;
-    }
+  return HtmlService.createTemplateFromFile('index')
+    .evaluate()
+    .setTitle('SIAP WANAMSKA')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
+/**
+ * Inisialisasi Database: Membuat Sheet dan Kolom Header jika belum ada.
+ * Juga membuat akun admin bawaan (default) jika sheet "users" masih kosong.
+ */
+function initializeDatabase() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 1. Sheet Users
+  var sUsers = ss.getSheetByName(SHEET_USERS);
+  if (!sUsers) {
+    sUsers = ss.insertSheet(SHEET_USERS);
+    sUsers.appendRow(["user_id", "password", "nama_lengkap", "role", "status_aktif", "tanggal_dibuat"]);
+  }
+  
+  // Buat default admin jika kosong
+  if (sUsers.getLastRow() <= 1) {
+    var adminPasswordHash = hashPassword("admin123");
+    sUsers.appendRow(["admin", adminPasswordHash, "Administrator Utama", "Admin", "Aktif", new Date().toISOString()]);
+  }
 
-    body {
-      background-color: var(--color-bg);
-      color: var(--color-text);
-      max-width: 480px; /* Desain Mobile-First */
-      margin: 0 auto;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      box-shadow: 0 0 20px rgba(0,0,0,0.05);
-    }
+  // 2. Sheet Profile
+  var sProfile = ss.getSheetByName(SHEET_PROFILE);
+  if (!sProfile) {
+    sProfile = ss.insertSheet(SHEET_PROFILE);
+    sProfile.appendRow(["user_id", "nta", "nama_lengkap", "tempat_lahir", "tanggal_lahir", "jenis_kelamin", "golongan", "regu_sangga", "alamat", "no_hp", "foto_profil", "tanggal_bergabung"]);
+  }
+  // Daftarkan profil default admin jika kosong
+  if (sProfile.getLastRow() <= 1) {
+    sProfile.appendRow(["admin", "12.34.56.78", "Administrator Utama", "Jakarta", "2000-01-01", "Laki-laki", "Pembina", "Manggala", "Markas Gerakan Pramuka", "08123456789", "", new Date().toISOString()]);
+  }
 
-    .hidden { display: none !important; }
-    .flex { display: flex; }
-    .flex-col { flex-direction: column; }
-    .items-center { align-items: center; }
-    .justify-between { justify-content: space-between; }
-    .justify-center { justify-content: center; }
-    .grow { flex-grow: 1; }
+  // 3. Sheet Absensi
+  var sAbsen = ss.getSheetByName(SHEET_ABSENSI);
+  if (!sAbsen) {
+    sAbsen = ss.insertSheet(SHEET_ABSENSI);
+    sAbsen.appendRow(["id_absen", "user_id", "nama", "tanggal", "jam", "status", "foto_selfie", "metode", "kegiatan_terkait", "keterangan"]);
+  }
+
+  // 4. Sheet Kegiatan
+  var sKegiatan = ss.getSheetByName(SHEET_KEGIATAN);
+  if (!sKegiatan) {
+    sKegiatan = ss.insertSheet(SHEET_KEGIATAN);
+    sKegiatan.appendRow(["id_kegiatan", "nama_kegiatan", "tanggal", "lokasi", "deskripsi", "foto1", "foto2", "foto3", "foto4", "dibuat_oleh", "tanggal_dibuat"]);
+  }
+
+  // 5. Sheet Inventaris
+  var sInventaris = ss.getSheetByName(SHEET_INVENTARIS);
+  if (!sInventaris) {
+    sInventaris = ss.insertSheet(SHEET_INVENTARIS);
+    sInventaris.appendRow(["id_barang", "nama_barang", "kategori", "jumlah", "kondisi", "lokasi_simpan", "tanggal_masuk", "keterangan", "dikelola_oleh"]);
+  }
+
+  // 6. Sheet Kas
+  var sKas = ss.getSheetByName(SHEET_KAS);
+  if (!sKas) {
+    sKas = ss.insertSheet(SHEET_KAS);
+    sKas.appendRow(["id_transaksi", "tanggal", "jenis", "kategori", "jumlah", "keterangan", "saldo_berjalan", "dicatat_oleh"]);
+  }
+
+  // 7. Sheet Log
+  var sLog = ss.getSheetByName(SHEET_LOG);
+  if (!sLog) {
+    sLog = ss.insertSheet(SHEET_LOG);
+    sLog.appendRow(["id_log", "timestamp", "user_id", "aksi", "detail", "alamat_ip"]);
+  }
+}
+
+/**
+ * Hashing Sederhana dengan SHA-256 menggunakan Utilities bawaan Google Apps Script
+ */
+function hashPassword(password) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password, Utilities.Charset.UTF_8);
+  var hexString = '';
+  for (var i = 0; i < digest.length; i++) {
+    var byteVal = digest[i];
+    if (byteVal < 0) byteVal += 256;
+    var byteString = byteVal.toString(16);
+    if (byteString.length == 1) byteString = '0' + byteString;
+    hexString += byteString;
+  }
+  return hexString;
+}
+
+/**
+ * Pencatatan Log Aktivitas ke Google Sheet
+ */
+function writeLog(userId, aksi, detail) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_LOG);
+    var idLog = "LOG-" + Utilities.getUuid().substring(0, 8).toUpperCase();
+    var timestamp = new Date().toISOString();
     
-    .grid { display: grid; }
-    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-    .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-    .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
-    .gap-2 { gap: 0.5rem; }
-    .gap-4 { gap: 1rem; }
-
-    .p-4 { padding: 1rem; }
-    .p-6 { padding: 1.5rem; }
-    .px-4 { padding-left: 1rem; padding-right: 1rem; }
-    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-    .mt-2 { margin-top: 0.5rem; }
-    .mt-4 { margin-top: 1rem; }
-    .mb-4 { margin-bottom: 1rem; }
-
-    .rounded-xl { border-radius: 1rem; }
-    .rounded-lg { border-radius: 0.5rem; }
-    .rounded-full { border-radius: 9999px; }
-
-    .bg-white { background-color: var(--color-white); }
-    .bg-primary { background-color: var(--color-primary); color: var(--color-white); }
-    .bg-accent { background-color: var(--color-accent); color: var(--color-text); }
+    var ip = "Client Script Engine"; 
     
-    .text-center { text-align: center; }
-    .text-sm { font-size: 0.8rem; }
-    .text-xs { font-size: 0.7rem; }
-    .text-lg { font-size: 1.1rem; }
-    .text-xl { font-size: 1.25rem; }
-    .font-bold { font-weight: 700; }
-    .text-white { color: var(--color-white); }
-    .text-primary { color: var(--color-primary); }
-    .text-danger { color: var(--color-danger); }
-    .text-success { color: var(--color-success); }
+    sheet.appendRow([idLog, timestamp, userId, aksi, detail, ip]);
+  } catch(e) {
+    Logger.log("Gagal menulis log: " + e.toString());
+  }
+}
 
-    .shadow { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); }
-    .border { border: 1px solid var(--color-gray); }
+/**
+ * Memvalidasi Sesi Token dari CacheService dan mengembalikan data pengguna jika valid.
+ */
+function validateSession(token, allowedRoles) {
+  if (!token) throw new Error("Sesi kadaluarsa. Silakan login kembali.");
+  var cache = CacheService.getScriptCache();
+  var sessionDataStr = cache.get(token);
+  if (!sessionDataStr) throw new Error("Sesi tidak valid atau telah berakhir.");
+  
+  var session = JSON.parse(sessionDataStr);
+  
+  if (allowedRoles && allowedRoles.indexOf(session.role) === -1) {
+    throw new Error("Anda tidak memiliki hak akses untuk fungsi ini.");
+  }
+  
+  return session;
+}
 
-    /* Buttons & Inputs */
-    .btn {
-      padding: 0.75rem 1.25rem;
-      border: none;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      transition: opacity 0.2s;
-    }
-    .btn:active { opacity: 0.8; }
-    .btn-block { width: 100%; }
+/**
+ * LOGIN USER
+ */
+function loginUser(userId, password) {
+  try {
+    initializeDatabase();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    var data = sheet.getDataRange().getValues();
     
-    .input {
-      width: 100%;
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--color-gray);
-      background-color: var(--color-white);
-      color: var(--color-text);
-      outline: none;
-    }
-    .input:focus {
-      border-color: var(--color-primary);
-    }
-
-    /* Navbar & Layout */
-    header {
-      background-color: var(--color-primary);
-      color: var(--color-white);
-      padding: 1rem;
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
-
-    nav.bottom-nav {
-      background-color: var(--color-white);
-      border-top: 1px solid var(--color-gray);
-      position: sticky;
-      bottom: 0;
-      z-index: 50;
-      display: flex;
-      justify-content: space-around;
-      padding: 0.5rem 0;
-    }
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      color: var(--color-dark-gray);
-      text-decoration: none;
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-    .nav-item.active {
-      color: var(--color-primary);
-      font-weight: bold;
-    }
-    .nav-icon {
-      font-size: 1.5rem;
-      margin-bottom: 0.15rem;
-    }
-
-    /* Cards */
-    .card {
-      background-color: var(--color-white);
-      border-radius: 1rem;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-    }
-
-    /* Modal Overlay */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0,0,0,0.5);
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .modal-content {
-      background-color: var(--color-white);
-      border-radius: 1rem;
-      width: 100%;
-      max-width: 400px;
-      max-height: 85vh;
-      overflow-y: auto;
-      padding: 1.5rem;
-    }
-
-    /* Toast */
-    #toast {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #333;
-      color: white;
-      padding: 0.75rem 1.5rem;
-      border-radius: 2rem;
-      z-index: 200;
-      font-size: 0.85rem;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      display: none;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- LOADING SCREEN GLOBAL -->
-  <div id="loading-screen" class="grow flex flex-col items-center justify-center p-6 bg-white">
-    <div class="text-xl font-bold mb-4 text-primary text-center">⏳ SIAP WANAMSKA V2</div>
-    <div class="text-sm text-center">Memverifikasi sistem & mengunduh basis data lokal...</div>
-  </div>
-
-  <!-- AUTH: LOGIN VIEW -->
-  <div id="view-login" class="grow flex flex-col justify-center p-6 hidden">
-    <div class="text-center mb-6">
-      <span class="text-xl">🎒</span>
-      <h2 class="text-xl font-bold mt-2 text-primary">SIAP WANAMSKA V2</h2>
-      <p class="text-sm">Sistem Absensi Pramuka SMPN 26 Surakarta</p>
-    </div>
+    var uId = userId.trim().toLowerCase();
+    var pHash = hashPassword(password);
     
-    <div class="card shadow">
-      <div class="mb-4">
-        <label class="text-sm font-bold block mb-4">NTA (Nomor Anggota)</label>
-        <input type="text" id="login-nta" class="input" placeholder="Masukkan NTA">
-      </div>
-      <div class="mb-4">
-        <label class="text-sm font-bold block mb-4">Password</label>
-        <input type="password" id="login-password" class="input" placeholder="Masukkan Password">
-      </div>
-      <button onclick="handleLogin()" class="btn btn-block bg-primary">Masuk 🔑</button>
-    </div>
-  </div>
-
-  <!-- MAIN APP CONTAINER -->
-  <div id="app-container" class="grow flex flex-col hidden">
-    <!-- TOP NAVBAR -->
-    <header class="flex items-center justify-between">
-      <div>
-        <div class="text-sm font-bold">⚜️ SIAP WANAMSKA</div>
-        <div class="text-xs" id="nav-user-info">Memuat...</div>
-      </div>
-      <button onclick="handleLogout()" class="btn py-2 bg-accent text-xs">Keluar</button>
-    </header>
-
-    <!-- VIEWS SCROLL CONTENT -->
-    <main class="grow p-4" style="overflow-y: auto; padding-bottom: 2rem;">
-      
-      <!-- VIEW: DASHBOARD -->
-      <section id="view-dashboard" class="app-section">
-        <div class="card bg-primary text-white shadow">
-          <div class="text-xl font-bold" id="dash-clock">00:00:00</div>
-          <div class="text-sm" id="dash-date">Hari, Tanggal</div>
-        </div>
-
-        <button onclick="bukaModalAbsen()" class="btn btn-block bg-accent p-6 text-lg rounded-xl mb-4 font-bold shadow">
-          📸 ABSEN SEKARANG
-        </button>
-
-        <h3 class="font-bold mb-4">📊 Statistik Kehadiran</h3>
-        <div class="card shadow flex flex-col items-center">
-          <canvas id="dashboard-chart" width="300" height="150" class="w-full"></canvas>
-          <div id="chart-legend" class="grid grid-cols-4 gap-2 w-full mt-4 text-center text-xs">
-            <div><span style="color:#16A34A">■</span> Hadir</div>
-            <div><span style="color:#F59E0B">■</span> Izin</div>
-            <div><span style="color:#3B82F6">■</span> Sakit</div>
-            <div><span style="color:#EF4444">■</span> Alpa</div>
-          </div>
-        </div>
-
-        <h3 class="font-bold mb-4">📅 Kegiatan Terdekat</h3>
-        <div id="dash-kegiatan-list">
-          <p class="text-sm text-center py-4">Memuat agenda terdekat...</p>
-        </div>
-      </section>
-
-      <!-- VIEW: ABSENSI FORM (DIPANGGIL VIA MODAL) -->
-      <section id="view-absensi" class="app-section hidden">
-        <!-- Konten dialihkan ke Modal overlay demi kenyamanan UX Mobile -->
-      </section>
-
-      <!-- VIEW: KEGIATAN -->
-      <section id="view-kegiatan" class="app-section hidden">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold">Agenda Kegiatan</h3>
-          <button id="btn-tambah-kegiatan-trigger" onclick="bukaFormKegiatan()" class="btn bg-primary py-2 text-xs">＋ Tambah</button>
-        </div>
-        
-        <!-- Admin Export Buttons -->
-        <div id="kegiatan-export-panel" class="mb-4 grid grid-cols-2 gap-2 hidden">
-          <button onclick="exportKegiatan('pdf')" class="btn bg-white border text-sm">📋 PDF</button>
-          <button onclick="exportKegiatan('excel')" class="btn bg-white border text-sm">🟢 Excel</button>
-        </div>
-
-        <div id="kegiatan-list" class="flex flex-col gap-4">
-          <!-- List kegiatan di-generate via JS -->
-        </div>
-      </section>
-
-      <!-- VIEW: INVENTARIS (Khusus Admin/Pembina/Dewan) -->
-      <section id="view-inventaris" class="app-section hidden">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold">Gudang Inventaris</h3>
-          <button onclick="bukaFormInventaris()" class="btn bg-primary py-2 text-xs">＋ Tambah</button>
-        </div>
-
-        <div id="inventaris-export-panel" class="mb-4 grid grid-cols-2 gap-2 hidden">
-          <button onclick="exportInventaris('pdf')" class="btn bg-white border text-sm">📋 PDF</button>
-          <button onclick="exportInventaris('excel')" class="btn bg-white border text-sm">🟢 Excel</button>
-        </div>
-
-        <div id="inventaris-list" class="flex flex-col gap-2">
-          <!-- List barang di-generate via JS -->
-        </div>
-      </section>
-
-      <!-- VIEW: PROFIL -->
-      <section id="view-profil" class="app-section hidden">
-        <div class="card shadow text-center">
-          <div class="w-full flex justify-center mb-4">
-            <div id="profil-photo-box" class="w-24 h-24 rounded-full border bg-gray flex items-center justify-center overflow-hidden">
-              👤
-            </div>
-          </div>
-          <h3 class="font-bold text-lg" id="profil-nama">Nama Anggota</h3>
-          <p class="text-sm" id="profil-nta">NTA: -</p>
-          <p class="text-xs text-accent font-bold" id="profil-role">ROLE</p>
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0].toString().toLowerCase() === uId) {
+        if (data[i][1] === pHash) {
+          if (data[i][4] !== "Aktif") {
+            return { success: false, message: "Status akun Anda tidak aktif." };
+          }
           
-          <div class="mt-4 border p-4 rounded-lg bg-white flex flex-col items-center">
-            <canvas id="qr-profile-canvas" width="160" height="160" class="border"></canvas>
-            <p class="text-xs mt-2">Gunakan QR ID Card ini untuk verifikasi kehadiran</p>
-          </div>
-        </div>
-
-        <button onclick="bukaGantiPassword()" class="btn btn-block bg-white border text-sm mb-4">🔑 Ganti Password</button>
-        <button id="btn-kelola-user" onclick="bukaKelolaUser()" class="btn btn-block bg-primary text-sm hidden">👥 Kelola Anggota (Admin)</button>
-      </section>
-
-      <!-- VIEW: LOG / RIWAYAT -->
-      <section id="view-log" class="app-section hidden">
-        <h3 class="font-bold mb-4">Riwayat Aktivitas & Absen</h3>
-        <div id="log-list" class="flex flex-col gap-2">
-          <!-- List logs di-generate via JS -->
-        </div>
-      </section>
-
-    </main>
-
-    <!-- BOTTOM TAB NAVIGATION -->
-    <nav class="bottom-nav">
-      <div id="nav-dashboard" onclick="showView('dashboard')" class="nav-item active">
-        <span class="nav-icon">🏠</span><span>Beranda</span>
-      </div>
-      <div id="nav-kegiatan" onclick="showView('kegiatan')" class="nav-item">
-        <span class="nav-icon">📅</span><span>Kegiatan</span>
-      </div>
-      <div id="nav-inventaris" onclick="showView('inventaris')" class="nav-item">
-        <span class="nav-icon">📦</span><span>Barang</span>
-      </div>
-      <div id="nav-profil" onclick="showView('profil')" class="nav-item">
-        <span class="nav-icon">👤</span><span>Profil</span>
-      </div>
-      <div id="nav-log" onclick="showView('log')" class="nav-item">
-        <span class="nav-icon">📊</span><span>Riwayat</span>
-      </div>
-    </nav>
-  </div>
-
-  <!-- ==================== MODAL OVERLAYS ==================== -->
-
-  <!-- MODAL ABSEN SEFI/CAMERA -->
-  <div id="modal-absen" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">Form Absensi Pramuka</h3>
-        <button onclick="tutupModalAbsen()" class="btn bg-white text-danger">✖</button>
-      </div>
-
-      <div class="mb-4">
-        <div class="rounded-lg overflow-hidden border bg-black flex items-center justify-center relative" style="height:200px;">
-          <video id="selfie-video" autoplay playsinline class="w-full h-full object-cover"></video>
-          <canvas id="selfie-canvas" class="hidden"></canvas>
-          <img id="selfie-preview" class="w-full h-full object-cover hidden">
-        </div>
-        <div class="flex gap-2 mt-2">
-          <button id="btn-capture-selfie" onclick="captureSelfie()" class="btn bg-primary grow py-2 text-xs">📸 Tangkap Foto</button>
-          <button id="btn-retake-selfie" onclick="resetSelfieCamera()" class="btn bg-white border grow py-2 text-xs hidden">🔄 Foto Ulang</button>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="text-xs font-bold block mb-1">Pilih Kegiatan (Opsional)</label>
-        <select id="absen-kegiatan-id" class="input py-2 text-sm">
-          <option value="">Absensi Mandiri (Latihan Rutin)</option>
-        </select>
-      </div>
-
-      <div class="mb-4">
-        <label class="text-xs font-bold block mb-1">Keterangan Kehadiran</label>
-        <select id="absen-status" class="input py-2 text-sm">
-          <option value="Hadir">✅ Hadir</option>
-          <option value="Izin">✉️ Izin</option>
-          <option value="Sakit">🤒 Sakit</option>
-          <option value="Alpa">❌ Alpa</option>
-        </select>
-      </div>
-
-      <!-- Verifikasi QR Petugas -->
-      <div class="mb-4 p-3 rounded-lg border bg-bg">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-bold">Verifikasi QR Petugas</span>
-          <button onclick="mulaiScanQRPetugas()" class="btn bg-accent py-1 px-3 text-xs">📱 Scan QR</button>
-        </div>
-        <input type="hidden" id="input-verifikator-nta">
-        <div id="label-verifikator" class="text-xs mt-1 text-danger">Belum diverifikasi petugas</div>
-      </div>
-
-      <button id="btn-submit-absensi" onclick="kirimAbsensi()" class="btn btn-block bg-primary">KIRIM ABSENSI 🚀</button>
-    </div>
-  </div>
-
-  <!-- MODAL SCAN BACK CAMERA UNTUK QR CODE PETUGAS -->
-  <div id="modal-scan-qr" class="modal-overlay hidden" style="z-index: 150;">
-    <div class="modal-content text-center">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">Arahkan ke QR Petugas</h3>
-        <button onclick="stopQRScanner()" class="btn bg-white text-danger">✖</button>
-      </div>
-      <div class="rounded-lg overflow-hidden border bg-black flex items-center justify-center relative" style="height:220px;">
-        <video id="qr-video" autoplay playsinline class="w-full h-full object-cover"></video>
-        <canvas id="qr-canvas" class="hidden"></canvas>
-      </div>
-      <p class="text-xs mt-2" id="status-scan-text">Kamera memindai secara real-time...</p>
-    </div>
-  </div>
-
-  <!-- MODAL FORM KEGIATAN (TAMBAH/EDIT) -->
-  <div id="modal-form-kegiatan" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="flex justify-between items-center mb-4">
-        <h3 id="form-kegiatan-title" class="font-bold">Agenda Baru</h3>
-        <button onclick="tutupFormKegiatan()" class="btn bg-white text-danger">✖</button>
-      </div>
-      
-      <input type="hidden" id="form-kegiatan-id">
-
-      <div class="mb-2">
-        <label class="text-xs font-bold block">Nama Kegiatan</label>
-        <input type="text" id="keg-nama" class="input py-2">
-      </div>
-      <div class="mb-2">
-        <label class="text-xs font-bold block">Deskripsi</label>
-        <textarea id="keg-deskripsi" class="input py-2" rows="3"></textarea>
-      </div>
-      <div class="grid grid-cols-2 gap-2 mb-2">
-        <div>
-          <label class="text-xs font-bold block">Tgl Mulai</label>
-          <input type="date" id="keg-tgl-mulai" class="input py-2">
-        </div>
-        <div>
-          <label class="text-xs font-bold block">Tgl Selesai</label>
-          <input type="date" id="keg-tgl-selesai" class="input py-2">
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-2 mb-2">
-        <div>
-          <label class="text-xs font-bold block">Jam Pelaksanaan</label>
-          <input type="text" id="keg-jam" class="input py-2" placeholder="Contoh: 14:00 - selesai">
-        </div>
-        <div>
-          <label class="text-xs font-bold block">Lokasi</label>
-          <input type="text" id="keg-lokasi" class="input py-2">
-        </div>
-      </div>
-      <div class="mb-2">
-        <label class="text-xs font-bold block">Penanggung Jawab</label>
-        <input type="text" id="keg-pj" class="input py-2">
-      </div>
-
-      <!-- FOTO UPLOAD CONTAINER (MINIMAL 2 FOTO) -->
-      <div class="mb-4">
-        <label class="text-xs font-bold block mb-1">Unggah Dokumentasi (Wajib Min 2 Foto, Maks 500KB/file)</label>
-        <div id="foto-uploader-container" class="flex flex-col gap-2">
-          <input type="file" id="keg-file-1" accept="image/*" onchange="prosesKompresiFile(this, 1)" class="input py-1 text-xs">
-          <input type="file" id="keg-file-2" accept="image/*" onchange="prosesKompresiFile(this, 2)" class="input py-1 text-xs">
-        </div>
-        <div class="text-xs text-danger mt-1" id="form-foto-warning">Wajib melengkapi minimal 2 dokumentasi foto.</div>
-      </div>
-
-      <button id="btn-simpan-kegiatan" onclick="kirimFormKegiatan()" class="btn btn-block bg-primary">SIMPAN AGENDA 💾</button>
-    </div>
-  </div>
-
-  <!-- MODAL FORM BARANG INVENTARIS -->
-  <div id="modal-form-inventaris" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="flex justify-between items-center mb-4">
-        <h3 id="form-inventaris-title" class="font-bold">Data Barang Gudang</h3>
-        <button onclick="tutupFormInventaris()" class="btn bg-white text-danger">✖</button>
-      </div>
-
-      <input type="hidden" id="form-barang-id">
-
-      <div class="mb-2">
-        <label class="text-xs font-bold block">Nama Barang</label>
-        <input type="text" id="inv-nama" class="input py-2">
-      </div>
-      <div class="mb-2">
-        <label class="text-xs font-bold block">Kategori</label>
-        <input type="text" id="inv-kategori" class="input py-2" placeholder="Misal: Tali, Tenda, Isyarat">
-      </div>
-      <div class="grid grid-cols-2 gap-2 mb-2">
-        <div>
-          <label class="text-xs font-bold block">Jumlah</label>
-          <input type="number" id="inv-jumlah" class="input py-2">
-        </div>
-        <div>
-          <label class="text-xs font-bold block">Satuan</label>
-          <input type="text" id="inv-satuan" class="input py-2" placeholder="Pcs, Roll, dsb">
-        </div>
-      </div>
-      <div class="mb-2">
-        <label class="text-xs font-bold block">Kondisi Barang</label>
-        <select id="inv-kondisi" class="input py-2">
-          <option value="Baik">🟢 Baik (Siap Pakai)</option>
-          <option value="Rusak Ringan">🟡 Rusak Ringan</option>
-          <option value="Rusak Berat">🔴 Rusak Berat</option>
-        </select>
-      </div>
-      <div class="mb-4">
-        <label class="text-xs font-bold block">Lokasi Simpan</label>
-        <input type="text" id="inv-lokasi" class="input py-2" placeholder="Lemari A, Rak B, Gudang Utama">
-      </div>
-
-      <button onclick="kirimFormInventaris()" class="btn btn-block bg-primary">SIMPAN DATA BARANG 💾</button>
-    </div>
-  </div>
-
-  <!-- TOAST NOTIFICATION SYSTEM -->
-  <div id="toast">Notifikasi Pesan</div>
-
-  <!-- ==================== LOGICAL ENGINE SCRIPT ==================== -->
-
-  <!-- EMBEDDED LIGHTWEIGHT DECODER FALLBACK JSQR -->
-  <script>
-    // Penulis menyertakan algoritma decoder ringan sebagai fallback jika BarcodeDetector API tidak tersedia di browser
-    // (LazarSoft jsqrcode packed fallback)
-    // Demi menjaga performa, browser modern akan otomatis memakai native BarcodeDetector API di ponsel pintar Guru/Siswa.
-  </script>
-
-  <!-- NATIVE COMPACT CANVAS QR GENERATOR -->
-  <script>
-    // Algoritma encoding QR Code sederhana versi kecil, Low Error Correction, digambar ke canvas
-    // (Berdasarkan modifikasi arsitektur minimal QR Code encoder)
-    const SimpleQRGen = {
-      draw: function(text, canvasId, size = 150) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // QR Code layout generator modular 21x21 (V1)
-        const modulesCount = 21;
-        const cellSize = size / modulesCount;
-        
-        // Pattern standard locator posisi sudut (Top-Left, Top-Right, Bottom-Left)
-        const finders = [
-          { r: 0, c: 0 },
-          { r: 0, c: modulesCount - 7 },
-          { r: modulesCount - 7, c: 0 }
-        ];
-
-        ctx.fillStyle = '#000000';
-        
-        // Draw Finders
-        finders.forEach(f => {
-          ctx.fillRect((f.c) * cellSize, (f.r) * cellSize, 7 * cellSize, 7 * cellSize);
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect((f.c + 1) * cellSize, (f.r + 1) * cellSize, 5 * cellSize, 5 * cellSize);
-          ctx.fillStyle = '#000000';
-          ctx.fillRect((f.c + 2) * cellSize, (f.r + 2) * cellSize, 3 * cellSize, 3 * cellSize);
-        });
-
-        // Pseudo-random Generator untuk data payload NTA
-        let hash = 0;
-        for (let i = 0; i < text.length; i++) {
-          hash = text.charCodeAt(i) + ((hash << 5) - hash);
-        }
-
-        // Draw pseudorandom data matrix grid
-        for (let r = 0; r < modulesCount; r++) {
-          for (let c = 0; c < modulesCount; c++) {
-            // Lewati area finder pattern agar tidak tertimpa
-            if ((r < 8 && c < 8) || (r < 8 && c >= modulesCount - 8) || (r >= modulesCount - 8 && c < 8)) {
-              continue;
-            }
-            // Logic timing pattern standard QR
-            if (r === 6 || c === 6) {
-              if ((r + c) % 2 === 0) {
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-              }
-              continue;
-            }
-            // Draw dummy pseudo-randomized bit squares matching the NTA key
-            const val = Math.abs(Math.sin(hash + (r * 13) + (c * 37)));
-            if (val > 0.45) {
-              ctx.fillStyle = '#000000';
-              ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
-            }
-          }
-        }
-      }
-    };
-  </script>
-
-  <!-- MAIN JS CONTROLLER & INTEGRATION -->
-  <script>
-    // State Aplikasi
-    const appState = {
-      user: null,
-      token: null,
-      activeView: 'login',
-      dashboardStats: null,
-      compressedFotos: {}, // Simpan base64 foto-foto kegiatan
-      activeSelfieBase64: ""
-    };
-
-    // Auto load state dari browser jika ada
-    window.addEventListener('DOMContentLoaded', () => {
-      initApp();
-    });
-
-    function initApp() {
-      const savedNta = localStorage.getItem('siap_nta');
-      const savedToken = localStorage.getItem('siap_token');
-      
-      if (savedNta && savedToken) {
-        google.script.run
-          .withSuccessHandler(function(response) {
-            if (response.success) {
-              appState.user = response.user;
-              appState.token = savedToken;
-              document.getElementById('loading-screen').classList.add('hidden');
-              document.getElementById('app-container').classList.remove('hidden');
-              showView('dashboard');
-              setupLayoutByRole();
-            } else {
-              localStorage.clear();
-              setLoadingState(false);
-            }
-          })
-          .checkSession(savedNta, savedToken);
-      } else {
-        setLoadingState(false);
-      }
-      
-      // Update jam digital secara konstan
-      setInterval(updateJamDigital, 1000);
-    }
-
-    function setLoadingState(loading) {
-      if (loading) {
-        document.getElementById('loading-screen').classList.remove('hidden');
-        document.getElementById('view-login').classList.add('hidden');
-        document.getElementById('app-container').classList.add('hidden');
-      } else {
-        document.getElementById('loading-screen').classList.add('hidden');
-        document.getElementById('view-login').classList.remove('hidden');
-        document.getElementById('app-container').classList.add('hidden');
-      }
-    }
-
-    function showView(viewId) {
-      document.querySelectorAll('.app-section').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-      
-      const targetView = document.getElementById('view-' + viewId);
-      if (targetView) targetView.classList.remove('hidden');
-      
-      const targetNav = document.getElementById('nav-' + viewId);
-      if (targetNav) targetNav.classList.add('active');
-      
-      appState.activeView = viewId;
-      
-      if (viewId === 'dashboard') {
-        refreshDashboard();
-      } else if (viewId === 'kegiatan') {
-        loadKegiatan();
-      } else if (viewId === 'inventaris') {
-        loadInventaris();
-      } else if (viewId === 'profil') {
-        renderProfil();
-      } else if (viewId === 'log') {
-        loadLogs();
-      }
-    }
-
-    // --- SKELETON SECURITY LAYOUTS ---
-    function setupLayoutByRole() {
-      if (!appState.user) return;
-      
-      document.getElementById('nav-user-info').innerText = `${appState.user.nama} (${appState.user.role})`;
-      
-      // Matriks Visibilitas di Client
-      const role = appState.user.role;
-      
-      // Sembunyikan modul Inventaris seutuhnya jika user adalah Penggalang (siswa)
-      const navInv = document.getElementById('nav-inventaris');
-      if (role === 'Penggalang') {
-        navInv.classList.add('hidden');
-      } else {
-        navInv.classList.remove('hidden');
-      }
-
-      // Tombol add agenda kegiatan hanya untuk non-penggalang
-      const btnAddKeg = document.getElementById('btn-tambah-kegiatan-trigger');
-      if (role === 'Penggalang') {
-        btnAddKeg.classList.add('hidden');
-      } else {
-        btnAddKeg.classList.remove('hidden');
-      }
-
-      // Tombol export khusus Admin
-      const kegiatanExport = document.getElementById('kegiatan-export-panel');
-      const inventarisExport = document.getElementById('inventaris-export-panel');
-      const btnKelola = document.getElementById('btn-kelola-user');
-      
-      if (role === 'Admin') {
-        kegiatanExport.classList.remove('hidden');
-        inventarisExport.classList.remove('hidden');
-        btnKelola.classList.remove('hidden');
-      } else {
-        kegiatanExport.classList.add('hidden');
-        inventarisExport.classList.add('hidden');
-        btnKelola.classList.add('hidden');
-      }
-    }
-
-    // --- NOTIFICATION & MESSAGES ---
-    function showToast(message, type = "info") {
-      const toast = document.getElementById('toast');
-      toast.innerText = message;
-      toast.style.display = "block";
-      toast.style.backgroundColor = type === "success" ? "var(--color-success)" : (type === "error" ? "var(--color-danger)" : "#333");
-      setTimeout(() => {
-        toast.style.display = "none";
-      }, 3500);
-    }
-
-    // --- DIGITAL CLOCK SYSTEM ---
-    function updateJamDigital() {
-      const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      const dateStr = now.toLocaleDateString('id-ID', options);
-      
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      const ss = String(now.getSeconds()).padStart(2, '0');
-      
-      const clockElement = document.getElementById('dash-clock');
-      const dateElement = document.getElementById('dash-date');
-      
-      if (clockElement) clockElement.innerText = `${hh}:${mm}:${ss}`;
-      if (dateElement) dateElement.innerText = dateStr;
-    }
-
-    // --- AUTHENTICATION FLOW ---
-    function handleLogin() {
-      const nta = document.getElementById('login-nta').value;
-      const pass = document.getElementById('login-password').value;
-      
-      if (!nta || !pass) {
-        showToast("Mohon isi semua bidang form login.", "error");
-        return;
-      }
-      
-      setLoadingState(true);
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            appState.user = response.user;
-            appState.token = response.token;
-            localStorage.setItem('siap_nta', response.user.nta);
-            localStorage.setItem('siap_token', response.token);
-            
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            showView('dashboard');
-            setupLayoutByRole();
-            showToast("Masuk berhasil! Selamat berkegiatan.", "success");
-          } else {
-            setLoadingState(false);
-            showToast(response.message, "error");
-          }
-        })
-        .loginUser(nta, pass);
-    }
-
-    function handleLogout() {
-      if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
-        google.script.run.logoutUser(appState.user.nta);
-        localStorage.clear();
-        appState.user = null;
-        appState.token = null;
-        setLoadingState(false);
-      }
-    }
-
-    // --- CANVAS-BASED CHARTS ENGINE (0% CDN) ---
-    function drawStatisticsChart(stats) {
-      const canvas = document.getElementById('dashboard-chart');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      let data = [0, 0, 0, 0];
-      const colors = ['#16A34A', '#F59E0B', '#3B82F6', '#DC2626']; // Hadir, Izin, Sakit, Alpa
-      
-      if (appState.user.role === 'Penggalang') {
-        const p = stats.kehadiranPribadi;
-        data = [p.Hadir, p.Izin, p.Sakit, p.Alpa];
-        
-        // Render Donut Chart
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const radius = 60;
-        const innerRadius = 40;
-        const total = data.reduce((a, b) => a + b, 0);
-        
-        if (total === 0) {
-          ctx.fillStyle = '#CCCCCC';
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-          ctx.fill();
-          ctx.fillStyle = '#FFFFFF';
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
-          ctx.fill();
-          return;
-        }
-        
-        let startAngle = -0.5 * Math.PI;
-        for (let i = 0; i < data.length; i++) {
-          const sliceAngle = (data[i] / total) * 2 * Math.PI;
-          ctx.fillStyle = colors[i];
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-          ctx.arc(centerX, centerY, innerRadius, startAngle + sliceAngle, startAngle, true);
-          ctx.closePath();
-          ctx.fill();
-          startAngle += sliceAngle;
-        }
-      } else {
-        // Render Bar Chart kehadiran regu global untuk Admin/Pembina
-        const r = stats.rekapHariIni;
-        data = [r.Hadir, r.Izin, r.Sakit, r.Alpa];
-        
-        const padding = 20;
-        const chartWidth = canvas.width - padding * 2;
-        const chartHeight = canvas.height - padding * 2;
-        const maxVal = Math.max(...data, 1);
-        const barWidth = 40;
-        const spacing = (chartWidth - barWidth * 4) / 3;
-        
-        for (let i = 0; i < data.length; i++) {
-          const barHeight = (data[i] / maxVal) * chartHeight;
-          const x = padding + i * (barWidth + spacing);
-          const y = canvas.height - padding - barHeight;
+          var role = data[i][3];
+          var namaLengkap = data[i][2];
           
-          ctx.fillStyle = colors[i];
-          ctx.fillRect(x, y, barWidth, barHeight);
+          var token = "SESSION-" + Utilities.getUuid();
+          var sessionObj = { userId: uId, role: role, name: namaLengkap };
           
-          ctx.fillStyle = '#2D1E15';
-          ctx.font = '10px Arial';
-          ctx.textAlign = 'center';
-          ctx.fillText(data[i], x + barWidth/2, y - 5);
-        }
-      }
-    }
-
-    function refreshDashboard() {
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            appState.dashboardStats = response.stats;
-            drawStatisticsChart(response.stats);
-          }
-        })
-        .getDashboardStats(appState.user.role, appState.user.nta);
-
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            renderDashKegiatan(response.data);
-            
-            // Masukkan daftar kegiatan ke Dropdown Form Absensi
-            const selectKeg = document.getElementById('absen-kegiatan-id');
-            selectKeg.innerHTML = '<option value="">Absensi Mandiri (Latihan Rutin)</option>';
-            response.data.forEach(k => {
-              selectKeg.innerHTML += `<option value="${k.id_kegiatan}">${k.nama_kegiatan}</option>`;
-            });
-          }
-        })
-        .getKegiatanTerdekat();
-    }
-
-    function renderDashKegiatan(kegiatans) {
-      const container = document.getElementById('dash-kegiatan-list');
-      if (kegiatans.length === 0) {
-        container.innerHTML = '<p class="text-sm text-center py-4">Belum ada agenda kegiatan terdekat.</p>';
-        return;
-      }
-      container.innerHTML = '';
-      kegiatans.forEach(k => {
-        container.innerHTML += `
-          <div class="card border flex flex-col gap-2">
-            <div class="font-bold text-primary">${k.nama_kegiatan}</div>
-            <div class="text-xs text-accent">📅 ${k.tanggal_mulai} | 📍 ${k.lokasi}</div>
-            <div class="text-sm">${k.deskripsi}</div>
-          </div>
-        `;
-      });
-    }
-
-    // --- FILE SIZE COMPRESSION ENGINE ---
-    function compressImageFile(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-          const img = new Image();
-          img.src = event.target.result;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-            
-            // Batas maksimal dimensi lebar demi efisiensi pixel transfer
-            const maxDimension = 480; 
-            if (width > maxDimension) {
-              height = Math.round((height * maxDimension) / width);
-              width = maxDimension;
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // Compress optimal JPEG quality
-            let quality = 0.6;
-            let compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-            resolve(compressedBase64);
+          CacheService.getScriptCache().put(token, JSON.stringify(sessionObj), 21600);
+          
+          writeLog(uId, "LOGIN", "Berhasil login ke sistem");
+          
+          return {
+            success: true,
+            token: token,
+            role: role,
+            userId: uId,
+            namaLengkap: namaLengkap
           };
-        };
-        reader.onerror = error => reject(error);
-      });
-    }
-
-    function prosesKompresiFile(inputElement, indexSlot) {
-      const file = inputElement.files[0];
-      if (!file) return;
-      
-      // Loading visual state
-      showToast(`Mengompresi slot foto ${indexSlot}...`, "info");
-      
-      compressImageFile(file).then(base64 => {
-        appState.compressedFotos[`foto_${indexSlot}`] = base64;
-        showToast(`Slot foto ${indexSlot} siap dikirim.`, "success");
-        document.getElementById('form-foto-warning').classList.add('hidden');
-      }).catch(err => {
-        showToast("Format file foto ditolak sistem.", "error");
-      });
-    }
-
-    // --- ABSENSI MEDIA DEVICE CONTROLLER ---
-    let selfieStream = null;
-
-    async function bukaModalAbsen() {
-      document.getElementById('modal-absen').classList.remove('hidden');
-      
-      const constraints = {
-        video: { facingMode: "user", width: 320, height: 240 }
-      };
-
-      try {
-        selfieStream = await navigator.mediaDevices.getUserMedia(constraints);
-        const video = document.getElementById('selfie-video');
-        video.srcObject = selfieStream;
-        video.play();
-      } catch (err) {
-        showToast("Gagal mengakses kamera depan perangkat.", "error");
+        } else {
+          return { success: false, message: "Password salah." };
+        }
       }
     }
+    return { success: false, message: "User ID tidak ditemukan." };
+  } catch (err) {
+    return { success: false, message: "Error sistem: " + err.toString() };
+  }
+}
 
-    function captureSelfie() {
-      const video = document.getElementById('selfie-video');
-      const canvas = document.getElementById('selfie-canvas');
-      const img = document.getElementById('selfie-preview');
-      
-      if (selfieStream) {
-        canvas.width = 320;
-        canvas.height = 240;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Convert to highly optimized local format
-        appState.activeSelfieBase64 = canvas.toDataURL('image/jpeg', 0.5);
-        img.src = appState.activeSelfieBase64;
-        
-        // UI toggle
-        video.classList.add('hidden');
-        img.classList.remove('hidden');
-        document.getElementById('btn-capture-selfie').classList.add('hidden');
-        document.getElementById('btn-retake-selfie').classList.remove('hidden');
-        
-        // Matikan stream kamera
-        selfieStream.getTracks().forEach(track => track.stop());
+/**
+ * LOGOUT USER
+ */
+function logoutUser(token) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
+    CacheService.getScriptCache().remove(token);
+    writeLog(session.userId, "LOGOUT", "Keluar dari sistem");
+    return { success: true };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * DASHBOARD DATA FETCH
+ */
+function getDashboardData(token) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    var usersSheet = ss.getSheetByName(SHEET_USERS);
+    var totalAnggota = usersSheet.getLastRow() - 1;
+    
+    var absensiSheet = ss.getSheetByName(SHEET_ABSENSI);
+    var absensiData = absensiSheet.getDataRange().getValues();
+    var hariIni = new Date().toISOString().substring(0, 10);
+    var hadirHariIni = 0;
+    
+    for (var i = 1; i < absensiData.length; i++) {
+      var tglRow = absensiData[i][3];
+      var status = absensiData[i][5];
+      if (tglRow === hariIni && status === "Hadir") {
+        hadirHariIni++;
       }
     }
-
-    async function resetSelfieCamera() {
-      document.getElementById('selfie-preview').classList.add('hidden');
-      document.getElementById('selfie-video').classList.remove('hidden');
-      document.getElementById('btn-capture-selfie').classList.remove('hidden');
-      document.getElementById('btn-retake-selfie').classList.add('hidden');
-      
-      const constraints = { video: { facingMode: "user", width: 320, height: 240 } };
-      selfieStream = await navigator.mediaDevices.getUserMedia(constraints);
-      document.getElementById('selfie-video').srcObject = selfieStream;
+    
+    var kegiatanSheet = ss.getSheetByName(SHEET_KEGIATAN);
+    var kegiatanData = kegiatanSheet.getDataRange().getValues();
+    var kegiatanTerbaru = "-";
+    if (kegiatanData.length > 1) {
+      kegiatanTerbaru = kegiatanData[kegiatanData.length - 1][1];
     }
-
-    function tutupModalAbsen() {
-      document.getElementById('modal-absen').classList.add('hidden');
-      if (selfieStream) {
-        selfieStream.getTracks().forEach(track => track.stop());
-        selfieStream = null;
+    
+    var saldoKas = 0;
+    if (["Admin", "Pembina", "Dewan"].indexOf(session.role) !== -1) {
+      var kasSheet = ss.getSheetByName(SHEET_KAS);
+      var kasData = kasSheet.getDataRange().getValues();
+      if (kasData.length > 1) {
+        saldoKas = kasData[kasData.length - 1][6];
       }
-      appState.activeSelfieBase64 = "";
     }
+    
+    return {
+      success: true,
+      totalAnggota: totalAnggota,
+      hadirHariIni: hadirHariIni,
+      kegiatanTerbaru: kegiatanTerbaru,
+      saldoKas: saldoKas,
+      role: session.role
+    };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
 
-    // --- QR PETUGAS SCANNER WORKFLOW ---
-    let qrBackStream = null;
-    let isScanningQR = false;
+/**
+ * SUBMIT ABSENSI (Selfie & Manual/QR)
+ */
+function submitAbsen(token, status, fotoSelfie, metode, kegiatanTerkait, keterangan) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_ABSENSI);
+    
+    var idAbsen = "ABS-" + Utilities.getUuid().substring(0, 8).toUpperCase();
+    var tanggal = new Date().toISOString().substring(0, 10);
+    var jam = new Date().toTimeString().substring(0, 8);
+    
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][1] === session.userId && data[i][3] === tanggal) {
+        return { success: false, message: "Anda sudah melakukan absensi hari ini." };
+      }
+    }
+    
+    sheet.appendRow([
+      idAbsen,
+      session.userId,
+      session.name,
+      tanggal,
+      jam,
+      status,
+      fotoSelfie,
+      metode,
+      kegiatanTerkait,
+      keterangan
+    ]);
+    
+    writeLog(session.userId, "ABSEN", "Melakukan absensi " + status + " via " + metode);
+    return { success: true, message: "Absensi berhasil dicatat!" };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
 
-    async function mulaiScanQRPetugas() {
-      document.getElementById('modal-scan-qr').classList.remove('hidden');
-      const video = document.getElementById('qr-video');
-      const canvas = document.getElementById('qr-canvas');
-      const ctx = canvas.getContext('2d');
-      isScanningQR = true;
-
-      try {
-        qrBackStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment", width: 320, height: 240 }
+/**
+ * GET RIWAYAT ABSENSI
+ */
+function getAbsenHistory(token, filterDate) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_ABSENSI);
+    var data = sheet.getDataRange().getValues();
+    
+    var list = [];
+    for (var i = 1; i < data.length; i++) {
+      var show = false;
+      
+      if (session.role === "Penggalang") {
+        if (data[i][1] === session.userId) {
+          show = true;
+        }
+      } else {
+        show = true;
+      }
+      
+      if (show && filterDate) {
+        if (data[i][3] !== filterDate) {
+          show = false;
+        }
+      }
+      
+      if (show) {
+        list.push({
+          id_absen: data[i][0],
+          user_id: data[i][1],
+          nama: data[i][2],
+          tanggal: data[i][3],
+          jam: data[i][4],
+          status: data[i][5],
+          foto_selfie: data[i][6] ? "Ada Foto" : "Tidak Ada",
+          foto_base64: data[i][6],
+          metode: data[i][7],
+          kegiatan: data[i][8],
+          keterangan: data[i][9]
         });
-        video.srcObject = qrBackStream;
-        video.play();
-        requestAnimationFrame(tickScanQR);
-      } catch (err) {
-        showToast("Akses kamera belakang perangkat ditolak.", "error");
-      }
-
-      async function tickScanQR() {
-        if (!isScanningQR) return;
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          canvas.width = 320;
-          canvas.height = 240;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          
-          let qrResult = null;
-          
-          // Gunakan BarcodeDetector native jika didukung browser HP
-          if ('BarcodeDetector' in window) {
-            const detector = new BarcodeDetector({ formats: ['qr_code'] });
-            try {
-              const detected = await detector.detect(canvas);
-              if (detected.length > 0) qrResult = detected[0].rawValue;
-            } catch(e) {}
-          }
-          
-          if (qrResult) {
-            prosesVerifikatorQR(qrResult);
-            return;
-          }
-        }
-        requestAnimationFrame(tickScanQR);
       }
     }
+    
+    list.reverse();
+    return { success: true, list: list };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
 
-    function stopQRScanner() {
-      isScanningQR = false;
-      if (qrBackStream) {
-        qrBackStream.getTracks().forEach(track => track.stop());
-        qrBackStream = null;
-      }
-      document.getElementById('modal-scan-qr').classList.add('hidden');
-    }
-
-    function prosesVerifikatorQR(ntaPetugas) {
-      stopQRScanner();
-      showToast("Sedang memverifikasi NTA petugas...", "info");
-      
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            document.getElementById('input-verifikator-nta').value = response.user.nta;
-            document.getElementById('label-verifikator').innerText = `Diverifikasi: ${response.user.nama}`;
-            document.getElementById('label-verifikator').className = "text-xs mt-1 text-success font-bold";
-            showToast("QR Petugas Terverifikasi!", "success");
-          } else {
-            showToast(response.message, "error");
-          }
-        })
-        .validasiQRPetugas(ntaPetugas);
-    }
-
-    // --- SUBMIT ABSENSI KE SERVER ---
-    function kirimAbsensi() {
-      const keterangan = document.getElementById('absen-status').value;
-      const idKegiatan = document.getElementById('absen-kegiatan-id').value;
-      const verifikatorNta = document.getElementById('input-verifikator-nta').value;
-      
-      if (!appState.activeSelfieBase64) {
-        showToast("Harap tangkap foto selfie kehadiran Anda.", "error");
-        return;
-      }
-      
-      showToast("Mengirim berkas absensi ke server...", "info");
-      
-      const payload = {
-        nta: appState.user.nta,
-        keterangan: keterangan,
-        foto_selfie: appState.activeSelfieBase64,
-        id_kegiatan: idKegiatan,
-        verifikator_nta: verifikatorNta,
-        lokasi: "SMPN 26 Surakarta"
-      };
-
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            showToast(response.message, "success");
-            tutupModalAbsen();
-            refreshDashboard();
-          } else {
-            showToast(response.message, "error");
-          }
-        })
-        .simpanAbsensi(payload);
-    }
-
-    // --- KEGIATAN DATA LOGIC ---
-    function loadKegiatan() {
-      const container = document.getElementById('kegiatan-list');
-      container.innerHTML = '<p class="text-sm text-center py-4">Sinkronisasi agenda kegiatan...</p>';
-      
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            container.innerHTML = '';
-            response.data.forEach(k => {
-              let photoHtml = '';
-              if (k.foto_urls && k.foto_urls.length > 0) {
-                photoHtml = `<div class="flex gap-1 overflow-x-auto mt-2">`;
-                k.foto_urls.forEach(url => {
-                  photoHtml += `<img src="${url}" class="w-16 h-16 object-cover rounded border">`;
-                });
-                photoHtml += `</div>`;
-              }
-              
-              const hapusBtn = appState.user.role === 'Admin' ? 
-                `<button onclick="hapusKegiatan('${k.id_kegiatan}')" class="btn bg-white border text-danger py-1 px-3 text-xs">Hapus</button>` : '';
-              
-              container.innerHTML += `
-                <div class="card shadow border">
-                  <div class="font-bold text-primary">${k.nama_kegiatan}</div>
-                  <div class="text-xs text-accent mt-1">📅 ${k.tanggal_mulai} s/d ${k.tanggal_selesai}</div>
-                  <div class="text-xs text-dark-gray">📍 ${k.lokasi} | PJ: ${k.penanggung_jawab}</div>
-                  <p class="text-sm mt-2">${k.deskripsi}</p>
-                  ${photoHtml}
-                  <div class="flex justify-end gap-2 mt-4">
-                    ${hapusBtn}
-                  </div>
-                </div>
-              `;
-            });
-          }
-        })
-        .getAllKegiatan();
-    }
-
-    function bukaFormKegiatan() {
-      document.getElementById('modal-form-kegiatan').classList.remove('hidden');
-    }
-    function tutupFormKegiatan() {
-      document.getElementById('modal-form-kegiatan').classList.add('hidden');
-    }
-
-    function kirimFormKegiatan() {
-      const payload = {
-        nama_kegiatan: document.getElementById('keg-nama').value,
-        deskripsi: document.getElementById('keg-deskripsi').value,
-        tanggal_mulai: document.getElementById('keg-tgl-mulai').value,
-        tanggal_selesai: document.getElementById('keg-tgl-selesai').value,
-        jam: document.getElementById('keg-jam').value,
-        lokasi: document.getElementById('keg-lokasi').value,
-        penanggung_jawab: document.getElementById('keg-pj').value
-      };
-
-      const foto1 = appState.compressedFotos['foto_1'];
-      const foto2 = appState.compressedFotos['foto_2'];
-
-      if (!payload.nama_kegiatan || !foto1 || !foto2) {
-        showToast("Lengkapi form agenda & unggah minimal 2 foto dokumentasi.", "error");
-        return;
-      }
-
-      showToast("Menyimpan agenda kegiatan...", "info");
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            showToast(response.message, "success");
-            tutupFormKegiatan();
-            loadKegiatan();
-          } else {
-            showToast(response.message, "error");
-          }
-        })
-        .tambahKegiatan(payload, [foto1, foto2], appState.user.nta);
-    }
-
-    function hapusKegiatan(id) {
-      if (confirm("Apakah Anda yakin ingin menghapus agenda kegiatan ini seutuhnya?")) {
-        showToast("Menghapus kegiatan...", "info");
-        google.script.run
-          .withSuccessHandler(function(response) {
-            if (response.success) {
-              showToast(response.message, "success");
-              loadKegiatan();
-            } else {
-              showToast(response.message, "error");
-            }
-          })
-          .hapusKegiatan(id, appState.user.nta);
-      }
-    }
-
-    // --- INVENTARIS LOGIC ---
-    function loadInventaris() {
-      const container = document.getElementById('inventaris-list');
-      container.innerHTML = '<p class="text-sm text-center py-4">Memuat stok gudang...</p>';
-      
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            container.innerHTML = '';
-            response.data.forEach(b => {
-              const hapusBtn = appState.user.role === 'Admin' ? 
-                `<button onclick="hapusBarang('${b.id_barang}')" class="btn bg-white border text-danger py-1 px-3 text-xs">Hapus</button>` : '';
-              
-              container.innerHTML += `
-                <div class="card shadow border flex justify-between items-center">
-                  <div>
-                    <div class="font-bold text-primary">${b.nama_barang}</div>
-                    <div class="text-xs">Kondisi: ${b.kondisi} | Kategori: ${b.kategori}</div>
-                    <div class="text-xs text-dark-gray mt-1">📍 Simpan: ${b.lokasi_simpan}</div>
-                  </div>
-                  <div class="text-right">
-                    <div class="font-bold text-xl">${b.jumlah} <span class="text-sm font-normal">${b.satuan}</span></div>
-                    <div class="mt-2 flex gap-1 justify-end">
-                      ${hapusBtn}
-                    </div>
-                  </div>
-                </div>
-              `;
-            });
-          }
-        })
-        .getAllInventaris("", appState.user.nta);
-    }
-
-    function bukaFormInventaris() {
-      document.getElementById('modal-form-inventaris').classList.remove('hidden');
-    }
-    function tutupFormInventaris() {
-      document.getElementById('modal-form-inventaris').classList.add('hidden');
-    }
-
-    function kirimFormInventaris() {
-      const payload = {
-        nama_barang: document.getElementById('inv-nama').value,
-        kategori: document.getElementById('inv-kategori').value,
-        jumlah: parseInt(document.getElementById('inv-jumlah').value),
-        satuan: document.getElementById('inv-satuan').value,
-        kondisi: document.getElementById('inv-kondisi').value,
-        lokasi_simpan: document.getElementById('inv-lokasi').value
-      };
-
-      if (!payload.nama_barang || isNaN(payload.jumlah)) {
-        showToast("Lengkapi semua isian form barang gudang.", "error");
-        return;
-      }
-
-      showToast("Menyimpan aset inventaris...", "info");
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            showToast(response.message, "success");
-            tutupFormInventaris();
-            loadInventaris();
-          } else {
-            showToast(response.message, "error");
-          }
-        })
-        .tambahInventaris(payload, appState.user.nta);
-    }
-
-    function hapusBarang(id) {
-      if (confirm("Hapus barang dari catatan inventaris?")) {
-        google.script.run
-          .withSuccessHandler(function(response) {
-            if (response.success) {
-              showToast(response.message, "success");
-              loadInventaris();
-            } else {
-              showToast(response.message, "error");
-            }
-          })
-          .hapusInventaris(id, appState.user.nta);
-      }
-    }
-
-    // --- PROFIL & BARCODE ENGINE ---
-    function renderProfil() {
-      if (!appState.user) return;
-      document.getElementById('profil-nama').innerText = appState.user.nama;
-      document.getElementById('profil-nta').innerText = `NTA: ${appState.user.nta}`;
-      document.getElementById('profil-role').innerText = appState.user.role.toUpperCase();
-      
-      // Generate QR Code ID Card personal siswa manual ke canvas
-      SimpleQRGen.draw(appState.user.nta, 'qr-profile-canvas', 160);
-    }
-
-    // --- LOG AUDIT TRAILS ---
-    function loadLogs() {
-      const container = document.getElementById('log-list');
-      container.innerHTML = '<p class="text-sm text-center py-4">Menghubungkan audit trail...</p>';
-      
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            container.innerHTML = '';
-            response.data.forEach(l => {
-              container.innerHTML += `
-                <div class="card shadow border py-2 px-3 text-xs">
-                  <div class="flex justify-between font-bold">
-                    <span>${l.nama} (${l.nta})</span>
-                    <span class="text-accent">${l.timestamp}</span>
-                  </div>
-                  <div class="mt-1">${l.aksi} - ${l.detail}</div>
-                </div>
-              `;
-            });
-          }
-        })
-        .getLogAktivitas(appState.user.nta, appState.user.role);
-    }
-
-    // --- REPORT EXPORTS CLIENT HANDLERS ---
-    function exportKegiatan(format) {
-      showToast("Mengekspor laporan kegiatan...", "info");
-      const r = google.script.run.withSuccessHandler(function(response) {
-        if (response.success) {
-          showToast("Laporan siap diunduh!", "success");
-          window.open(response.url, '_blank');
-        } else {
-          showToast(response.message, "error");
-        }
+/**
+ * GET DAFTAR KEGIATAN
+ */
+function getKegiatanList(token) {
+  try {
+    validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_KEGIATAN);
+    var data = sheet.getDataRange().getValues();
+    
+    var list = [];
+    for (var i = 1; i < data.length; i++) {
+      list.push({
+        id_kegiatan: data[i][0],
+        nama_kegiatan: data[i][1],
+        tanggal: data[i][2],
+        lokasi: data[i][3],
+        deskripsi: data[i][4],
+        foto1: data[i][5],
+        foto2: data[i][6],
+        foto3: data[i][7],
+        foto4: data[i][8],
+        dibuat_oleh: data[i][9],
+        tanggal_dibuat: data[i][10]
       });
-      
-      if (format === 'pdf') r.exportKegiatanToPDF("", appState.user.nta);
-      else r.exportKegiatanToExcel("", appState.user.nta);
     }
+    list.reverse();
+    return { success: true, list: list };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
 
-    function exportInventaris(format) {
-      showToast("Mengekspor laporan inventaris...", "info");
-      const r = google.script.run.withSuccessHandler(function(response) {
-        if (response.success) {
-          showToast("Laporan siap diunduh!", "success");
-          window.open(response.url, '_blank');
-        } else {
-          showToast(response.message, "error");
+/**
+ * SAVE KEGIATAN (Create & Update)
+ */
+function saveKegiatan(token, dataKegiatan) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_KEGIATAN);
+    var data = sheet.getDataRange().getValues();
+    
+    var idKegiatan = dataKegiatan.id_kegiatan;
+    var rowIdx = -1;
+    
+    if (idKegiatan) {
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0] === idKegiatan) {
+          rowIdx = i + 1;
+          break;
         }
-      });
-      
-      if (format === 'pdf') r.exportInventarisToPDF(appState.user.nta);
-      else r.exportInventarisToExcel(appState.user.nta);
+      }
+    } else {
+      idKegiatan = "KEG-" + Utilities.getUuid().substring(0, 8).toUpperCase();
     }
-  </script>
-</body>
-</html>
+    
+    var tglDibuat = new Date().toISOString();
+    
+    if (rowIdx !== -1) {
+      sheet.getRange(rowIdx, 2, 1, 9).setValues([[
+        dataKegiatan.nama_kegiatan,
+        dataKegiatan.tanggal,
+        dataKegiatan.lokasi,
+        dataKegiatan.deskripsi,
+        dataKegiatan.foto1,
+        dataKegiatan.foto2,
+        dataKegiatan.foto3 || "",
+        dataKegiatan.foto4 || "",
+        session.userId
+      ]]);
+      writeLog(session.userId, "EDIT_KEGIATAN", "Mengubah kegiatan " + dataKegiatan.nama_kegiatan);
+    } else {
+      sheet.appendRow([
+        idKegiatan,
+        dataKegiatan.nama_kegiatan,
+        dataKegiatan.tanggal,
+        dataKegiatan.lokasi,
+        dataKegiatan.deskripsi,
+        dataKegiatan.foto1,
+        dataKegiatan.foto2,
+        dataKegiatan.foto3 || "",
+        dataKegiatan.foto4 || "",
+        session.userId,
+        tglDibuat
+      ]);
+      writeLog(session.userId, "TAMBAH_KEGIATAN", "Menambahkan kegiatan baru " + dataKegiatan.nama_kegiatan);
+    }
+    
+    return { success: true, message: "Kegiatan berhasil disimpan." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * DELETE KEGIATAN (Hanya Admin)
+ */
+function deleteKegiatan(token, idKegiatan) {
+  try {
+    var session = validateSession(token, ["Admin"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_KEGIATAN);
+    var data = sheet.getDataRange().getValues();
+    
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0] === idKegiatan) {
+        sheet.deleteRow(i + 1);
+        writeLog(session.userId, "HAPUS_KEGIATAN", "Menghapus kegiatan ID " + idKegiatan);
+        return { success: true, message: "Kegiatan berhasil dihapus." };
+      }
+    }
+    return { success: false, message: "Kegiatan tidak ditemukan." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * GET INVENTARIS
+ */
+function getInventarisList(token) {
+  try {
+    validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_INVENTARIS);
+    var data = sheet.getDataRange().getValues();
+    
+    var list = [];
+    for (var i = 1; i < data.length; i++) {
+      list.push({
+        id_barang: data[i][0],
+        nama_barang: data[i][1],
+        kategori: data[i][2],
+        jumlah: data[i][3],
+        kondisi: data[i][4],
+        lokasi_simpan: data[i][5],
+        tanggal_masuk: data[i][6],
+        keterangan: data[i][7],
+        dikelola_oleh: data[i][8]
+      });
+    }
+    return { success: true, list: list };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * SAVE INVENTARIS (Create & Update)
+ */
+function saveInventaris(token, dataBarang) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_INVENTARIS);
+    var data = sheet.getDataRange().getValues();
+    
+    var idBarang = dataBarang.id_barang;
+    var rowIdx = -1;
+    
+    if (idBarang) {
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0] === idBarang) {
+          rowIdx = i + 1;
+          break;
+        }
+      }
+    } else {
+      idBarang = "INV-" + Utilities.getUuid().substring(0, 8).toUpperCase();
+    }
+    
+    if (rowIdx !== -1) {
+      sheet.getRange(rowIdx, 2, 1, 8).setValues([[
+        dataBarang.nama_barang,
+        dataBarang.kategori,
+        dataBarang.jumlah,
+        dataBarang.kondisi,
+        dataBarang.lokasi_simpan,
+        dataBarang.tanggal_masuk,
+        dataBarang.keterangan,
+        session.userId
+      ]]);
+      writeLog(session.userId, "EDIT_INVENTARIS", "Mengubah barang " + dataBarang.nama_barang);
+    } else {
+      sheet.appendRow([
+        idBarang,
+        dataBarang.nama_barang,
+        dataBarang.kategori,
+        dataBarang.jumlah,
+        dataBarang.kondisi,
+        dataBarang.lokasi_simpan,
+        dataBarang.tanggal_masuk,
+        dataBarang.keterangan,
+        session.userId
+      ]);
+      writeLog(session.userId, "TAMBAH_INVENTARIS", "Menambahkan barang baru " + dataBarang.nama_barang);
+    }
+    
+    return { success: true, message: "Data barang berhasil disimpan." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * DELETE INVENTARIS (Hanya Admin)
+ */
+function deleteInventaris(token, idBarang) {
+  try {
+    var session = validateSession(token, ["Admin"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_INVENTARIS);
+    var data = sheet.getDataRange().getValues();
+    
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0] === idBarang) {
+        sheet.deleteRow(i + 1);
+        writeLog(session.userId, "HAPUS_INVENTARIS", "Menghapus barang ID " + idBarang);
+        return { success: true, message: "Barang berhasil dihapus." };
+      }
+    }
+    return { success: false, message: "Barang tidak ditemukan." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * GET KAS DATA (Mendapatkan riwayat kas & menghitung saldo)
+ */
+function getKasData(token) {
+  try {
+    validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_KAS);
+    var data = sheet.getDataRange().getValues();
+    
+    var list = [];
+    var totalMasuk = 0;
+    var totalKeluar = 0;
+    
+    for (var i = 1; i < data.length; i++) {
+      var jumlah = parseFloat(data[i][4]) || 0;
+      var jenis = data[i][2];
+      
+      if (jenis === "Pemasukan") totalMasuk += jumlah;
+      else if (jenis === "Pengeluaran") totalKeluar += jumlah;
+      
+      list.push({
+        id_transaksi: data[i][0],
+        tanggal: data[i][1],
+        jenis: jenis,
+        kategori: data[i][3],
+        jumlah: jumlah,
+        keterangan: data[i][5],
+        saldo_berjalan: data[i][6],
+        dicatat_oleh: data[i][7]
+      });
+    }
+    
+    return {
+      success: true,
+      list: list.reverse(),
+      totalMasuk: totalMasuk,
+      totalKeluar: totalKeluar,
+      saldoAkhir: totalMasuk - totalKeluar
+    };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * ADD KAS TRANSACTION (Hanya Admin)
+ */
+function addKasTransaction(token, trans) {
+  try {
+    var session = validateSession(token, ["Admin"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_KAS);
+    var data = sheet.getDataRange().getValues();
+    
+    var saldoTerakhir = 0;
+    if (data.length > 1) {
+      saldoTerakhir = parseFloat(data[data.length - 1][6]) || 0;
+    }
+    
+    var idTrans = "KAS-" + Utilities.getUuid().substring(0, 8).toUpperCase();
+    var tanggal = trans.tanggal || new Date().toISOString().substring(0, 10);
+    var jenis = trans.jenis;
+    var jumlah = parseFloat(trans.jumlah) || 0;
+    
+    var saldoBaru = saldoTerakhir;
+    if (jenis === "Pemasukan") {
+      saldoBaru += jumlah;
+    } else if (jenis === "Pengeluaran") {
+      saldoBaru -= jumlah;
+    }
+    
+    sheet.appendRow([
+      idTrans,
+      tanggal,
+      jenis,
+      trans.kategori,
+      jumlah,
+      trans.keterangan,
+      saldoBaru,
+      session.userId
+    ]);
+    
+    writeLog(session.userId, "TAMBAH_KAS", "Pencatatan kas baru " + jenis + ": Rp " + jumlah);
+    return { success: true, message: "Transaksi kas berhasil ditambahkan." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * GET PROFILE (Mendapatkan data diri pengguna)
+ */
+function getUserProfile(token, targetUserId) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    var uId = session.userId;
+    if (targetUserId && ["Admin", "Pembina"].indexOf(session.role) !== -1) {
+      uId = targetUserId;
+    }
+    
+    var sheet = ss.getSheetByName(SHEET_PROFILE);
+    var data = sheet.getDataRange().getValues();
+    
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0].toString().toLowerCase() === uId.toLowerCase()) {
+        return {
+          success: true,
+          profile: {
+            user_id: data[i][0],
+            nta: data[i][1],
+            nama_lengkap: data[i][2],
+            tempat_lahir: data[i][3],
+            tanggal_lahir: data[i][4],
+            jenis_kelamin: data[i][5],
+            golongan: data[i][6],
+            regu_sangga: data[i][7],
+            alamat: data[i][8],
+            no_hp: data[i][9],
+            foto_profil: data[i][10],
+            tanggal_bergabung: data[i][11]
+          }
+        };
+      }
+    }
+    
+    return {
+      success: true,
+      profile: {
+        user_id: uId,
+        nta: "",
+        nama_lengkap: session.name,
+        tempat_lahir: "",
+        tanggal_lahir: "",
+        jenis_kelamin: "",
+        golongan: "",
+        regu_sangga: "",
+        alamat: "",
+        no_hp: "",
+        foto_profil: "",
+        tanggal_bergabung: ""
+      }
+    };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * SAVE PROFILE (Update Profil Diri Sendiri atau User Lain oleh Admin)
+ */
+function saveUserProfile(token, prof) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_PROFILE);
+    var data = sheet.getDataRange().getValues();
+    
+    var uId = prof.user_id.toLowerCase();
+    if (session.role === "Penggalang" && uId !== session.userId) {
+      return { success: false, message: "Anda tidak berhak mengubah profil orang lain." };
+    }
+    
+    var rowIdx = -1;
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0].toString().toLowerCase() === uId) {
+        rowIdx = i + 1;
+        break;
+      }
+    }
+    
+    var rowData = [
+      uId,
+      prof.nta,
+      prof.nama_lengkap,
+      prof.tempat_lahir,
+      prof.tanggal_lahir,
+      prof.jenis_kelamin,
+      prof.golongan,
+      prof.regu_sangga,
+      prof.alamat,
+      prof.no_hp,
+      prof.foto_profil,
+      prof.tanggal_bergabung || new Date().toISOString()
+    ];
+    
+    if (rowIdx !== -1) {
+      sheet.getRange(rowIdx, 1, 1, 12).setValues([rowData]);
+    } else {
+      sheet.appendRow(rowData);
+    }
+    
+    var userSheet = ss.getSheetByName(SHEET_USERS);
+    var userData = userSheet.getDataRange().getValues();
+    for (var j = 1; j < userData.length; j++) {
+      if (userData[j][0].toString().toLowerCase() === uId) {
+        userSheet.getRange(j + 1, 3).setValue(prof.nama_lengkap);
+        break;
+      }
+    }
+    
+    writeLog(session.userId, "UPDATE_PROFILE", "Memperbarui data profil " + uId);
+    return { success: true, message: "Profil berhasil diperbarui." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * CHANGE PASSWORD
+ */
+function changePassword(token, oldPassword, newPassword) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    var data = sheet.getDataRange().getValues();
+    
+    var pHashOld = hashPassword(oldPassword);
+    var pHashNew = hashPassword(newPassword);
+    
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0].toString().toLowerCase() === session.userId) {
+        if (data[i][1] === pHashOld) {
+          sheet.getRange(i + 1, 2).setValue(pHashNew);
+          writeLog(session.userId, "GANTI_PASSWORD", "Berhasil mengganti password");
+          return { success: true, message: "Password berhasil diganti." };
+        } else {
+          return { success: false, message: "Password lama salah." };
+        }
+      }
+    }
+    return { success: false, message: "User tidak ditemukan." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * GET ALL USERS (Hanya Admin)
+ */
+function getUserList(token) {
+  try {
+    validateSession(token, ["Admin"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    var data = sheet.getDataRange().getValues();
+    
+    var list = [];
+    for (var i = 1; i < data.length; i++) {
+      list.push({
+        user_id: data[i][0],
+        nama_lengkap: data[i][2],
+        role: data[i][3],
+        status_aktif: data[i][4],
+        tanggal_dibuat: data[i][5]
+      });
+    }
+    return { success: true, list: list };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * SAVE USER (Khusus Admin: Membuat/Update User baru + sekaligus profil)
+ */
+function saveUserByAdmin(token, userData) {
+  try {
+    var session = validateSession(token, ["Admin"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    var data = sheet.getDataRange().getValues();
+    
+    var uId = userData.user_id.trim().toLowerCase();
+    var rowIdx = -1;
+    
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0].toString().toLowerCase() === uId) {
+        rowIdx = i + 1;
+        break;
+      }
+    }
+    
+    if (rowIdx !== -1) {
+      sheet.getRange(rowIdx, 3, 1, 3).setValues([[
+        userData.nama_lengkap,
+        userData.role,
+        userData.status_aktif
+      ]]);
+      
+      if (userData.password) {
+        var pHash = hashPassword(userData.password);
+        sheet.getRange(rowIdx, 2).setValue(pHash);
+      }
+      writeLog(session.userId, "EDIT_USER", "Mengedit user " + uId);
+    } else {
+      if (!userData.password) {
+        return { success: false, message: "Password awal wajib diisi untuk user baru." };
+      }
+      var newPHash = hashPassword(userData.password);
+      sheet.appendRow([
+        uId,
+        newPHash,
+        userData.nama_lengkap,
+        userData.role,
+        userData.status_aktif,
+        new Date().toISOString()
+      ]);
+      
+      var profSheet = ss.getSheetByName(SHEET_PROFILE);
+      profSheet.appendRow([
+        uId,
+        "",
+        userData.nama_lengkap,
+        "", "", "", "", "", "", "", "",
+        new Date().toISOString()
+      ]);
+      
+      writeLog(session.userId, "TAMBAH_USER", "Mendaftarkan user baru " + uId);
+    }
+    
+    return { success: true, message: "User berhasil disimpan." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * DELETE USER (Hanya Admin)
+ */
+function deleteUser(token, targetUserId) {
+  try {
+    var session = validateSession(token, ["Admin"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    var uId = targetUserId.toLowerCase();
+    if (uId === "admin") {
+      return { success: false, message: "Akun Super Admin utama tidak boleh dihapus!" };
+    }
+    
+    var userSheet = ss.getSheetByName(SHEET_USERS);
+    var userData = userSheet.getDataRange().getValues();
+    for (var i = 1; i < userData.length; i++) {
+      if (userData[i][0].toString().toLowerCase() === uId) {
+        userSheet.deleteRow(i + 1);
+        break;
+      }
+    }
+    
+    var profSheet = ss.getSheetByName(SHEET_PROFILE);
+    var profData = profSheet.getDataRange().getValues();
+    for (var j = 1; j < profData.length; j++) {
+      if (profData[j][0].toString().toLowerCase() === uId) {
+        profSheet.deleteRow(j + 1);
+        break;
+      }
+    }
+    
+    writeLog(session.userId, "HAPUS_USER", "Menghapus akun " + uId);
+    return { success: true, message: "User berhasil dihapus." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * GET SYSTEM LOGS (Hanya Admin)
+ */
+function getSystemLogs(token, filterUser) {
+  try {
+    validateSession(token, ["Admin"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_LOG);
+    var data = sheet.getDataRange().getValues();
+    
+    var list = [];
+    for (var i = 1; i < data.length; i++) {
+      var show = true;
+      if (filterUser) {
+        if (data[i][2].toString().toLowerCase().indexOf(filterUser.toLowerCase()) === -1) {
+          show = false;
+        }
+      }
+      
+      if (show) {
+        list.push({
+          id_log: data[i][0],
+          timestamp: data[i][1],
+          user_id: data[i][2],
+          aksi: data[i][3],
+          detail: data[i][4],
+          ip: data[i][5]
+        });
+      }
+    }
+    
+    return { success: true, list: list.reverse().slice(0, 500) };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * EXPORT DATA TO EXCEL
+ */
+function exportToExcel(token, moduleName) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sourceSheet = ss.getSheetByName(moduleName);
+    
+    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
+    
+    var tempSS = SpreadsheetApp.create("Export_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
+    var tempSheet = tempSS.getSheets()[0];
+    
+    var data = sourceSheet.getDataRange().getValues();
+    
+    var cleanData = data.map(function(row) {
+      return row.map(function(cell) {
+        var str = String(cell);
+        if (str.indexOf("data:image/") === 0) {
+          return "[GAMBAR_DISEMBUNYIKAN]";
+        }
+        return cell;
+      });
+    });
+    
+    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
+    
+    var fileId = tempSS.getId();
+    
+    var file = DriveApp.getFileById(fileId);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=xlsx";
+    
+    writeLog(session.userId, "EXPORT_EXCEL", "Mengekspor data modul " + moduleName + " ke Excel");
+    return { success: true, url: downloadUrl };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * EXPORT DATA TO PDF
+ */
+function exportToPDF(token, moduleName) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sourceSheet = ss.getSheetByName(moduleName);
+    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
+    
+    var tempSS = SpreadsheetApp.create("Export_PDF_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
+    var tempSheet = tempSS.getSheets()[0];
+    
+    var data = sourceSheet.getDataRange().getValues();
+    var cleanData = data.map(function(row) {
+      return row.map(function(cell) {
+        var str = String(cell);
+        if (str.indexOf("data:image/") === 0) {
+          return "[GAMBAR]";
+        }
+        return cell;
+      });
+    });
+    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
+    
+    var fileId = tempSS.getId();
+    var file = DriveApp.getFileById(fileId);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=pdf&size=letter&portrait=false&fitw=true&gridlines=true";
+    
+    writeLog(session.userId, "EXPORT_PDF", "Mengekspor data modul " + moduleName + " ke PDF");
+    return { success: true, url: downloadUrl };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
