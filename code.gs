@@ -261,13 +261,12 @@ function getDashboardData(token) {
     }
     
     return {
-      success: true,
-      totalAnggota: totalAnggota,
-      hadirHariIni: hadirHariIni,
-      kegiatanTerbaru: kegiatanTerbaru,
-      saldoKas: saldoKas,
-      role: session.role
-    };
+  success: true,
+  total_anggota: data.totalAnggota, // ganti key nya
+  hadir_hari_ini: data.hadirHariIni,
+  kegiatan_terbaru: data.kegiatanTerbaru,
+  saldo_kas: data.saldoKas
+};
   } catch (err) {
     return { success: false, message: err.toString() };
   }
