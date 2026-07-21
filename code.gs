@@ -152,60 +152,88 @@ function validateSession(token, allowedRoles) {
 }
 
 /**
- * LOGIN USER
+ * ==========================================
+ * PERBAIKAN 3: code.gs - FUNGSI LOGIN USER
+ * ==========================================
+ * Mencocokkan struktur kolom Sheet Users:
+ * A=user_id | B=password | C=nama_lengkap | D=role | E=status_aktif
  */
-// PATCH 1: FIX LOGIN RETURN
-function loginUser(userId, password) {
+function loginUser(userId, password){
+  if(!userId || !password) return {success: false, message: 'User ID dan Password wajib diisi'};
+  
+  var ss;
+  const spreadsheetId = 'GANTI_DENGAN_ID_SPREADSHEET_ANDA';
+  
   try {
-    initializeDatabase();
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
-    var data = sheet.getDataRange().getValues();
-
-    var uId = userId.trim().toLowerCase();
-    var pHash = hashPassword(password);
-
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0].toString().toLowerCase() === uId) {
-        if (data[i][1] === pHash) {
-          if (data[i][4] !== "Aktif") {
-            return { success: false, message: "Status akun Anda tidak aktif." };
-          }
-
-          var role = data[i][3];
-          var namaLengkap = data[i][2];
-
-          var token = "SESSION-" + Utilities.getUuid();
-          var sessionObj = { userId: uId, role: role, name: namaLengkap };
-          CacheService.getScriptCache().put(token, JSON.stringify(sessionObj), 21600);
-
-          writeLog(uId, "LOGIN", "Berhasil login ke sistem");
-
-          return {
-            success: true,
-            token: token,
-            user: {
-              user_id: uId,
-              nama_lengkap: namaLengkap,
-              role: role
-            }
-          };
-        } else {
-          return { success: false, message: "Password salah." };
-        }
-      }
+    if (spreadsheetId === 'GANTI_DENGAN_ID_SPREADSHEET_ANDA' || !spreadsheetId) {
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    } else {
+      ss = SpreadsheetApp.openById(spreadsheetId);
     }
-    return { success: false, message: "User ID tidak ditemukan." };
-  } catch (err) {
-    return { success: false, message: "Error sistem: " + err.toString() };
+  } catch(e) {
+    ss = SpreadsheetApp.getActiveSpreadsheet();
+  }
+  
+  // Mencari nama sheet 'Users' (prioritas) atau 'users'
+  const sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+  const data = sheet.getDataRange().getValues();
+  
+  // Cari user: kolom 0=user_id, kolom 4=status_aktif
+  const userRow = data.find(row => row[0].toString().trim() === userId.toString().trim() && row[4].toString().trim() === 'Aktif');
+  if(!userRow) return {success: false, message: 'User tidak ditemukan atau Status tidak Aktif'};
+  
+  // Mengonversi input password menjadi hash SHA-256 hulu-hilir
+  const hashInput = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password).map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+  const hashDiSheet = userRow[1];
+  
+  if(hashInput === hashDiSheet){
+    // Daftarkan sesi ke dalam CacheService agar sistem audit sesi tetap sinkron
+    var token = "token_" + userId;
+    var sessionObj = { userId: userRow[0], role: userRow[3], name: userRow[2] };
+    CacheService.getScriptCache().put(token, JSON.stringify(sessionObj), 21600);
+    
+    writeLog(userRow[0], "LOGIN", "Berhasil login ke sistem");
+    
+    return {
+      success: true, 
+      sessionToken: token, 
+      user:{
+        user_id: userRow[0], 
+        nama_lengkap: userRow[2], // kolom 2
+        role: userRow[3] // kolom 3
+      }
+    };
+  } else {
+    return {success: false, message: 'Password salah'};
   }
 }
-function togglePassword() {
-  var x = document.getElementById("password");
-  var t = event.target;
-  if (x.type === "password") { x.type = "text"; t.innerText = "SEMBUNYIKAN"; }
-  else { x.type = "password"; t.innerText = "TAMPILKAN"; }
+
+/**
+ * ==========================================
+ * TAMBAHAN 4: code.gs - FUNGSI BUAT USER MANUAL
+ * ==========================================
+ */
+function addUser(userId, password, namaLengkap, role){
+  var ss;
+  const spreadsheetId = 'GANTI_DENGAN_ID_SPREADSHEET_ANDA';
+  
+  try {
+    if (spreadsheetId === 'GANTI_DENGAN_ID_SPREADSHEET_ANDA' || !spreadsheetId) {
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    } else {
+      ss = SpreadsheetApp.openById(spreadsheetId);
+    }
+  } catch(e) {
+    ss = SpreadsheetApp.getActiveSpreadsheet();
+  }
+  
+  const sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+  const hash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password).map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+  
+  sheet.appendRow([userId, hash, namaLengkap, role, 'Aktif', new Date()]);
+  return 'User '+userId+' berhasil dibuat';
 }
+
 /**
  * LOGOUT USER
  */
@@ -228,7 +256,7 @@ function getDashboardData(token) {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    var usersSheet = ss.getSheetByName(SHEET_USERS);
+    var usersSheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
     var totalAnggota = usersSheet.getLastRow() - 1;
     
     var absensiSheet = ss.getSheetByName(SHEET_ABSENSI);
@@ -261,12 +289,12 @@ function getDashboardData(token) {
     }
     
     return {
-  success: true,
-  total_anggota: data.totalAnggota, // ganti key nya
-  hadir_hari_ini: data.hadirHariIni,
-  kegiatan_terbaru: data.kegiatanTerbaru,
-  saldo_kas: data.saldoKas
-};
+      success: true,
+      total_anggota: totalAnggota,
+      hadir_hari_ini: hadirHariIni,
+      kegiatan_terbaru: kegiatanTerbaru,
+      saldo_kas: saldoKas
+    };
   } catch (err) {
     return { success: false, message: err.toString() };
   }
@@ -593,96 +621,6 @@ function deleteInventaris(token, idBarang) {
 }
 
 /**
- * GET KAS DATA (Mendapatkan riwayat kas & menghitung saldo)
- */
-function getKasData(token) {
-  try {
-    validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_KAS);
-    var data = sheet.getDataRange().getValues();
-    
-    var list = [];
-    var totalMasuk = 0;
-    var totalKeluar = 0;
-    
-    for (var i = 1; i < data.length; i++) {
-      var jumlah = parseFloat(data[i][4]) || 0;
-      var jenis = data[i][2];
-      
-      if (jenis === "Pemasukan") totalMasuk += jumlah;
-      else if (jenis === "Pengeluaran") totalKeluar += jumlah;
-      
-      list.push({
-        id_transaksi: data[i][0],
-        tanggal: data[i][1],
-        jenis: jenis,
-        kategori: data[i][3],
-        jumlah: jumlah,
-        keterangan: data[i][5],
-        saldo_berjalan: data[i][6],
-        dicatat_oleh: data[i][7]
-      });
-    }
-    
-    return {
-      success: true,
-      list: list.reverse(),
-      totalMasuk: totalMasuk,
-      totalKeluar: totalKeluar,
-      saldoAkhir: totalMasuk - totalKeluar
-    };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * ADD KAS TRANSACTION (Hanya Admin)
- */
-function addKasTransaction(token, trans) {
-  try {
-    var session = validateSession(token, ["Admin"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_KAS);
-    var data = sheet.getDataRange().getValues();
-    
-    var saldoTerakhir = 0;
-    if (data.length > 1) {
-      saldoTerakhir = parseFloat(data[data.length - 1][6]) || 0;
-    }
-    
-    var idTrans = "KAS-" + Utilities.getUuid().substring(0, 8).toUpperCase();
-    var tanggal = trans.tanggal || new Date().toISOString().substring(0, 10);
-    var jenis = trans.jenis;
-    var jumlah = parseFloat(trans.jumlah) || 0;
-    
-    var saldoBaru = saldoTerakhir;
-    if (jenis === "Pemasukan") {
-      saldoBaru += jumlah;
-    } else if (jenis === "Pengeluaran") {
-      saldoBaru -= jumlah;
-    }
-    
-    sheet.appendRow([
-      idTrans,
-      tanggal,
-      jenis,
-      trans.kategori,
-      jumlah,
-      trans.keterangan,
-      saldoBaru,
-      session.userId
-    ]);
-    
-    writeLog(session.userId, "TAMBAH_KAS", "Pencatatan kas baru " + jenis + ": Rp " + jumlah);
-    return { success: true, message: "Transaksi kas berhasil ditambahkan." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
  * GET PROFILE (Mendapatkan data diri pengguna)
  */
 function getUserProfile(token, targetUserId) {
@@ -786,7 +724,7 @@ function saveUserProfile(token, prof) {
       sheet.appendRow(rowData);
     }
     
-    var userSheet = ss.getSheetByName(SHEET_USERS);
+    var userSheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
     var userData = userSheet.getDataRange().getValues();
     for (var j = 1; j < userData.length; j++) {
       if (userData[j][0].toString().toLowerCase() === uId) {
@@ -809,7 +747,7 @@ function changePassword(token, oldPassword, newPassword) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
+    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
     var data = sheet.getDataRange().getValues();
     
     var pHashOld = hashPassword(oldPassword);
@@ -839,7 +777,7 @@ function getUserList(token) {
   try {
     validateSession(token, ["Admin"]);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
+    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
     var data = sheet.getDataRange().getValues();
     
     var list = [];
@@ -865,7 +803,7 @@ function saveUserByAdmin(token, userData) {
   try {
     var session = validateSession(token, ["Admin"]);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
+    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
     var data = sheet.getDataRange().getValues();
     
     var uId = userData.user_id.trim().toLowerCase();
@@ -935,7 +873,7 @@ function deleteUser(token, targetUserId) {
       return { success: false, message: "Akun Super Admin utama tidak boleh dihapus!" };
     }
     
-    var userSheet = ss.getSheetByName(SHEET_USERS);
+    var userSheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
     var userData = userSheet.getDataRange().getValues();
     for (var i = 1; i < userData.length; i++) {
       if (userData[i][0].toString().toLowerCase() === uId) {
@@ -992,86 +930,6 @@ function getSystemLogs(token, filterUser) {
     }
     
     return { success: true, list: list.reverse().slice(0, 500) };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * EXPORT DATA TO EXCEL
- */
-function exportToExcel(token, moduleName) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sourceSheet = ss.getSheetByName(moduleName);
-    
-    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
-    
-    var tempSS = SpreadsheetApp.create("Export_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
-    var tempSheet = tempSS.getSheets()[0];
-    
-    var data = sourceSheet.getDataRange().getValues();
-    
-    var cleanData = data.map(function(row) {
-      return row.map(function(cell) {
-        var str = String(cell);
-        if (str.indexOf("data:image/") === 0) {
-          return "[GAMBAR_DISEMBUNYIKAN]";
-        }
-        return cell;
-      });
-    });
-    
-    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
-    
-    var fileId = tempSS.getId();
-    
-    var file = DriveApp.getFileById(fileId);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
-    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=xlsx";
-    
-    writeLog(session.userId, "EXPORT_EXCEL", "Mengekspor data modul " + moduleName + " ke Excel");
-    return { success: true, url: downloadUrl };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * EXPORT DATA TO PDF
- */
-function exportToPDF(token, moduleName) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sourceSheet = ss.getSheetByName(moduleName);
-    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
-    
-    var tempSS = SpreadsheetApp.create("Export_PDF_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
-    var tempSheet = tempSS.getSheets()[0];
-    
-    var data = sourceSheet.getDataRange().getValues();
-    var cleanData = data.map(function(row) {
-      return row.map(function(cell) {
-        var str = String(cell);
-        if (str.indexOf("data:image/") === 0) {
-          return "[GAMBAR]";
-        }
-        return cell;
-      });
-    });
-    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
-    
-    var fileId = tempSS.getId();
-    var file = DriveApp.getFileById(fileId);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
-    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=pdf&size=letter&portrait=false&fitw=true&gridlines=true";
-    
-    writeLog(session.userId, "EXPORT_PDF", "Mengekspor data modul " + moduleName + " ke PDF");
-    return { success: true, url: downloadUrl };
   } catch (err) {
     return { success: false, message: err.toString() };
   }
