@@ -1,16 +1,30 @@
-/**
- * SIAP WANAMSKA - Sistem Informasi & Absensi Penggalang Wanamska
- * Backend Code (Google Apps Script)
- * 
- * Karakteristik:
- * - Menggunakan Google Sheets sebagai database dengan 7 tabel utama.
- * - Keamanan berbasis RBAC (Role-Based Access Control) yang divalidasi di sisi server.
- * - Manajemen Sesi menggunakan CacheService dengan token unik.
- * - Log aktivitas otomatis untuk setiap tindakan kritis.
- */
-
-// Konstanta Spreadsheet ID Wajib
 const SPREADSHEET_ID = '107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg';
+
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('index').setTitle('SIAP WANAMSKA V2');
+}
+
+function hashPassword(password){
+  if(!password) return "";
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password);
+  return digest.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+}
+
+function loginUser(userId, password){
+  if(!userId ||!password) return {success: false, message: 'User ID dan Password wajib diisi'};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName('Users');
+  if(!sheet) return {success: false, message: 'Sheet "Users" tidak ditemukan'};
+  const data = sheet.getDataRange().getValues();
+  const userRow = data.find(row => String(row[0]).trim() === userId && String(row[4]).trim() === 'Aktif');
+  if(!userRow) return {success: false, message: 'User tidak ditemukan atau Status tidak Aktif'};
+  const hashInput = hashPassword(password);
+  if(hashInput === String(userRow[1]).trim()){
+    return {success: true, sessionToken: "token_" + userId, user:{user_id:userRow[0], nama_lengkap:userRow[2], role:userRow[3]}};
+  } else {
+    return {success: false, message: 'Password salah'};
+  }
+}
 
 // Konstanta Nama Sheet
 const SHEET_USERS = "Users";
@@ -26,20 +40,6 @@ const SHEET_LOG = "log";
  */
 function getSpreadsheet() {
   return SpreadsheetApp.openById(SPREADSHEET_ID);
-}
-
-/**
- * Fungsi doGet: Me-render halaman frontend index.html
- */
-function doGet(e) {
-  // Pastikan database terinisialisasi sebelum digunakan
-  initializeDatabase();
-  
-  return HtmlService.createTemplateFromFile('index')
-    .evaluate()
-    .setTitle('SIAP WANAMSKA')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 /**
@@ -110,26 +110,6 @@ function initializeDatabase() {
 }
 
 /**
- * Hashing SHA-256 menggunakan Utilities bawaan Google Apps Script.
- * Wajib melempar error jika argumen password kosong atau tidak valid.
- */
-function hashPassword(password) {
-  if (!password) {
-    throw new Error("Password tidak boleh kosong untuk proses hashing.");
-  }
-  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password, Utilities.Charset.UTF_8);
-  var hexString = '';
-  for (var i = 0; i < digest.length; i++) {
-    var byteVal = digest[i];
-    if (byteVal < 0) byteVal += 256;
-    var byteString = byteVal.toString(16);
-    if (byteString.length == 1) byteString = '0' + byteString;
-    hexString += byteString;
-  }
-  return hexString;
-}
-
-/**
  * Pencatatan Log Aktivitas ke Google Sheet
  */
 function writeLog(userId, aksi, detail) {
@@ -163,61 +143,6 @@ function validateSession(token, allowedRoles) {
   }
   
   return session;
-}
-
-/**
- * LOGIN USER
- * Membaca Kolom: A=user_id, B=password, C=nama_lengkap, D=role, E=status_aktif, F=tanggal_dibuat
- * Mengecek apakah status_aktif bernilai 'Aktif'
- */
-function loginUser(userId, password) {
-  try {
-    if (!userId || !password) {
-      return { success: false, message: 'User ID dan Password wajib diisi' };
-    }
-    
-    initializeDatabase();
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
-    var data = sheet.getDataRange().getValues();
-
-    var uId = userId.trim().toLowerCase();
-    var pHash = hashPassword(password);
-
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0].toString().toLowerCase() === uId) {
-        if (data[i][1] === pHash) {
-          if (data[i][4] !== "Aktif") {
-            return { success: false, message: "Status akun Anda tidak aktif." };
-          }
-
-          var role = data[i][3];
-          var namaLengkap = data[i][2];
-          var token = "token_" + uId;
-          
-          var sessionObj = { userId: uId, role: role, name: namaLengkap };
-          CacheService.getScriptCache().put(token, JSON.stringify(sessionObj), 21600);
-
-          writeLog(uId, "LOGIN", "Berhasil login ke sistem");
-
-          return {
-            success: true, 
-            sessionToken: token, 
-            user: {
-              user_id: uId, 
-              nama_lengkap: namaLengkap, 
-              role: role
-            }
-          };
-        } else {
-          return { success: false, message: "Password salah." };
-        }
-      }
-    }
-    return { success: false, message: "User ID tidak ditemukan atau tidak aktif." };
-  } catch (e) {
-    return { success: false, message: "Error sistem: " + e.toString() };
-  }
 }
 
 /**
