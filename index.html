@@ -72,7 +72,7 @@
     }
 
     /* CSS Wajib Toggle Password */
-    .password-toggle {
+    .toggle-password-icon {
       position: absolute; 
       right: 12px; 
       top: 50%; 
@@ -1502,9 +1502,6 @@
       else if (sectionId === 'section-logs') loadSystemLogs();
     }
 
-    // ==========================================
-    // FUNGSI UTAMA handleLogin() - GANTI TOTAL
-    // ==========================================
     function handleLogin(){
       const userId = document.getElementById('userId').value.trim();
       const password = document.getElementById('password').value.trim();
@@ -1632,16 +1629,18 @@
       showPage('dashboard-page');
     }
 
-    // ==========================================
-    // PERBAIKAN 2: LOGIKA TOGGLE PASSWORD
-    // ==========================================
+    // LOGIKA TOGGLE PASSWORD (TAMPIL/SEMBUNYI)
     function togglePassword() {
       const passwordInput = document.getElementById('password');
       const eyeIcon = document.getElementById('eyeIcon');
-      if (passwordInput.type === 'password') {
-        passwordInput.type = 'text'; eyeIcon.innerHTML = '🙈';
-      } else {
-        passwordInput.type = 'password'; eyeIcon.innerHTML = '👁️';
+      if (passwordInput && eyeIcon) {
+        if (passwordInput.type === 'password') { 
+          passwordInput.type = 'text'; 
+          eyeIcon.innerText = '🙈'; 
+        } else { 
+          passwordInput.type = 'password'; 
+          eyeIcon.innerText = '👁️'; 
+        }
       }
     }
 
