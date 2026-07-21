@@ -100,9 +100,13 @@ function initializeDatabase() {
 }
 
 /**
- * Hashing Sederhana dengan SHA-256 menggunakan Utilities bawaan Google Apps Script
+ * ==========================================
+ * PERBAIKAN 2.1: HASH PASSWORD DENGAN VALIDASI
+ * ==========================================
+ * Hashing SHA-256 menggunakan Utilities bawaan Google Apps Script
  */
 function hashPassword(password) {
+  if (!password) return "";
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password, Utilities.Charset.UTF_8);
   var hexString = '';
   for (var i = 0; i < digest.length; i++) {
@@ -153,85 +157,81 @@ function validateSession(token, allowedRoles) {
 
 /**
  * ==========================================
- * PERBAIKAN 3: code.gs - FUNGSI LOGIN USER
+ * PERBAIKAN 2.2: FUNGSI LOGIN USER (FIXED)
  * ==========================================
- * Mencocokkan struktur kolom Sheet Users:
- * A=user_id | B=password | C=nama_lengkap | D=role | E=status_aktif
+ * Membaca Kolom: A=user_id, B=password, C=nama_lengkap, D=role, E=status_aktif
+ * Cek status === 'Aktif'
  */
 function loginUser(userId, password){
-  if(!userId || !password) return {success: false, message: 'User ID dan Password wajib diisi'};
-  
-  var ss;
-  const spreadsheetId = 'GANTI_DENGAN_ID_SPREADSHEET_ANDA';
-  
   try {
-    if (spreadsheetId === 'GANTI_DENGAN_ID_SPREADSHEET_ANDA' || !spreadsheetId) {
-      ss = SpreadsheetApp.getActiveSpreadsheet();
-    } else {
-      ss = SpreadsheetApp.openById(spreadsheetId);
-    }
-  } catch(e) {
-    ss = SpreadsheetApp.getActiveSpreadsheet();
-  }
-  
-  // Mencari nama sheet 'Users' (prioritas) atau 'users'
-  const sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
-  const data = sheet.getDataRange().getValues();
-  
-  // Cari user: kolom 0=user_id, kolom 4=status_aktif
-  const userRow = data.find(row => row[0].toString().trim() === userId.toString().trim() && row[4].toString().trim() === 'Aktif');
-  if(!userRow) return {success: false, message: 'User tidak ditemukan atau Status tidak Aktif'};
-  
-  // Mengonversi input password menjadi hash SHA-256 hulu-hilir
-  const hashInput = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password).map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
-  const hashDiSheet = userRow[1];
-  
-  if(hashInput === hashDiSheet){
-    // Daftarkan sesi ke dalam CacheService agar sistem audit sesi tetap sinkron
-    var token = "token_" + userId;
-    var sessionObj = { userId: userRow[0], role: userRow[3], name: userRow[2] };
-    CacheService.getScriptCache().put(token, JSON.stringify(sessionObj), 21600);
+    if(!userId || !password) return {success: false, message: 'User ID dan Password wajib diisi'};
     
-    writeLog(userRow[0], "LOGIN", "Berhasil login ke sistem");
+    initializeDatabase();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    return {
-      success: true, 
-      sessionToken: token, 
-      user:{
-        user_id: userRow[0], 
-        nama_lengkap: userRow[2], // kolom 2
-        role: userRow[3] // kolom 3
+    // Membaca sheet 'Users' (prioritas) atau 'users'
+    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    var data = sheet.getDataRange().getValues();
+
+    var uId = userId.trim().toLowerCase();
+    var pHash = hashPassword(password);
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0].toString().toLowerCase() === uId) {
+        if (data[i][1] === pHash) {
+          if (data[i][4] !== "Aktif") {
+            return { success: false, message: "Status akun Anda tidak aktif." };
+          }
+
+          var role = data[i][3];
+          var namaLengkap = data[i][2];
+          var token = "token_" + uId;
+          
+          // Daftarkan sesi ke dalam CacheService agar audit log / validateSession sinkron
+          var sessionObj = { userId: uId, role: role, name: namaLengkap };
+          CacheService.getScriptCache().put(token, JSON.stringify(sessionObj), 21600);
+
+          writeLog(uId, "LOGIN", "Berhasil login ke sistem");
+
+          return {
+            success: true, 
+            sessionToken: token, 
+            user: {
+              user_id: uId, 
+              nama_lengkap: namaLengkap, 
+              role: role
+            }
+          };
+        } else {
+          return { success: false, message: "Password salah." };
+        }
       }
-    };
-  } else {
-    return {success: false, message: 'Password salah'};
+    }
+    return { success: false, message: "User ID tidak ditemukan atau tidak aktif." };
+  } catch(e) {
+    return { success: false, message: "Error sistem: " + e.toString() };
   }
 }
 
 /**
  * ==========================================
- * TAMBAHAN 4: code.gs - FUNGSI BUAT USER MANUAL
+ * PERBAIKAN 2.3: TAMBAHKAN FUNGSI ADD USER (NEW)
  * ==========================================
+ * Menambahkan user secara manual dengan enkripsi SHA-256
  */
-function addUser(userId, password, namaLengkap, role){
-  var ss;
-  const spreadsheetId = 'GANTI_DENGAN_ID_SPREADSHEET_ANDA';
-  
+function addUser(userId, password, namaLengkap, role) {
   try {
-    if (spreadsheetId === 'GANTI_DENGAN_ID_SPREADSHEET_ANDA' || !spreadsheetId) {
-      ss = SpreadsheetApp.getActiveSpreadsheet();
-    } else {
-      ss = SpreadsheetApp.openById(spreadsheetId);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    if (!sheet) {
+      return { success: false, message: "Sheet Users tidak ditemukan." };
     }
-  } catch(e) {
-    ss = SpreadsheetApp.getActiveSpreadsheet();
+    var hash = hashPassword(password);
+    sheet.appendRow([userId, hash, namaLengkap, role, 'Aktif', new Date().toISOString()]);
+    return 'User ' + userId + ' berhasil dibuat';
+  } catch (e) {
+    return 'Gagal membuat user: ' + e.toString();
   }
-  
-  const sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
-  const hash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password).map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
-  
-  sheet.appendRow([userId, hash, namaLengkap, role, 'Aktif', new Date()]);
-  return 'User '+userId+' berhasil dibuat';
 }
 
 /**
@@ -621,6 +621,96 @@ function deleteInventaris(token, idBarang) {
 }
 
 /**
+ * GET KAS DATA (Mendapatkan riwayat kas & menghitung saldo)
+ */
+function getKasData(token) {
+  try {
+    validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_KAS);
+    var data = sheet.getDataRange().getValues();
+    
+    var list = [];
+    var totalMasuk = 0;
+    var totalKeluar = 0;
+    
+    for (var i = 1; i < data.length; i++) {
+      var jumlah = parseFloat(data[i][4]) || 0;
+      var jenis = data[i][2];
+      
+      if (jenis === "Pemasukan") totalMasuk += jumlah;
+      else if (jenis === "Pengeluaran") totalKeluar += jumlah;
+      
+      list.push({
+        id_transaksi: data[i][0],
+        tanggal: data[i][1],
+        jenis: jenis,
+        kategori: data[i][3],
+        jumlah: jumlah,
+        keterangan: data[i][5],
+        saldo_berjalan: data[i][6],
+        dicatat_oleh: data[i][7]
+      });
+    }
+    
+    return {
+      success: true,
+      list: list.reverse(),
+      totalMasuk: totalMasuk,
+      totalKeluar: totalKeluar,
+      saldoAkhir: totalMasuk - totalKeluar
+    };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * ADD KAS TRANSACTION (Hanya Admin)
+ */
+function addKasTransaction(token, trans) {
+  try {
+    var session = validateSession(token, ["Admin"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_KAS);
+    var data = sheet.getDataRange().getValues();
+    
+    var saldoTerakhir = 0;
+    if (data.length > 1) {
+      saldoTerakhir = parseFloat(data[data.length - 1][6]) || 0;
+    }
+    
+    var idTrans = "KAS-" + Utilities.getUuid().substring(0, 8).toUpperCase();
+    var tanggal = trans.tanggal || new Date().toISOString().substring(0, 10);
+    var jenis = trans.jenis;
+    var jumlah = parseFloat(trans.jumlah) || 0;
+    
+    var saldoBaru = saldoTerakhir;
+    if (jenis === "Pemasukan") {
+      saldoBaru += jumlah;
+    } else if (jenis === "Pengeluaran") {
+      saldoBaru -= jumlah;
+    }
+    
+    sheet.appendRow([
+      idTrans,
+      tanggal,
+      jenis,
+      trans.kategori,
+      jumlah,
+      trans.keterangan,
+      saldoBaru,
+      session.userId
+    ]);
+    
+    writeLog(session.userId, "TAMBAH_KAS", "Pencatatan kas baru " + jenis + ": Rp " + jumlah);
+    return { success: true, message: "Transaksi kas berhasil ditambahkan." };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
  * GET PROFILE (Mendapatkan data diri pengguna)
  */
 function getUserProfile(token, targetUserId) {
@@ -932,5 +1022,178 @@ function getSystemLogs(token, filterUser) {
     return { success: true, list: list.reverse().slice(0, 500) };
   } catch (err) {
     return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * EXPORT DATA TO EXCEL
+ */
+function exportToExcel(token, moduleName) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sourceSheet = ss.getSheetByName(moduleName);
+    
+    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
+    
+    var tempSS = SpreadsheetApp.create("Export_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
+    var tempSheet = tempSS.getSheets()[0];
+    
+    var data = sourceSheet.getDataRange().getValues();
+    
+    var cleanData = data.map(function(row) {
+      return row.map(function(cell) {
+        var str = String(cell);
+        if (str.indexOf("data:image/") === 0) {
+          return "[GAMBAR_DISEMBUNYIKAN]";
+        }
+        return cell;
+      });
+    });
+    
+    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
+    
+    var fileId = tempSS.getId();
+    
+    var file = DriveApp.getFileById(fileId);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=xlsx";
+    
+    writeLog(session.userId, "EXPORT_EXCEL", "Mengekspor data modul " + moduleName + " ke Excel");
+    return { success: true, url: downloadUrl };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
+ * EXPORT DATA TO PDF
+ */
+function exportToPDF(token, moduleName) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sourceSheet = ss.getSheetByName(moduleName);
+    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
+    
+    var tempSS = SpreadsheetApp.create("Export_PDF_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
+    var tempSheet = tempSS.getSheets()[0];
+    
+    var data = sourceSheet.getDataRange().getValues();
+    var cleanData = data.map(function(row) {
+      return row.map(function(cell) {
+        var str = String(cell);
+        if (str.indexOf("data:image/") === 0) {
+          return "[GAMBAR]";
+        }
+        return cell;
+      });
+    });
+    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
+    
+    var fileId = tempSS.getId();
+    var file = DriveApp.getFileById(fileId);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=pdf&size=letter&portrait=false&fitw=true&gridlines=true";
+    
+    writeLog(session.userId, "EXPORT_PDF", "Mengekspor data modul " + moduleName + " ke PDF");
+    return { success: true, url: downloadUrl };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+// FITUR 4A code.gs
+
+/**
+ * Mengambil daftar anggota dari sheet "Anggota" atau cadangan sheet "users".
+ * Filter: Hanya menampilkan role 'penggalang' oatau 'pembina'.
+ */
+function getAnggotaUntukAbsen() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    // Gunakan sheet "Anggota" sebagai prioritas, jika tidak ada fallback ke sheet "users"
+    var sheet = ss.getSheetByName("Anggota") || ss.getSheetByName(SHEET_USERS);
+    if (!sheet) {
+      return { success: false, message: "Sheet data anggota tidak ditemukan." };
+    }
+    
+    var data = sheet.getDataRange().getValues();
+    var isAnggotaSheet = (sheet.getName() === "Anggota");
+    var result = [];
+    
+    for (var i = 1; i < data.length; i++) {
+      // Pemetaan kolom: 
+      // Jika "Anggota" -> Col A=user_id, Col B=nama_lengkap, Col C=role
+      // Jika "users" -> Col A=user_id, Col C=nama_lengkap, Col D=role
+      var userId = data[i][0];
+      var namaLengkap = isAnggotaSheet ? data[i][1] : data[i][2];
+      var role = isAnggotaSheet ? data[i][2] : data[i][3];
+      
+      if (userId && role) {
+        var roleLower = role.toString().trim().toLowerCase();
+        if (roleLower === "penggalang" || roleLower === "pembina") {
+          result.push({
+            user_id: userId.toString(),
+            nama_lengkap: namaLengkap.toString(),
+            role: role.toString()
+          });
+        }
+      }
+    }
+    return { success: true, data: result };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * Menyimpan seluruh data kehadiran harian ke dalam sheet "Kehadiran".
+ * Jika data dengan kombinasi Tanggal + user_id sudah ada, sistem akan memperbaruinya (UPDATE).
+ * Jika belum ada, data baru akan ditambahkan (APPEND).
+ */
+function saveKehadiran(dataAbsen) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Kehadiran");
+    if (!sheet) {
+      sheet = ss.insertSheet("Kehadiran");
+      sheet.appendRow(["Tanggal", "user_id", "status"]);
+    }
+    
+    var data = sheet.getDataRange().getValues();
+    var tanggalStr = dataAbsen.tanggal; // format: 'YYYY-MM-DD'
+    var listRecord = dataAbsen.data;
+    
+    // Petakan data baris yang sudah ada untuk mempercepat verifikasi duplikasi
+    var mappedKeys = {};
+    for (var i = 1; i < data.length; i++) {
+      var rowDate = data[i][0];
+      var rowDateStr = (rowDate instanceof Date) ? Utilities.formatDate(rowDate, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd") : rowDate.toString().substring(0, 10);
+      var rowUserId = data[i][1].toString().trim();
+      
+      mappedKeys[rowDateStr + "_" + rowUserId] = i + 1; // Menyimpan index baris sheet (1-based)
+    }
+    
+    // Proses tulis/update data
+    for (var j = 0; j < listRecord.length; j++) {
+      var record = listRecord[j];
+      var key = tanggalStr + "_" + record.user_id.trim();
+      
+      if (mappedKeys[key]) {
+        // Jika sudah terdata pada tanggal yang sama, lakukan UPDATE pada kolom Status (Kolom C/3)
+        var targetRow = mappedKeys[key];
+        sheet.getRange(targetRow, 3).setValue(record.status);
+      } else {
+        // Jika belum ada, lakukan APPEND baris baru
+        sheet.appendRow([tanggalStr, record.user_id, record.status]);
+      }
+    }
+    
+    return { success: true, message: 'Data kehadiran harian berhasil disimpan' };
+  } catch (e) {
+    return { success: false, message: e.toString() };
   }
 }
