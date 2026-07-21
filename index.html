@@ -2060,18 +2060,26 @@
     }
     
 async function aktifkanKamera() {
-  const video = document.getElementById('video'); // pastikan ada tag <video id="video">
+  const video = document.getElementById('video'); 
+  if(!video) return; // biar aman kalau bukan di halaman absensi
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
     video.srcObject = stream;
   } catch (err) {
-    alert("Izin kamera ditolak. Silakan buka lewat Chrome dan izinkan akses kamera. Error: " + err.name);
+    alert("Izin kamera ditolak. Silakan buka lewat Chrome dan izinkan akses kamera.");
     console.error("Camera Error: ", err);
   }
 }
 
-// panggil saat masuk menu absensi
-document.addEventListener('DOMContentLoaded', aktifkanKamera);
+// panggil otomatis saat halaman absensi dibuka
+function showSection(sectionId){
+  document.querySelectorAll('.app-section').forEach(s => s.style.display = 'none');
+  document.getElementById(sectionId).style.display = 'block';
+  
+  if(sectionId === 'section-absensi'){ // <-- TAMBAHKAN INI
+    aktifkanKamera();
+  }
+}
 
   </script>
 </body>
