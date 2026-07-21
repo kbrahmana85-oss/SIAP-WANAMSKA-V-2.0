@@ -132,10 +132,7 @@ body {
       text-align: center;
       border-top: 8px solid var(--color-accent-gold);
     }
-    .login-box img {
-      width: 100px;
-      height: auto;
-      margin-bottom: 20px;
+    .login-box img {display:block; margin:0 auto 15px; width:80px;
     }
     .login-box h1 {
       font-family: var(--font-title);
@@ -1064,11 +1061,11 @@ body {
                 <h2 style="font-family: var(--font-title); color: var(--color-primary-brown);">Senior Apps Script Developer & UX Specialist</h2>
                 <p style="color: var(--color-accent-gold); font-weight: bold; margin-bottom: 15px;">Gerakan Pramuka Wanamska</p>
                 <p style="max-width: 600px; margin: 0 auto; color: var(--color-text-dark);">
-                  Aplikasi **SIAP WANAMSKA** dibuat murni tanpa pustaka CDN pihak ketiga demi keamanan data, optimalisasi waktu muat (loading speed), dan keselarasan ekosistem Google Workspace. 
+                  Aplikasi **SIAP WANAMSKA** di gunakan sebagai media Informasi dan Absensi Penggalang Gugus Depan 04.109-04.110 Pangkalan SMP Negeri 26 Kota Surakarta. 
                 </p>
                 <div style="margin-top: 25px; padding: 15px; border-radius: var(--rounded-box); background-color: #FAF2EB; display: inline-block;">
-                  <p><strong>Nama Pengembang:</strong> K. Brahmana (Senior Developer)</p>
-                  <p><strong>Spesialisasi:</strong> Google Apps Script Core, Native HTML5/CSS3/JS Web App Design</p>
+                  <p><strong>Nama Pengembang:</strong> ARIF NUUR ISWAHYUDI, S.Pd., Gr</p>
+                  <p><strong>Spesialisasi:</strong> Google Apps Script Core, Native HTML5/CSS3/JS Web App Design, Guru Matematika dan Pembina Pramuka</p>
                   <p><strong>Kontak Organisasi:</strong> support@wanamska.or.id</p>
                 </div>
               </div>
@@ -1269,6 +1266,17 @@ body {
 
   <!-- FRONTEND LOGIC (JS Murni) -->
   <script>
+    // PATCH: CEK SESSION SAAT LOAD
+document.addEventListener('DOMContentLoaded', function() {
+  sessionToken = sessionStorage.getItem('sessionToken');
+  const userData = sessionStorage.getItem('user');
+  if(sessionToken && userData){
+    showPage('dashboard-page');
+    loadDashboard();
+  } else {
+    showPage('login-page');
+  }
+});
     let sessionToken = "";
     let userRole = "";
     let userId = "";
