@@ -6,57 +6,81 @@
   <title>SIAP WANAMSKA</title>
   <style>
     /* ==========================================
-   // PATCH 1: CSS TEMA MAJESTY
-   ========================================== */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+       // PATCH 1: CSS TEMA MAJESTY
+       ========================================== */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
-:root {
-  --color-primary: #6F4E37; /* Coklat Majesty */
-  --color-bg: #FDF8F4;      /* Krem */
-  --color-accent: #F59E0B;  /* Emas */
-  --color-danger: #B91C1C;  /* Merah Marun */
-  --color-text: #3D2B1F;
-  --radius: 12px;
-  --shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
+    :root {
+      --color-primary: #6F4E37; /* Coklat Majesty */
+      --color-bg: #FDF8F4;      /* Krem */
+      --color-accent: #F59E0B;  /* Emas */
+      --color-danger: #B91C1C;  /* Merah Marun */
+      --color-text: #3D2B1F;
+      --radius: 12px;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+      
+      /* Tambahan variabel fallback dari template sebelumnya */
+      --color-primary-brown: #6F4E37;
+      --color-bg-cream: #FDF8F4;
+      --color-accent-gold: #F59E0B;
+      --color-accent-gold-hover: #D97706;
+      --color-danger-red: #B91C1C;
+      --color-text-dark: #3E2723;
+      --color-text-muted: #795548;
+      --color-white: #FFFFFF;
+      --color-light-brown: #D7CCC8;
+      --font-title: 'Poppins', Georgia, serif;
+      --font-body: 'Poppins', sans-serif;
+      --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-bold: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --rounded-box: 12px;
+      --rounded-btn: 8px;
+    }
 
-body {
-  font-family: 'Poppins', sans-serif !important;
-  background-color: var(--color-bg) !important;
-  color: var(--color-text) !important;
-}
+    body {
+      font-family: 'Poppins', sans-serif !important;
+      background-color: var(--color-bg) !important;
+      color: var(--color-text) !important;
+      line-height: 1.5;
+    }
 
-/* Modifikasi Class Login-Box agar Sesuai Spesifikasi */
-.login-box {
-  background-color: #FFFFFF !important;
-  padding: 30px !important;
-  border-radius: 12px !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05) !important;
-  max-width: 400px !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-  text-align: center !important;
-  border-top: 6px solid var(--color-accent) !important;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-.login-box h1 {
-  font-family: 'Poppins', sans-serif !important;
-  color: var(--color-primary) !important;
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 5px;
-}
+    /* Modifikasi Class Login-Box agar Sesuai Spesifikasi */
+    .login-box {
+      background-color: #FFFFFF !important;
+      padding: 30px !important;
+      border-radius: 12px !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05) !important;
+      max-width: 400px !important;
+      width: 100% !important;
+      margin: 0 auto !important;
+      text-align: center !important;
+      border-top: 6px solid var(--color-accent) !important;
+    }
 
-/* Styling Ikon Mata Penebas Sandi */
-.toggle-password-icon {
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  font-size: 1.25rem;
-  user-select: none;
-}
+    .login-box h1 {
+      font-family: 'Poppins', sans-serif !important;
+      color: var(--color-primary) !important;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    /* Styling Ikon Mata Penebas Sandi */
+    .toggle-password-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 18px;
+      user-select: none;
+    }
 
     /* TOAST NOTIFICATION */
     #toast-container {
@@ -119,31 +143,8 @@ body {
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      background: radial-gradient(circle, var(--color-primary-brown) 0%, #3E2723 100%);
+      background: radial-gradient(circle, var(--color-primary) 0%, #3E2723 100%);
       padding: 20px;
-    }
-    .login-box {
-      background-color: var(--color-bg-cream);
-      padding: 40px;
-      border-radius: var(--rounded-box);
-      box-shadow: var(--shadow-bold);
-      max-width: 450px;
-      width: 100%;
-      text-align: center;
-      border-top: 8px solid var(--color-accent-gold);
-    }
-    .login-box img {display:block; margin:0 auto 15px; width:80px;
-    }
-    .login-box h1 {
-      font-family: var(--font-title);
-      color: var(--color-primary-brown);
-      margin-bottom: 5px;
-      font-size: 1.8rem;
-    }
-    .login-box p {
-      color: var(--color-text-muted);
-      margin-bottom: 30px;
-      font-size: 0.9rem;
     }
 
     /* INPUT STYLES */
@@ -192,6 +193,14 @@ body {
     .btn:hover {
       background-color: #553C2A;
       box-shadow: var(--shadow-soft);
+    }
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: white;
+    }
+    .btn-accent {
+      background-color: var(--color-accent);
+      color: var(--color-text);
     }
     .btn-gold {
       background-color: var(--color-accent-gold);
@@ -596,42 +605,40 @@ body {
   </div>
 
   <!-- ==========================================
-     PATCH 3A: HTML LOGIN SCREEN (CLEAN & FIXED)
+     PATCH 3A & HTML LOGIN SCREEN (PERBAIKAN TOTAL)
      ========================================== -->
-<!-- ==========================================
-     // PATCH 2: HTML FORM LOGIN
-     ========================================== -->
-<div id="login-screen">
-  <div class="login-box">
-    <!-- Logo SIAP WANAMSKA Baru -->
-    <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/assets/logo.png?raw=true" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto; margin-bottom: 15px;">
-    <h1>SIAP WANAMSKA</h1>
-    <p style="color: var(--color-text-muted); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi & Absensi Penggalang Wanamska</p>
-    
-    <!-- Input User ID -->
-    <div class="form-group" style="text-align: left; margin-bottom: 20px;">
-      <label for="userId" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem;">User ID</label>
-      <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
-    </div>
-    
-    <!-- Input Password dengan Ikon Interaktif -->
-    <div class="form-group" style="text-align: left; margin-bottom: 25px;">
-      <label for="password" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem;">Password</label>
-      <div style="position: relative;">
-        <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%; padding: 10px 45px 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
-        <span class="toggle-password-icon" onclick="togglePassword()">👁️</span>
+  <div id="login-screen">
+    <div class="login-box">
+      <!-- Logo SIAP WANAMSKA V-2.0 -->
+      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/assets/logo.png?raw=true" alt="Logo SIAP WANAMSKA" style="display: block; margin: 0 auto 15px; width: 80px;">
+      <h1>SIAP WANAMSKA</h1>
+      <p style="color: var(--color-text-muted); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi & Absensi Penggalang Wanamska</p>
+      
+      <!-- Input User ID -->
+      <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+        <label for="userId" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem;">User ID</label>
+        <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
+      </div>
+      
+      <!-- Input Password dengan Ikon Interaktif -->
+      <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+        <label for="password" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem;">Password</label>
+        <div style="position: relative;">
+          <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%; padding: 10px 45px 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
+          <span class="toggle-password-icon" onclick="togglePassword()">👁️</span>
+        </div>
+      </div>
+      
+      <!-- Tombol Submit (Hanya 1 Tombol, Bebas Bug Dobel) -->
+      <button id="loginBtn" type="button" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none; cursor: pointer;">Login</button>
+      
+      <!-- Section Developer Di Bawah Tombol Login -->
+      <div class="developer-credit" style="margin-top: 25px; border-top: 1px solid #E0E0E0; padding-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png?raw=true" alt="Developer" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-accent);">
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--color-text);">Developed by Pembina</span>
       </div>
     </div>
-    
-    <!-- Tombol Submit -->
-    <button id="loginBtn" class="btn btn-full btn-primary" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none; cursor: pointer;">Login</button>
   </div>
-</div>
-    
-    <!-- Tombol Login -->
-    <button id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()">Login</button>
-  </div>
-</div>
 
   <!-- APP LAYOUT CONTAINER -->
   <div id="app-container">
@@ -718,6 +725,14 @@ body {
               <div class="val" style="font-size: 1.3rem;" id="dash-saldo-kas">Rp 0</div>
             </div>
           </div>
+          
+          <!-- Tombol Input Kehadiran Anggota (Hanya 1 Kali di luar Grid-Dashboard agar Rapi) -->
+          <div style="margin-top: 15px; margin-bottom: 25px;">
+            <button class="btn btn-primary btn-gold" onclick="showAbsenPage()" style="padding: 12px 24px; font-weight: bold; border-radius: var(--radius); cursor: pointer;">
+              Input Kehadiran Anggota
+            </button>
+          </div>
+          
           <div class="card text-center">
             <h2 style="font-family: var(--font-title); margin-bottom: 10px;">Selamat Datang di SIAP WANAMSKA</h2>
             <p>Sistem ini dirancang khusus untuk memonitor kedisiplinan absensi serta manajemen aktivitas Gerakan Pramuka Penggalang di lingkungan Wanamska. Silakan gunakan menu navigasi sebelah kiri untuk mengakses modul-modul sistem.</p>
@@ -1003,7 +1018,7 @@ body {
           </div>
           <div class="card">
             <h2 style="font-family: var(--font-title); margin-bottom: 15px;">Ekspor Laporan Cepat</h2>
-            <p style="margin-bottom: 25px; color: var(--color-text-muted);">Format yang dihasilkan disinkronisasi langsung dengan salinan Google Drive secara realtime tanpa risiko data korup.</p>
+            <p style="margin-bottom: 25px; color: var(--color-text-muted); margin-top: 10px;">Format yang dihasilkan disinkronisasi langsung dengan salinan Google Drive secara realtime tanpa risiko data korup.</p>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
               <div class="card" style="border: 1px solid var(--color-light-brown);">
@@ -1056,7 +1071,7 @@ body {
           </div>
           <div class="card">
             <div class="dev-profile">
-              <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA/blob/0c664ba4e2828e8a5e524978eb20742f5ad256ab/foto.png?raw=true" alt="Developer SIAP WANAMSKA">
+              <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png?raw=true" alt="Developer SIAP WANAMSKA">
               <div>
                 <h2 style="font-family: var(--font-title); color: var(--color-primary-brown);">Senior Apps Script Developer & UX Specialist</h2>
                 <p style="color: var(--color-accent-gold); font-weight: bold; margin-bottom: 15px;">Gerakan Pramuka Wanamska</p>
@@ -1069,6 +1084,49 @@ body {
                   <p><strong>Kontak Organisasi:</strong> support@wanamska.or.id</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- FITUR 4C HTML PAGE: HALAMAN ABSEN HARIAN -->
+        <section id="absen-page" class="app-section" style="display: none;">
+          <div class="section-header">
+            <h1>Input Kehadiran Harian</h1>
+          </div>
+          
+          <div class="card" style="background-color: #ffffff; border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); margin-bottom: 25px;">
+            
+            <!-- Input Tanggal -->
+            <div class="form-group" style="margin-bottom: 20px; max-width: 300px;">
+              <label for="tanggalAbsen" style="font-weight: bold; color: var(--color-primary); display: block; margin-bottom: 8px;">Pilih Tanggal Kegiatan</label>
+              <input type="date" id="tanggalAbsen" class="form-control" style="width: 100%; padding: 10px; border: 1.5px solid #D7CCC8; border-radius: 8px;">
+            </div>
+            
+            <!-- Daftar Anggota -->
+            <div class="table-responsive" style="margin-top: 20px; margin-bottom: 25px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background-color: var(--color-primary); color: white;">
+                    <th style="padding: 12px; text-align: left;">ID Anggota</th>
+                    <th style="padding: 12px; text-align: left;">Nama Lengkap</th>
+                    <th style="padding: 12px; text-align: left;">Peran</th>
+                    <th style="padding: 12px; text-align: center;">Status Kehadiran</th>
+                  </tr>
+                </thead>
+                <tbody id="daftarAnggotaAbsen">
+                  <!-- Data akan dimuat melalui panggilan JS -->
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Navigasi Aksi -->
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+              <button class="btn btn-gold" onclick="simpanKehadiran()" style="background-color: var(--color-accent); color: white; padding: 10px 25px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer;">
+                Simpan Kehadiran
+              </button>
+              <button class="btn" onclick="kembaliKeDashboard()" style="background-color: #795548; color: white; padding: 10px 25px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer;">
+                Kembali ke Dashboard
+              </button>
             </div>
           </div>
         </section>
@@ -1266,23 +1324,62 @@ body {
 
   <!-- FRONTEND LOGIC (JS Murni) -->
   <script>
-    // PATCH: CEK SESSION SAAT LOAD
-document.addEventListener('DOMContentLoaded', function() {
-  sessionToken = sessionStorage.getItem('sessionToken');
-  const userData = sessionStorage.getItem('user');
-  if(sessionToken && userData){
-    showPage('dashboard-page');
-    loadDashboard();
-  } else {
-    showPage('login-page');
-  }
-});
+    // CEK SESSION SAAT LOAD
+    document.addEventListener('DOMContentLoaded', function() {
+      sessionToken = sessionStorage.getItem('sessionToken');
+      const userData = sessionStorage.getItem('user');
+      if (sessionToken && userData) {
+        currentUser = JSON.parse(userData);
+        userRole = currentUser.role;
+        userId = currentUser.user_id;
+        
+        document.getElementById('user-display-name').innerText = currentUser.nama_lengkap;
+        document.getElementById('user-display-role').innerText = userRole;
+        
+        setupRBACUI(userRole);
+        showPage('dashboard-page');
+        loadDashboard();
+      } else {
+        showPage('login-page');
+      }
+    });
+
     let sessionToken = "";
     let userRole = "";
     let userId = "";
+    let currentUser = null;
 
     let streamRef = null;
     let base64SelfieString = "";
+
+    /**
+     * Helper Navigasi Halaman yang Menghubungkan SPA dengan lancar
+     */
+    function showPage(pageId) {
+      if (pageId === 'login-page' || pageId === 'login-screen') {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('app-container').style.display = 'none';
+        return;
+      }
+      if (pageId === 'dashboard-page') {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-container').style.display = 'flex';
+        switchSection('section-dashboard');
+        return;
+      }
+
+      // Untuk sub-halaman/bagian dalam kontainer utama
+      const sections = document.querySelectorAll('.app-section');
+      sections.forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+      });
+      const target = document.getElementById(pageId);
+      if (target) {
+        target.classList.add('active');
+        target.style.display = 'block';
+      }
+    }
 
     function showToast(message, isDanger = false) {
       const container = document.getElementById('toast-container');
@@ -1317,10 +1414,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function switchSection(sectionId, elementMenu) {
       const sections = document.querySelectorAll('.app-section');
-      sections.forEach(s => s.classList.remove('active'));
+      sections.forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+      });
       
       const target = document.getElementById(sectionId);
-      if (target) target.classList.add('active');
+      if (target) {
+        target.classList.add('active');
+        target.style.display = 'block';
+      }
 
       const menuItems = document.querySelectorAll('.menu-item');
       menuItems.forEach(item => item.classList.remove('active'));
@@ -1340,44 +1443,41 @@ document.addEventListener('DOMContentLoaded', function() {
       else if (sectionId === 'section-logs') loadSystemLogs();
     }
 
-    function actionLogin() {
-      const u = document.getElementById('login-username').value;
-      const p = document.getElementById('login-password').value;
-
-      if (!u || !p) {
-        showToast("Isi ID Anggota dan Password Anda!", true);
-        return;
-      }
-
-      setLoader(true, "Memverifikasi Kredensial...");
-
+    // ==========================================
+    // PERBAIKAN BUG FUNGSI LOGIN (PERNIH)
+    // ==========================================
+    function handleLogin(){
+      const userId = document.getElementById('userId').value.trim();
+      const password = document.getElementById('password').value.trim();
+      
+      if(!userId || !password){ showToast('User ID dan Password wajib diisi'); return; }
+      
+      showToast('Sedang login...');
+      
       google.script.run
-        .withSuccessHandler(function(response) {
-          setLoader(false);
-          if (response.success) {
+        .withSuccessHandler(function(response){
+          if(response.success){
+            sessionStorage.setItem('sessionToken', response.token);
+            sessionStorage.setItem('user', JSON.stringify(response.user));
             sessionToken = response.token;
-            userRole = response.role;
-            userId = response.userId;
-            
-            document.getElementById('user-display-name').innerText = response.namaLengkap;
-            document.getElementById('user-display-role').innerText = response.role;
+            currentUser = response.user;
+            userRole = response.user.role;
+            userId = response.user.user_id;
 
-            setupRBACUI(response.role);
+            document.getElementById('user-display-name').innerText = response.user.nama_lengkap;
+            document.getElementById('user-display-role').innerText = response.user.role;
 
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('app-container').style.display = 'flex';
-
-            showToast("Selamat datang " + response.namaLengkap);
-            switchSection('section-dashboard');
+            setupRBACUI(response.user.role);
+            showPage('dashboard-page');
+            loadDashboard();
           } else {
-            showToast(response.message, true);
+            showToast(response.message || 'Login gagal', true);
           }
         })
-        .withFailureHandler(function(err) {
-          setLoader(false);
-          showToast("Error sistem: " + err.toString(), true);
+        .withFailureHandler(function(error){
+          showToast('Error: ' + error.message, true);
         })
-        .loginUser(u, p);
+        .loginUser(userId, password);
     }
 
     function actionLogout() {
@@ -1389,18 +1489,19 @@ document.addEventListener('DOMContentLoaded', function() {
       google.script.run
         .withSuccessHandler(function() {
           setLoader(false);
+          sessionStorage.clear();
           sessionToken = "";
           userRole = "";
           userId = "";
+          currentUser = null;
           
-          document.getElementById('app-container').style.display = 'none';
-          document.getElementById('login-screen').style.display = 'flex';
+          showPage('login-page');
           showToast("Berhasil logout.");
         })
         .withFailureHandler(function() {
           setLoader(false);
-          document.getElementById('app-container').style.display = 'none';
-          document.getElementById('login-screen').style.display = 'flex';
+          sessionStorage.clear();
+          showPage('login-page');
         })
         .logoutUser(sessionToken);
     }
@@ -1431,110 +1532,61 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    let sessionToken = sessionStorage.getItem('token');
-let currentUser = JSON.parse(sessionStorage.getItem('user'));
+    // PATCH 2: FIX DASHBOARD KEY
+    function loadDashboard() {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res.success) {
+            const totalAnggota = res.total_anggota !== undefined ? res.total_anggota : res.totalAnggota;
+            const hadirHariIni = res.hadir_hari_ini !== undefined ? res.hadir_hari_ini : res.hadirHariIni;
+            const kegiatanTerbaru = res.kegiatan_terbaru !== undefined ? res.kegiatan_terbaru : res.kegiatanTerbaru;
+            const saldoKas = res.saldo_kas !== undefined ? res.saldo_kas : res.saldoKas;
 
-// FUNGSI LOGIN
-function handleLogin() {
-  const userId = document.getElementById('userId').value.trim();
-  const password = document.getElementById('password').value;
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true; btn.innerText = 'Memproses...';
+            document.getElementById('dash-total-anggota').innerText = totalAnggota !== undefined ? totalAnggota : 0;
+            document.getElementById('dash-hadir-hari-ini').innerText = hadirHariIni !== undefined ? hadirHariIni : 0;
+            document.getElementById('dash-kegiatan-terbaru').innerText = kegiatanTerbaru !== undefined ? kegiatanTerbaru : "-";
+            
+            const saldoEl = document.getElementById('dash-saldo-kas');
+            const cardKas = document.getElementById('card-dash-kas');
+            
+            if (saldoKas !== undefined && saldoKas !== null) {
+              if (saldoEl) {
+                saldoEl.innerText = "Rp " + Number(saldoKas).toLocaleString('id-ID');
+              }
+              if (cardKas) {
+                cardKas.style.display = 'flex';
+              }
+            } else {
+              if (cardKas) {
+                cardKas.style.display = 'none';
+              }
+            }
+          } else {
+            showToast(res.message || "Gagal memuat dashboard", true);
+          }
+        })
+        .withFailureHandler(function(err){
+          showToast("Error: " + err.message, true);
+        })
+        .getDashboardData(sessionToken);
+    }
 
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res.success) {
-        sessionStorage.setItem('token', res.token);
-        sessionStorage.setItem('user', JSON.stringify(res.user)); // PENTING: .user
-        sessionToken = res.token;
-        currentUser = res.user;
-        document.getElementById('login-page').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-        document.getElementById('namaUser').innerText = res.user.nama_lengkap;
-        setupMenuByRole(res.user.role);
-        showDashboard();
-      } else {
-        showToast(res.message, 'error');
-        btn.disabled = false; btn.innerText = 'Login';
+    function showDashboard() {
+      showPage('dashboard-page');
+    }
+
+    // FUNGSI TOGGLE PASSWORD
+    function togglePassword() {
+      const p = document.getElementById('password');
+      const icon = event.target;
+      if (p.type === 'password') { 
+        p.type = 'text'; 
+        icon.innerText = '🙈'; 
+      } else { 
+        p.type = 'password'; 
+        icon.innerText = '👁️'; 
       }
-    })
-    .withFailureHandler(function(err){
-      showToast('Error: ' + err.message, 'error');
-      btn.disabled = false; btn.innerText = 'Login';
-    })
-    .loginUser(userId, password);
-}
-
-// FUNGSI DASHBOARD - INI YG SUDAH DIFIX
-// PATCH 2: FIX DASHBOARD KEY
-function loadDashboard() {
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res.success) {
-        // Mendukung format snake_case dan camelCase secara aman
-        const totalAnggota = res.total_anggota !== undefined ? res.total_anggota : res.totalAnggota;
-        const hadirHariIni = res.hadir_hari_ini !== undefined ? res.hadir_hari_ini : res.hadirHariIni;
-        const kegiatanTerbaru = res.kegiatan_terbaru !== undefined ? res.kegiatan_terbaru : res.kegiatanTerbaru;
-        const saldoKas = res.saldo_kas !== undefined ? res.saldo_kas : res.saldoKas;
-
-        document.getElementById('dash-total-anggota').innerText = totalAnggota !== undefined ? totalAnggota : 0;
-        document.getElementById('dash-hadir-hari-ini').innerText = hadirHariIni !== undefined ? hadirHariIni : 0;
-        document.getElementById('dash-kegiatan-terbaru').innerText = kegiatanTerbaru !== undefined ? kegiatanTerbaru : "-";
-        
-        const saldoEl = document.getElementById('dash-saldo-kas');
-        const cardKas = document.getElementById('card-dash-kas');
-        
-        if (saldoKas !== undefined && saldoKas !== null) {
-          if (saldoEl) {
-            saldoEl.innerText = "Rp " + Number(saldoKas).toLocaleString('id-ID');
-          }
-          if (cardKas) {
-            cardKas.style.display = 'flex';
-          }
-        } else {
-          if (cardKas) {
-            cardKas.style.display = 'none'; // Sembunyikan jika tidak ada akses saldo
-          }
-        }
-      } else {
-        showToast(res.message || "Gagal memuat dashboard", "error");
-      }
-    })
-    .withFailureHandler(function(err){
-      showToast("Error: " + err.message, "error");
-    })
-    .getDashboardData(sessionToken);
-}
-
-function showDashboard() {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('dashboard-page').classList.add('active');
-  loadDashboard(); // Panggil fungsi yg sudah fix
-}
-
-// FUNGSI TOGGLE PASSWORD - BARU
-// ==========================================
-// // PATCH 3: JS
-// ==========================================
-function togglePassword() {
-  const p = document.getElementById('password');
-  const icon = event.target;
-  if (p.type === 'password') { 
-    p.type = 'text'; 
-    icon.innerText = '🙈'; 
-  } else { 
-    p.type = 'password'; 
-    icon.innerText = '👁️'; 
-  }
-}
-// FUNGSI TOAST SEDERHANA
-function showToast(msg, type='success'){
-  const t = document.createElement('div');
-  t.innerText = msg;
-  t.style = `position:fixed; bottom:20px; right:20px; background:${type==='error'? 'var(--color-danger)':'var(--color-primary)'}; color:white; padding:12px 18px; border-radius:var(--radius); z-index:9999; box-shadow:var(--shadow);`;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(), 3000);
-}
+    }
 
     function toggleMetodeAbsen() {
       const met = document.getElementById('absen-metode').value;
@@ -2378,8 +2430,148 @@ function showToast(msg, type='success'){
         })
         .getSystemLogs(sessionToken, filter);
     }
-   
+    
+    // FITUR 4D JS: LOGIKA INPUT ABSENSI
+    function showAbsenPage() {
+      const pages = document.querySelectorAll('.app-section, .page');
+      pages.forEach(p => {
+        p.style.display = 'none';
+        p.classList.remove('active');
+      });
+      
+      const targetPage = document.getElementById('absen-page');
+      if (targetPage) {
+        targetPage.style.display = 'block';
+        targetPage.classList.add('active');
+      }
+      
+      document.getElementById('tanggalAbsen').value = new Date().toISOString().split('T')[0];
+      loadDaftarAnggota();
+    }
 
+    function loadDaftarAnggota() {
+      const tbody = document.getElementById('daftarAnggotaAbsen');
+      if (!tbody) return;
+      
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">Mengambil data anggota dari sheet...</td></tr>`;
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res.success) {
+            tbody.innerHTML = "";
+            if (res.data.length === 0) {
+              tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">Tidak ada anggota yang terdaftar untuk diabsen.</td></tr>`;
+              return;
+            }
+            
+            res.data.forEach(function(member) {
+              tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #D7CCC8;">
+                  <td style="padding: 12px; font-weight: bold;">${member.user_id}</td>
+                  <td style="padding: 12px;">${member.nama_lengkap}</td>
+                  <td style="padding: 12px;"><span class="badge" style="background-color: #E1EFFE; color: #1E429F;">${member.role}</span></td>
+                  <td style="padding: 12px; text-align: center;">
+                    <div style="display: inline-flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                      <label style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;">
+                        <input type="radio" name="status_${member.user_id}" value="Hadir" checked style="accent-color: var(--color-primary);"> Hadir
+                      </label>
+                      <label style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;">
+                        <input type="radio" name="status_${member.user_id}" value="Izin" style="accent-color: var(--color-primary);"> Izin
+                      </label>
+                      <label style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;">
+                        <input type="radio" name="status_${member.user_id}" value="Sakit" style="accent-color: var(--color-primary);"> Sakit
+                      </label>
+                      <label style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;">
+                        <input type="radio" name="status_${member.user_id}" value="Alpa" style="accent-color: var(--color-primary);"> Alpa
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            });
+          } else {
+            showToast("Kesalahan muat data: " + res.message, true);
+          }
+        })
+        .withFailureHandler(function(err) {
+          showToast("Gagal memanggil server: " + err.message, true);
+        })
+        .getAnggotaUntukAbsen();
+    }
+
+    function simpanKehadiran() {
+      const tanggal = document.getElementById('tanggalAbsen').value;
+      if (!tanggal) {
+        showToast("Pilih tanggal terlebih dahulu!", true);
+        return;
+      }
+      
+      const tbody = document.getElementById('daftarAnggotaAbsen');
+      const rows = tbody.querySelectorAll('tr');
+      const attendanceData = [];
+      
+      rows.forEach(function(row) {
+        const colId = row.querySelector('td');
+        if (!colId) return;
+        
+        const userId = colId.innerText.trim();
+        if (userId && userId.indexOf("Mengambil") === -1 && userId.indexOf("Tidak ada") === -1) {
+          const selectedRadio = row.querySelector(`input[name="status_${userId}"]:checked`);
+          if (selectedRadio) {
+            attendanceData.push({
+              user_id: userId,
+              status: selectedRadio.value
+            });
+          }
+        }
+      });
+      
+      if (attendanceData.length === 0) {
+        showToast("Tidak ada data anggota untuk disimpan.", true);
+        return;
+      }
+      
+      setLoader(true, "Menyimpan seluruh data kehadiran...");
+      
+      const payload = {
+        tanggal: tanggal,
+        data: attendanceData
+      };
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          setLoader(false);
+          if (res.success) {
+            showToast(res.message);
+            kembaliKeDashboard();
+          } else {
+            showToast("Penyimpanan gagal: " + res.message, true);
+          }
+        })
+        .withFailureHandler(function(err) {
+          setLoader(false);
+          showToast("Kesalahan sistem server: " + err.message, true);
+        })
+        .saveKehadiran(payload);
+    }
+
+    function kembaliKeDashboard() {
+      const pages = document.querySelectorAll('.app-section, .page');
+      pages.forEach(p => {
+        p.style.display = 'none';
+        p.classList.remove('active');
+      });
+      
+      const dashboardPage = document.getElementById('section-dashboard') || document.getElementById('dashboard-page');
+      if (dashboardPage) {
+        dashboardPage.style.display = 'block';
+        dashboardPage.classList.add('active');
+        
+        if (typeof loadDashboard === "function") {
+          loadDashboard();
+        }
+      }
+    }
   </script>
 </body>
 </html>
