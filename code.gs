@@ -182,12 +182,15 @@ function loginUser(userId, password) {
           writeLog(uId, "LOGIN", "Berhasil login ke sistem");
           
           return {
-            success: true,
-            token: token,
-            role: role,
-            userId: uId,
-            namaLengkap: namaLengkap
-          };
+  success: true,
+  token: token,
+  user: { // <-- dibungkus
+    user_id: uId,
+    nama_lengkap: namaLengkap, // ambil dari sheet users kolom 3
+    role: role,
+    nta: "" // nta adanya di profile, bisa dikosongin dulu
+  }
+};
         } else {
           return { success: false, message: "Password salah." };
         }
@@ -198,7 +201,12 @@ function loginUser(userId, password) {
     return { success: false, message: "Error sistem: " + err.toString() };
   }
 }
-
+function togglePassword() {
+  var x = document.getElementById("password");
+  var t = event.target;
+  if (x.type === "password") { x.type = "text"; t.innerText = "SEMBUNYIKAN"; }
+  else { x.type = "password"; t.innerText = "TAMPILKAN"; }
+}
 /**
  * LOGOUT USER
  */
