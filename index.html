@@ -5,35 +5,58 @@
   <meta charset="UTF-8">
   <title>SIAP WANAMSKA</title>
   <style>
-    /* =========================================================================
-       TEMA VISUAL - MAJESTY THEME (Coklat, Krem, Emas, Merah)
-       Semua style murni buatan sendiri tanpa framework eksternal
-       ========================================================================= */
-    :root {
+    /* ==========================================
+   // PATCH 1: CSS TEMA MAJESTY
+   ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+:root {
   --color-primary: #6F4E37; /* Coklat Majesty */
-  --color-bg: #FDF8F4; /* Krem */
-  --color-accent: #F59E0B; /* Emas */
-  --color-danger: #B91C1C; /* Merah Marun */
+  --color-bg: #FDF8F4;      /* Krem */
+  --color-accent: #F59E0B;  /* Emas */
+  --color-danger: #B91C1C;  /* Merah Marun */
   --color-text: #3D2B1F;
   --radius: 12px;
   --shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
-body { background: var(--color-bg); color: var(--color-text); }
-.btn-primary { background: var(--color-primary); color: white; }
-.btn-accent { background: var(--color-accent); color: var(--color-text); }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+body {
+  font-family: 'Poppins', sans-serif !important;
+  background-color: var(--color-bg) !important;
+  color: var(--color-text) !important;
+}
 
-    body {
-      font-family: var(--font-body);
-      background-color: var(--color-bg-cream);
-      color: var(--color-text-dark);
-      line-height: 1.5;
-    }
+/* Modifikasi Class Login-Box agar Sesuai Spesifikasi */
+.login-box {
+  background-color: #FFFFFF !important;
+  padding: 30px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05) !important;
+  max-width: 400px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  text-align: center !important;
+  border-top: 6px solid var(--color-accent) !important;
+}
+
+.login-box h1 {
+  font-family: 'Poppins', sans-serif !important;
+  color: var(--color-primary) !important;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+/* Styling Ikon Mata Penebas Sandi */
+.toggle-password-icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.25rem;
+  user-select: none;
+}
 
     /* TOAST NOTIFICATION */
     #toast-container {
@@ -578,27 +601,35 @@ body { background: var(--color-bg); color: var(--color-text); }
   <!-- ==========================================
      PATCH 3A: HTML LOGIN SCREEN (CLEAN & FIXED)
      ========================================== -->
+<!-- ==========================================
+     // PATCH 2: HTML FORM LOGIN
+     ========================================== -->
 <div id="login-screen">
   <div class="login-box">
-    <!-- Logo SIAP WANAMSKA -->
-    <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA/blob/0c664ba4e2828e8a5e524978eb20742f5ad256ab/logo.png?raw=true" alt="Logo SIAP WANAMSKA">
+    <!-- Logo SIAP WANAMSKA Baru -->
+    <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/assets/logo.png?raw=true" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto; margin-bottom: 15px;">
     <h1>SIAP WANAMSKA</h1>
-    <p>Sistem Informasi & Absensi Penggalang Wanamska</p>
+    <p style="color: var(--color-text-muted); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi & Absensi Penggalang Wanamska</p>
     
-    <!-- Form Input User ID -->
-    <div class="form-group">
-      <label for="userId">User ID</label>
-      <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required>
+    <!-- Input User ID -->
+    <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+      <label for="userId" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem;">User ID</label>
+      <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required style="width: 100%; padding: 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
     </div>
     
-    <!-- Form Input Password dengan Fitur Toggle Tampilkan/Sembunyikan -->
-    <div class="form-group">
-      <label for="password">Password</label>
+    <!-- Input Password dengan Ikon Interaktif -->
+    <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+      <label for="password" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem;">Password</label>
       <div style="position: relative;">
-        <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%; padding-right: 110px;">
-        <span id="togglePassText" onclick="togglePassword()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 12px; color: var(--color-primary); font-weight: 700; user-select: none; letter-spacing: 0.5px;">TAMPILKAN</span>
+        <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%; padding: 10px 45px 10px 14px; border: 1.5px solid var(--color-light-brown); border-radius: var(--rounded-btn);">
+        <span class="toggle-password-icon" onclick="togglePassword()">👁️</span>
       </div>
     </div>
+    
+    <!-- Tombol Submit -->
+    <button id="loginBtn" class="btn btn-full btn-primary" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none; cursor: pointer;">Login</button>
+  </div>
+</div>
     
     <!-- Tombol Login -->
     <button id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()">Login</button>
@@ -1474,18 +1505,20 @@ function showDashboard() {
 }
 
 // FUNGSI TOGGLE PASSWORD - BARU
-function togglePassword(){
+// ==========================================
+// // PATCH 3: JS
+// ==========================================
+function togglePassword() {
   const p = document.getElementById('password');
-  const s = document.getElementById('togglePassText');
-  if(p.type === 'password'){ 
+  const icon = event.target;
+  if (p.type === 'password') { 
     p.type = 'text'; 
-    s.innerText = 'SEMBUNYIKAN'; 
+    icon.innerText = '🙈'; 
   } else { 
     p.type = 'password'; 
-    s.innerText = 'LIHAT'; 
+    icon.innerText = '👁️'; 
   }
 }
-
 // FUNGSI TOAST SEDERHANA
 function showToast(msg, type='success'){
   const t = document.createElement('div');
@@ -2337,28 +2370,8 @@ function showToast(msg, type='success'){
         })
         .getSystemLogs(sessionToken, filter);
     }
-    <!-- ==========================================
-     PATCH 3B: JS TOGGLE PASSWORD
-     ========================================== -->
-<script>
-  /**
-   * Mengubah tipe input password untuk menampilkan atau menyembunyikan teks sandi.
-   * Dipanggil ketika elemen teks TAMPILKAN/SEMBUNYIKAN diklik.
-   */
-  function togglePassword() {
-    const passwordInput = document.getElementById("password");
-    const toggleText = document.getElementById("togglePassText");
-    if (passwordInput && toggleText) {
-      if (passwordInput.type === "password") {
-        passwordInput.type = "text";
-        toggleText.innerText = "SEMBUNYIKAN";
-      } else {
-        passwordInput.type = "password";
-        toggleText.innerText = "TAMPILKAN";
-      }
-    }
-  }
-</script>
+   
+
   </script>
 </body>
 </html>
