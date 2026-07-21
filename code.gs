@@ -9,14 +9,24 @@
  * - Log aktivitas otomatis untuk setiap tindakan kritis.
  */
 
+// Konstanta Spreadsheet ID Wajib
+const SPREADSHEET_ID = '107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg';
+
 // Konstanta Nama Sheet
-const SHEET_USERS = "users";
+const SHEET_USERS = "Users";
 const SHEET_PROFILE = "profile";
 const SHEET_ABSENSI = "absensi";
 const SHEET_KEGIATAN = "kegiatan";
 const SHEET_INVENTARIS = "inventaris";
 const SHEET_KAS = "kas";
 const SHEET_LOG = "log";
+
+/**
+ * Helper untuk membuka spreadsheet target secara konsisten menggunakan SPREADSHEET_ID
+ */
+function getSpreadsheet() {
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
+}
 
 /**
  * Fungsi doGet: Me-render halaman frontend index.html
@@ -34,10 +44,10 @@ function doGet(e) {
 
 /**
  * Inisialisasi Database: Membuat Sheet dan Kolom Header jika belum ada.
- * Juga membuat akun admin bawaan (default) jika sheet "users" masih kosong.
+ * Juga membuat akun admin bawaan (default) jika sheet "Users" masih kosong.
  */
 function initializeDatabase() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   
   // 1. Sheet Users
   var sUsers = ss.getSheetByName(SHEET_USERS);
@@ -100,13 +110,13 @@ function initializeDatabase() {
 }
 
 /**
- * ==========================================
- * PERBAIKAN 2.1: HASH PASSWORD DENGAN VALIDASI
- * ==========================================
- * Hashing SHA-256 menggunakan Utilities bawaan Google Apps Script
+ * Hashing SHA-256 menggunakan Utilities bawaan Google Apps Script.
+ * Wajib melempar error jika argumen password kosong atau tidak valid.
  */
 function hashPassword(password) {
-  if (!password) return "";
+  if (!password) {
+    throw new Error("Password tidak boleh kosong untuk proses hashing.");
+  }
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password, Utilities.Charset.UTF_8);
   var hexString = '';
   for (var i = 0; i < digest.length; i++) {
@@ -124,7 +134,7 @@ function hashPassword(password) {
  */
 function writeLog(userId, aksi, detail) {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_LOG);
     var idLog = "LOG-" + Utilities.getUuid().substring(0, 8).toUpperCase();
     var timestamp = new Date().toISOString();
@@ -156,21 +166,19 @@ function validateSession(token, allowedRoles) {
 }
 
 /**
- * ==========================================
- * PERBAIKAN 2.2: FUNGSI LOGIN USER (FIXED)
- * ==========================================
- * Membaca Kolom: A=user_id, B=password, C=nama_lengkap, D=role, E=status_aktif
- * Cek status === 'Aktif'
+ * LOGIN USER
+ * Membaca Kolom: A=user_id, B=password, C=nama_lengkap, D=role, E=status_aktif, F=tanggal_dibuat
+ * Mengecek apakah status_aktif bernilai 'Aktif'
  */
-function loginUser(userId, password){
+function loginUser(userId, password) {
   try {
-    if(!userId || !password) return {success: false, message: 'User ID dan Password wajib diisi'};
+    if (!userId || !password) {
+      return { success: false, message: 'User ID dan Password wajib diisi' };
+    }
     
     initializeDatabase();
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    
-    // Membaca sheet 'Users' (prioritas) atau 'users'
-    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    var ss = getSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
     var data = sheet.getDataRange().getValues();
 
     var uId = userId.trim().toLowerCase();
@@ -187,7 +195,6 @@ function loginUser(userId, password){
           var namaLengkap = data[i][2];
           var token = "token_" + uId;
           
-          // Daftarkan sesi ke dalam CacheService agar audit log / validateSession sinkron
           var sessionObj = { userId: uId, role: role, name: namaLengkap };
           CacheService.getScriptCache().put(token, JSON.stringify(sessionObj), 21600);
 
@@ -208,21 +215,18 @@ function loginUser(userId, password){
       }
     }
     return { success: false, message: "User ID tidak ditemukan atau tidak aktif." };
-  } catch(e) {
+  } catch (e) {
     return { success: false, message: "Error sistem: " + e.toString() };
   }
 }
 
 /**
- * ==========================================
- * PERBAIKAN 2.3: TAMBAHKAN FUNGSI ADD USER (NEW)
- * ==========================================
- * Menambahkan user secara manual dengan enkripsi SHA-256
+ * Menambahkan user baru secara manual dari Apps Script Editor ke sheet "Users" dengan password terenkripsi SHA-256.
  */
 function addUser(userId, password, namaLengkap, role) {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    var ss = getSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
     if (!sheet) {
       return { success: false, message: "Sheet Users tidak ditemukan." };
     }
@@ -254,9 +258,9 @@ function logoutUser(token) {
 function getDashboardData(token) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     
-    var usersSheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    var usersSheet = ss.getSheetByName(SHEET_USERS);
     var totalAnggota = usersSheet.getLastRow() - 1;
     
     var absensiSheet = ss.getSheetByName(SHEET_ABSENSI);
@@ -306,7 +310,7 @@ function getDashboardData(token) {
 function submitAbsen(token, status, fotoSelfie, metode, kegiatanTerkait, keterangan) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_ABSENSI);
     
     var idAbsen = "ABS-" + Utilities.getUuid().substring(0, 8).toUpperCase();
@@ -346,7 +350,7 @@ function submitAbsen(token, status, fotoSelfie, metode, kegiatanTerkait, keteran
 function getAbsenHistory(token, filterDate) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_ABSENSI);
     var data = sheet.getDataRange().getValues();
     
@@ -398,7 +402,7 @@ function getAbsenHistory(token, filterDate) {
 function getKegiatanList(token) {
   try {
     validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_KEGIATAN);
     var data = sheet.getDataRange().getValues();
     
@@ -431,7 +435,7 @@ function getKegiatanList(token) {
 function saveKegiatan(token, dataKegiatan) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_KEGIATAN);
     var data = sheet.getDataRange().getValues();
     
@@ -493,7 +497,7 @@ function saveKegiatan(token, dataKegiatan) {
 function deleteKegiatan(token, idKegiatan) {
   try {
     var session = validateSession(token, ["Admin"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_KEGIATAN);
     var data = sheet.getDataRange().getValues();
     
@@ -516,7 +520,7 @@ function deleteKegiatan(token, idKegiatan) {
 function getInventarisList(token) {
   try {
     validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_INVENTARIS);
     var data = sheet.getDataRange().getValues();
     
@@ -546,7 +550,7 @@ function getInventarisList(token) {
 function saveInventaris(token, dataBarang) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_INVENTARIS);
     var data = sheet.getDataRange().getValues();
     
@@ -603,7 +607,7 @@ function saveInventaris(token, dataBarang) {
 function deleteInventaris(token, idBarang) {
   try {
     var session = validateSession(token, ["Admin"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_INVENTARIS);
     var data = sheet.getDataRange().getValues();
     
@@ -626,7 +630,7 @@ function deleteInventaris(token, idBarang) {
 function getKasData(token) {
   try {
     validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_KAS);
     var data = sheet.getDataRange().getValues();
     
@@ -671,7 +675,7 @@ function getKasData(token) {
 function addKasTransaction(token, trans) {
   try {
     var session = validateSession(token, ["Admin"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_KAS);
     var data = sheet.getDataRange().getValues();
     
@@ -716,7 +720,7 @@ function addKasTransaction(token, trans) {
 function getUserProfile(token, targetUserId) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     
     var uId = session.userId;
     if (targetUserId && ["Admin", "Pembina"].indexOf(session.role) !== -1) {
@@ -776,7 +780,7 @@ function getUserProfile(token, targetUserId) {
 function saveUserProfile(token, prof) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_PROFILE);
     var data = sheet.getDataRange().getValues();
     
@@ -814,7 +818,7 @@ function saveUserProfile(token, prof) {
       sheet.appendRow(rowData);
     }
     
-    var userSheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    var userSheet = ss.getSheetByName(SHEET_USERS);
     var userData = userSheet.getDataRange().getValues();
     for (var j = 1; j < userData.length; j++) {
       if (userData[j][0].toString().toLowerCase() === uId) {
@@ -836,8 +840,8 @@ function saveUserProfile(token, prof) {
 function changePassword(token, oldPassword, newPassword) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    var ss = getSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
     var data = sheet.getDataRange().getValues();
     
     var pHashOld = hashPassword(oldPassword);
@@ -866,8 +870,8 @@ function changePassword(token, oldPassword, newPassword) {
 function getUserList(token) {
   try {
     validateSession(token, ["Admin"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    var ss = getSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
     var data = sheet.getDataRange().getValues();
     
     var list = [];
@@ -892,8 +896,8 @@ function getUserList(token) {
 function saveUserByAdmin(token, userData) {
   try {
     var session = validateSession(token, ["Admin"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    var ss = getSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
     var data = sheet.getDataRange().getValues();
     
     var uId = userData.user_id.trim().toLowerCase();
@@ -956,14 +960,14 @@ function saveUserByAdmin(token, userData) {
 function deleteUser(token, targetUserId) {
   try {
     var session = validateSession(token, ["Admin"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     
     var uId = targetUserId.toLowerCase();
     if (uId === "admin") {
       return { success: false, message: "Akun Super Admin utama tidak boleh dihapus!" };
     }
     
-    var userSheet = ss.getSheetByName('Users') || ss.getSheetByName(SHEET_USERS);
+    var userSheet = ss.getSheetByName(SHEET_USERS);
     var userData = userSheet.getDataRange().getValues();
     for (var i = 1; i < userData.length; i++) {
       if (userData[i][0].toString().toLowerCase() === uId) {
@@ -994,7 +998,7 @@ function deleteUser(token, targetUserId) {
 function getSystemLogs(token, filterUser) {
   try {
     validateSession(token, ["Admin"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_LOG);
     var data = sheet.getDataRange().getValues();
     
@@ -1031,7 +1035,7 @@ function getSystemLogs(token, filterUser) {
 function exportToExcel(token, moduleName) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sourceSheet = ss.getSheetByName(moduleName);
     
     if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
@@ -1073,7 +1077,7 @@ function exportToExcel(token, moduleName) {
 function exportToPDF(token, moduleName) {
   try {
     var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sourceSheet = ss.getSheetByName(moduleName);
     if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
     
@@ -1105,16 +1109,14 @@ function exportToPDF(token, moduleName) {
   }
 }
 
-// FITUR 4A code.gs
-
 /**
- * Mengambil daftar anggota dari sheet "Anggota" atau cadangan sheet "users".
- * Filter: Hanya menampilkan role 'penggalang' oatau 'pembina'.
+ * Mengambil daftar anggota dari sheet "Anggota" atau cadangan sheet "Users".
+ * Filter: Hanya menampilkan role 'penggalang' atau 'pembina'.
  */
 function getAnggotaUntukAbsen() {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    // Gunakan sheet "Anggota" sebagai prioritas, jika tidak ada fallback ke sheet "users"
+    var ss = getSpreadsheet();
+    // Gunakan sheet "Anggota" sebagai prioritas, jika tidak ada fallback ke sheet "Users"
     var sheet = ss.getSheetByName("Anggota") || ss.getSheetByName(SHEET_USERS);
     if (!sheet) {
       return { success: false, message: "Sheet data anggota tidak ditemukan." };
@@ -1125,9 +1127,6 @@ function getAnggotaUntukAbsen() {
     var result = [];
     
     for (var i = 1; i < data.length; i++) {
-      // Pemetaan kolom: 
-      // Jika "Anggota" -> Col A=user_id, Col B=nama_lengkap, Col C=role
-      // Jika "users" -> Col A=user_id, Col C=nama_lengkap, Col D=role
       var userId = data[i][0];
       var namaLengkap = isAnggotaSheet ? data[i][1] : data[i][2];
       var role = isAnggotaSheet ? data[i][2] : data[i][3];
@@ -1156,7 +1155,7 @@ function getAnggotaUntukAbsen() {
  */
 function saveKehadiran(dataAbsen) {
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var ss = getSpreadsheet();
     var sheet = ss.getSheetByName("Kehadiran");
     if (!sheet) {
       sheet = ss.insertSheet("Kehadiran");
