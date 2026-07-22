@@ -1,1393 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <base target="_top">
   <meta charset="UTF-8">
-  <title>Hasil Generate SIAP WANAMSKA</title>
+  <title>SIAP WANAMSKA</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #FDF8F4;
-      color: #3D2B1F;
-      margin: 0;
-      padding: 40px;
-    }
-    header {
-      text-align: center;
-      margin-bottom: 40px;
-      border-bottom: 3px solid #6F4E37;
-      padding-bottom: 20px;
-    }
-    h1 {
-      color: #6F4E37;
-      font-size: 2.2rem;
-      margin-bottom: 5px;
-    }
-    h2 {
-      color: #6F4E37;
-      font-size: 1.5rem;
-      border-left: 5px solid #F59E0B;
-      padding-left: 10px;
-      margin-top: 30px;
-    }
-    p {
-      color: #795548;
-      font-size: 1rem;
-    }
-    .action-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .btn-copy {
-      background-color: #6F4E37;
-      color: #FFFFFF;
-      border: none;
-      padding: 10px 20px;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.2s, transform 0.1s;
-    }
-    .btn-copy:hover {
-      background-color: #553C2A;
-    }
-    .btn-copy:active {
-      transform: scale(0.97);
-    }
-    textarea {
-      width: 100%;
-      height: 450px;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 14px;
-      background-color: #FFFFFF;
-      color: #333333;
-      border: 1.5px solid #D7CCC8;
-      border-radius: 8px;
-      padding: 15px;
-      resize: vertical;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-    }
-    textarea:focus {
-      outline: none;
-      border-color: #F59E0B;
-    }
-    footer {
-      text-align: center;
-      margin-top: 50px;
-      color: #795548;
-      font-size: 0.9rem;
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <h1>Hasil Generate Kode SIAP WANAMSKA V2.0</h1>
-    <p>Gunakan tombol salin di bawah ini untuk menyalin masing-masing kode secara instan dan utuh.</p>
-  </header>
-
-  <!-- SEKTOR 1: CODE.GS -->
-  <div class="action-bar">
-    <h2>1. File code.gs (Backend Google Apps Script)</h2>
-    <button class="btn-copy" onclick="copyCode('codegs')">Salin Kode code.gs</button>
-  </div>
-  <textarea id="codegs" readonly>&lt;!-- START OF FILE Paste July 22, 2026 - 12:25PM --&gt;
-
-const SPREADSHEET_ID = '107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg';
-
-// === MESIN LOGIN BARU V2 ===
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('index').setTitle('SIAP WANAMSKA V2');
-}
-
-function hashPassword(password){
-  if(!password) return "";
-  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password);
-  return digest.map(b => ('0' + (b &amp; 0xFF).toString(16)).slice(-2)).join('');
-}
-
-function loginUser(userId, password){
-  if(!userId ||!password) return {success: false, message: 'User ID dan Password wajib diisi'};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName('Users');
-  if(!sheet) return {success: false, message: 'Sheet "Users" tidak ditemukan'};
-  const data = sheet.getDataRange().getValues();
-  const userRow = data.find(row => String(row[0]).trim() === userId && String(row[4]).trim() === 'Aktif');
-  if(!userRow) return {success: false, message: 'User tidak ditemukan atau Status tidak Aktif'};
-  const hashInput = hashPassword(password);
-  if(hashInput === String(userRow[1]).trim()){
-    return {success: true, sessionToken: "token_" + userId, user:{user_id:userRow[0], nama_lengkap:userRow[2], role:userRow[3]}};
-  } else {
-    return {success: false, message: 'Password salah'};
-  }
-}
-
-function addUser(userId, password, namaLengkap, role){
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName('Users');
-  const hash = hashPassword(password);
-  sheet.appendRow([userId, hash, namaLengkap, role, 'Aktif', new Date()]);
-  return 'SUKSES: User '+userId+' dibuat dengan role '+role;
-}
-// Konstanta Nama Sheet
-const SHEET_USERS = "Users";
-const SHEET_PROFILE = "profile";
-const SHEET_ABSENSI = "absensi";
-const SHEET_KEGIATAN = "kegiatan";
-const SHEET_INVENTARIS = "inventaris";
-const SHEET_KAS = "kas";
-const SHEET_LOG = "log";
-
-/**
- * Helper untuk membuka spreadsheet target secara konsisten menggunakan SPREADSHEET_ID
- */
-function getSpreadsheet() {
-  return SpreadsheetApp.openById(SPREADSHEET_ID);
-}
-
-/**
- * Inisialisasi Database: Membuat Sheet dan Kolom Header jika belum ada.
- * Juga membuat akun admin bawaan (default) jika sheet "Users" masih kosong.
- */
-function initializeDatabase() {
-  var ss = getSpreadsheet();
-  
-  // 1. Sheet Users
-  var sUsers = ss.getSheetByName(SHEET_USERS);
-  if (!sUsers) {
-    sUsers = ss.insertSheet(SHEET_USERS);
-    sUsers.appendRow(["user_id", "password", "nama_lengkap", "role", "status_aktif", "tanggal_dibuat"]);
-  }
-  
-  // Buat default admin jika kosong
-  if (sUsers.getLastRow() <= 1) {
-    var adminPasswordHash = hashPassword("admin123");
-    sUsers.appendRow(["admin", adminPasswordHash, "Administrator Utama", "Admin", "Aktif", new Date().toISOString()]);
-  }
-
-  // 2. Sheet Profile
-  var sProfile = ss.getSheetByName(SHEET_PROFILE);
-  if (!sProfile) {
-    sProfile = ss.insertSheet(SHEET_PROFILE);
-    sProfile.appendRow(["user_id", "nta", "nama_lengkap", "tempat_lahir", "tanggal_lahir", "jenis_kelamin", "golongan", "regu_sangga", "alamat", "no_hp", "foto_profil", "tanggal_bergabung"]);
-  }
-  // Daftarkan profil default admin jika kosong
-  if (sProfile.getLastRow() <= 1) {
-    sProfile.appendRow(["admin", "12.34.56.78", "Administrator Utama", "Jakarta", "2000-01-01", "Laki-laki", "Pembina", "Manggala", "Markas Gerakan Pramuka", "08123456789", "", new Date().toISOString()]);
-  }
-
-  // 3. Sheet Absensi
-  var sAbsen = ss.getSheetByName(SHEET_ABSENSI);
-  if (!sAbsen) {
-    sAbsen = ss.insertSheet(SHEET_ABSENSI);
-    sAbsen.appendRow(["id_absen", "user_id", "nama", "tanggal", "jam", "status", "foto_selfie", "metode", "kegiatan_terkait", "keterangan"]);
-  }
-
-  // 4. Sheet Kegiatan
-  var sKegiatan = ss.getSheetByName(SHEET_KEGIATAN);
-  if (!sKegiatan) {
-    sKegiatan = ss.insertSheet(SHEET_KEGIATAN);
-    sKegiatan.appendRow(["id_kegiatan", "nama_kegiatan", "tanggal", "lokasi", "deskripsi", "foto1", "foto2", "foto3", "foto4", "dibuat_oleh", "tanggal_dibuat"]);
-  }
-
-  // 5. Sheet Inventaris
-  var sInventaris = ss.getSheetByName(SHEET_INVENTARIS);
-  if (!sInventaris) {
-    sInventaris = ss.insertSheet(SHEET_INVENTARIS);
-    sInventaris.appendRow(["id_barang", "nama_barang", "kategori", "jumlah", "kondisi", "lokasi_simpan", "tanggal_masuk", "keterangan", "dikelola_oleh"]);
-  }
-
-  // 6. Sheet Kas
-  var sKas = ss.getSheetByName(SHEET_KAS);
-  if (!sKas) {
-    sKas = ss.insertSheet(SHEET_KAS);
-    sKas.appendRow(["id_transaksi", "tanggal", "jenis", "kategori", "jumlah", "keterangan", "saldo_berjalan", "dicatat_oleh"]);
-  }
-
-  // 7. Sheet Log
-  var sLog = ss.getSheetByName(SHEET_LOG);
-  if (!sLog) {
-    sLog = ss.insertSheet(SHEET_LOG);
-    sLog.appendRow(["id_log", "timestamp", "user_id", "aksi", "detail", "alamat_ip"]);
-  }
-}
-
-/**
- * Pencatatan Log Aktivitas ke Google Sheet
- */
-function writeLog(userId, aksi, detail) {
-  try {
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_LOG);
-    var idLog = "LOG-" + Utilities.getUuid().substring(0, 8).toUpperCase();
-    var timestamp = new Date().toISOString();
-    
-    var ip = "Client Script Engine"; 
-    
-    sheet.appendRow([idLog, timestamp, userId, aksi, detail, ip]);
-  } catch(e) {
-    Logger.log("Gagal menulis log: " + e.toString());
-  }
-}
-
-/**
- * Memvalidasi Sesi Token dari CacheService dan mengembalikan data pengguna jika valid.
- */
-function validateSession(token, allowedRoles) {
-  if (!token) throw new Error("Sesi kadaluarsa. Silakan login kembali.");
-  var cache = CacheService.getScriptCache();
-  var sessionDataStr = cache.get(token);
-  if (!sessionDataStr) throw new Error("Sesi tidak valid atau telah berakhir.");
-  
-  var session = JSON.parse(sessionDataStr);
-  
-  if (allowedRoles && allowedRoles.indexOf(session.role) === -1) {
-    throw new Error("Anda tidak memiliki hak akses untuk fungsi ini.");
-  }
-  
-  return session;
-}
-
-/**
- * Menambahkan user baru secara manual dari Apps Script Editor ke sheet "Users" dengan password terenkripsi SHA-256.
- */
-function addUser_v2(userId, password, namaLengkap, role) {
-  try {
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
-    if (!sheet) {
-      return { success: false, message: "Sheet Users tidak ditemukan." };
-    }
-    var hash = hashPassword(password);
-    sheet.appendRow([userId, hash, namaLengkap, role, 'Aktif', new Date().toISOString()]);
-    return 'User ' + userId + ' berhasil dibuat';
-  } catch (e) {
-    return 'Gagal membuat user: ' + e.toString();
-  }
-}
-
-/**
- * LOGOUT USER
- */
-function logoutUser(token) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    CacheService.getScriptCache().remove(token);
-    writeLog(session.userId, "LOGOUT", "Keluar dari sistem");
-    return { success: true };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * DASHBOARD DATA FETCH
- */
-function getDashboardData(token) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = getSpreadsheet();
-    
-    var usersSheet = ss.getSheetByName(SHEET_USERS);
-    var totalAnggota = usersSheet.getLastRow() - 1;
-    
-    var absensiSheet = ss.getSheetByName(SHEET_ABSENSI);
-    var absensiData = absensiSheet.getDataRange().getValues();
-    var hariIni = new Date().toISOString().substring(0, 10);
-    var hadirHariIni = 0;
-    
-    for (var i = 1; i < absensiData.length; i++) {
-      var tglRow = absensiData[i][3];
-      var status = absensiData[i][5];
-      if (tglRow === hariIni && status === "Hadir") {
-        hadirHariIni++;
-      }
-    }
-    
-    var kegiatanSheet = ss.getSheetByName(SHEET_KEGIATAN);
-    var kegiatanData = kegiatanSheet.getDataRange().getValues();
-    var kegiatanTerbaru = "-";
-    if (kegiatanData.length > 1) {
-      kegiatanTerbaru = kegiatanData[kegiatanData.length - 1][1];
-    }
-    
-    var saldoKas = 0;
-    if (["Admin", "Pembina", "Dewan"].indexOf(session.role) !== -1) {
-      var kasSheet = ss.getSheetByName(SHEET_KAS);
-      var kasData = kasSheet.getDataRange().getValues();
-      if (kasData.length > 1) {
-        saldoKas = kasData[kasData.length - 1][6];
-      }
-    }
-    
-    return {
-      success: true,
-      total_anggota: totalAnggota,
-      hadir_hari_ini: hadirHariIni,
-      kegiatan_terbaru: kegiatanTerbaru,
-      saldo_kas: saldoKas
-    };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * SUBMIT ABSENSI (Selfie & Manual/QR)
- */
-function submitAbsen(token, status, fotoSelfie, metode, kegiatanTerkait, keterangan) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_ABSENSI);
-    
-    var idAbsen = "ABS-" + Utilities.getUuid().substring(0, 8).toUpperCase();
-    var tanggal = new Date().toISOString().substring(0, 10);
-    var jam = new Date().toTimeString().substring(0, 8);
-    
-    var data = sheet.getDataRange().getValues();
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][1] === session.userId && data[i][3] === tanggal) {
-        return { success: false, message: "Anda sudah melakukan absensi hari ini." };
-      }
-    }
-    
-    sheet.appendRow([
-      idAbsen,
-      session.userId,
-      session.name,
-      tanggal,
-      jam,
-      status,
-      fotoSelfie,
-      metode,
-      kegiatanTerkait,
-      keterangan
-    ]);
-    
-    writeLog(session.userId, "ABSEN", "Melakukan absensi " + status + " via " + metode);
-    return { success: true, message: "Absensi berhasil dicatat!" };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * GET RIWAYAT ABSENSI
- */
-function getAbsenHistory(token, filterDate) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_ABSENSI);
-    var data = sheet.getDataRange().getValues();
-    
-    var list = [];
-    for (var i = 1; i < data.length; i++) {
-      var show = false;
-      
-      if (session.role === "Penggalang") {
-        if (data[i][1] === session.userId) {
-          show = true;
-        }
-      } else {
-        show = true;
-      }
-      
-      if (show && filterDate) {
-        if (data[i][3] !== filterDate) {
-          show = false;
-        }
-      }
-      
-      if (show) {
-        list.push({
-          id_absen: data[i][0],
-          user_id: data[i][1],
-          nama: data[i][2],
-          tanggal: data[i][3],
-          jam: data[i][4],
-          status: data[i][5],
-          foto_selfie: data[i][6] ? "Ada Foto" : "Tidak Ada",
-          foto_base64: data[i][6],
-          metode: data[i][7],
-          kegiatan: data[i][8],
-          keterangan: data[i][9]
-        });
-      }
-    }
-    
-    list.reverse();
-    return { success: true, list: list };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * GET DAFTAR KEGIATAN
- */
-function getKegiatanList(token) {
-  try {
-    validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_KEGIATAN);
-    var data = sheet.getDataRange().getValues();
-    
-    var list = [];
-    for (var i = 1; i < data.length; i++) {
-      list.push({
-        id_kegiatan: data[i][0],
-        nama_kegiatan: data[i][1],
-        tanggal: data[i][2],
-        lokasi: data[i][3],
-        deskripsi: data[i][4],
-        foto1: data[i][5],
-        foto2: data[i][6],
-        foto3: data[i][7],
-        foto4: data[i][8],
-        dibuat_oleh: data[i][9],
-        tanggal_dibuat: data[i][10]
-      });
-    }
-    list.reverse();
-    return { success: true, list: list };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * SAVE KEGIATAN (Create & Update)
- */
-function saveKegiatan(token, dataKegiatan) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_KEGIATAN);
-    var data = sheet.getDataRange().getValues();
-    
-    var idKegiatan = dataKegiatan.id_kegiatan;
-    var rowIdx = -1;
-    
-    if (idKegiatan) {
-      for (var i = 1; i < data.length; i++) {
-        if (data[i][0] === idKegiatan) {
-          rowIdx = i + 1;
-          break;
-        }
-      }
-    } else {
-      idKegiatan = "KEG-" + Utilities.getUuid().substring(0, 8).toUpperCase();
-    }
-    
-    var tglDibuat = new Date().toISOString();
-    
-    if (rowIdx !== -1) {
-      sheet.getRange(rowIdx, 2, 1, 9).setValues([[
-        dataKegiatan.nama_kegiatan,
-        dataKegiatan.tanggal,
-        dataKegiatan.lokasi,
-        dataKegiatan.deskripsi,
-        dataKegiatan.foto1,
-        dataKegiatan.foto2,
-        dataKegiatan.foto3 || "",
-        dataKegiatan.foto4 || "",
-        session.userId
-      ]]);
-      writeLog(session.userId, "EDIT_KEGIATAN", "Mengubah kegiatan " + dataKegiatan.nama_kegiatan);
-    } else {
-      sheet.appendRow([
-        idKegiatan,
-        dataKegiatan.nama_kegiatan,
-        dataKegiatan.tanggal,
-        dataKegiatan.lokasi,
-        dataKegiatan.deskripsi,
-        dataKegiatan.foto1,
-        dataKegiatan.foto2,
-        dataKegiatan.foto3 || "",
-        dataKegiatan.foto4 || "",
-        session.userId,
-        tglDibuat
-      ]);
-      writeLog(session.userId, "TAMBAH_KEGIATAN", "Menambahkan kegiatan baru " + dataKegiatan.nama_kegiatan);
-    }
-    
-    return { success: true, message: "Kegiatan berhasil disimpan." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * DELETE KEGIATAN (Hanya Admin)
- */
-function deleteKegiatan(token, idKegiatan) {
-  try {
-    var session = validateSession(token, ["Admin"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_KEGIATAN);
-    var data = sheet.getDataRange().getValues();
-    
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0] === idKegiatan) {
-        sheet.deleteRow(i + 1);
-        writeLog(session.userId, "HAPUS_KEGIATAN", "Menghapus kegiatan ID " + idKegiatan);
-        return { success: true, message: "Kegiatan berhasil dihapus." };
-      }
-    }
-    return { success: false, message: "Kegiatan tidak ditemukan." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * GET INVENTARIS
- */
-function getInventarisList(token) {
-  try {
-    validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_INVENTARIS);
-    var data = sheet.getDataRange().getValues();
-    
-    var list = [];
-    for (var i = 1; i < data.length; i++) {
-      list.push({
-        id_barang: data[i][0],
-        nama_barang: data[i][1],
-        kategori: data[i][2],
-        jumlah: data[i][3],
-        kondisi: data[i][4],
-        locations_simpan: data[i][5],
-        tanggal_masuk: data[i][6],
-        keterangan: data[i][7],
-        dikelola_oleh: data[i][8]
-      });
-    }
-    return { success: true, list: list };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * SAVE INVENTARIS (Create & Update)
- */
-function saveInventaris(token, dataBarang) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_INVENTARIS);
-    var data = sheet.getDataRange().getValues();
-    
-    var idBarang = dataBarang.id_barang;
-    var rowIdx = -1;
-    
-    if (idBarang) {
-      for (var i = 1; i < data.length; i++) {
-        if (data[i][0] === idBarang) {
-          rowIdx = i + 1;
-          break;
-        }
-      }
-    } else {
-      idBarang = "INV-" + Utilities.getUuid().substring(0, 8).toUpperCase();
-    }
-    
-    if (rowIdx !== -1) {
-      sheet.getRange(rowIdx, 2, 1, 8).setValues([[
-        dataBarang.nama_barang,
-        dataBarang.kategori,
-        dataBarang.jumlah,
-        dataBarang.kondisi,
-        dataBarang.locations_simpan,
-        dataBarang.tanggal_masuk,
-        dataBarang.keterangan,
-        session.userId
-      ]]);
-      writeLog(session.userId, "EDIT_INVENTARIS", "Mengubah barang " + dataBarang.nama_barang);
-    } else {
-      sheet.appendRow([
-        idBarang,
-        dataBarang.nama_barang,
-        dataBarang.kategori,
-        dataBarang.jumlah,
-        dataBarang.kondisi,
-        dataBarang.locations_simpan,
-        dataBarang.tanggal_masuk,
-        dataBarang.keterangan,
-        session.userId
-      ]);
-      writeLog(session.userId, "TAMBAH_INVENTARIS", "Menambahkan barang baru " + dataBarang.nama_barang);
-    }
-    
-    return { success: true, message: "Data barang berhasil disimpan." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * DELETE INVENTARIS (Hanya Admin)
- */
-function deleteInventaris(token, idBarang) {
-  try {
-    var session = validateSession(token, ["Admin"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_INVENTARIS);
-    var data = sheet.getDataRange().getValues();
-    
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0] === idBarang) {
-        sheet.deleteRow(i + 1);
-        writeLog(session.userId, "HAPUS_INVENTARIS", "Menghapus barang ID " + idBarang);
-        return { success: true, message: "Barang berhasil dihapus." };
-      }
-    }
-    return { success: false, message: "Barang tidak ditemukan." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * GET KAS DATA (Mendapatkan riwayat kas & menghitung saldo)
- */
-function getKasData(token) {
-  try {
-    validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_KAS);
-    var data = sheet.getDataRange().getValues();
-    
-    var list = [];
-    var totalMasuk = 0;
-    var totalKeluar = 0;
-    
-    for (var i = 1; i < data.length; i++) {
-      var jumlah = parseFloat(data[i][4]) || 0;
-      var jenis = data[i][2];
-      
-      if (jenis === "Pemasukan") totalMasuk += jumlah;
-      else if (jenis === "Pengeluaran") totalKeluar += jumlah;
-      
-      list.push({
-        id_transaksi: data[i][0],
-        tanggal: data[i][1],
-        jenis: jenis,
-        kategori: data[i][3],
-        jumlah: jumlah,
-        keterangan: data[i][5],
-        saldo_berjalan: data[i][6],
-        dicatat_oleh: data[i][7]
-      });
-    }
-    
-    return {
-      success: true,
-      list: list.reverse(),
-      totalMasuk: totalMasuk,
-      totalKeluar: totalKeluar,
-      saldoAkhir: totalMasuk - totalKeluar
-    };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * ADD KAS TRANSACTION (Hanya Admin)
- */
-function addKasTransaction(token, trans) {
-  try {
-    var session = validateSession(token, ["Admin"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_KAS);
-    var data = sheet.getDataRange().getValues();
-    
-    var saldoTerakhir = 0;
-    if (data.length > 1) {
-      saldoTerakhir = parseFloat(data[data.length - 1][6]) || 0;
-    }
-    
-    var idTrans = "KAS-" + Utilities.getUuid().substring(0, 8).toUpperCase();
-    var tanggal = trans.tanggal || new Date().toISOString().substring(0, 10);
-    var jenis = trans.jenis;
-    var jumlah = parseFloat(trans.jumlah) || 0;
-    
-    var saldoBaru = saldoTerakhir;
-    if (jenis === "Pemasukan") {
-      saldoBaru += jumlah;
-    } else if (jenis === "Pengeluaran") {
-      saldoBaru -= jumlah;
-    }
-    
-    sheet.appendRow([
-      idTrans,
-      tanggal,
-      jenis,
-      trans.kategori,
-      jumlah,
-      trans.keterangan,
-      saldoBaru,
-      session.userId
-    ]);
-    
-    writeLog(session.userId, "TAMBAH_KAS", "Pencatatan kas baru " + jenis + ": Rp " + jumlah);
-    return { success: true, message: "Transaksi kas berhasil ditambahkan." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * GET PROFILE (Mendapatkan data diri pengguna)
- */
-function getUserProfile(token, targetUserId) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = getSpreadsheet();
-    
-    var uId = session.userId;
-    if (targetUserId && ["Admin", "Pembina"].indexOf(session.role) !== -1) {
-      uId = targetUserId;
-    }
-    
-    var sheet = ss.getSheetByName(SHEET_PROFILE);
-    var data = sheet.getDataRange().getValues();
-    
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0].toString().toLowerCase() === uId.toLowerCase()) {
-        return {
-          success: true,
-          profile: {
-            user_id: data[i][0],
-            nta: data[i][1],
-            nama_lengkap: data[i][2],
-            tempat_lahir: data[i][3],
-            tanggal_lahir: data[i][4],
-            jenis_kelamin: data[i][5],
-            golongan: data[i][6],
-            regu_sangga: data[i][7],
-            alamat: data[i][8],
-            no_hp: data[i][9],
-            foto_profil: data[i][10],
-            tanggal_bergabung: data[i][11]
-          }
-        };
-      }
-    }
-    
-    return {
-      success: true,
-      profile: {
-        user_id: uId,
-        nta: "",
-        nama_lengkap: session.name,
-        tempat_lahir: "",
-        tanggal_lahir: "",
-        jenis_kelamin: "",
-        golongan: "",
-        regu_sangga: "",
-        alamat: "",
-        no_hp: "",
-        foto_profil: "",
-        tanggal_bergabung: ""
-      }
-    };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * SAVE PROFILE (Update Profil Diri Sendiri atau User Lain oleh Admin)
- */
-function saveUserProfile(token, prof) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_PROFILE);
-    var data = sheet.getDataRange().getValues();
-    
-    var uId = prof.user_id.toLowerCase();
-    if (session.role === "Penggalang" && uId !== session.userId) {
-      return { success: false, message: "Anda tidak berhak mengubah profil orang lain." };
-    }
-    
-    var rowIdx = -1;
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0].toString().toLowerCase() === uId) {
-        rowIdx = i + 1;
-        break;
-      }
-    }
-    
-    var rowData = [
-      uId,
-      prof.nta,
-      prof.nama_lengkap,
-      prof.tempat_lahir,
-      prof.tanggal_lahir,
-      prof.jenis_kelamin,
-      prof.golongan,
-      prof.regu_sangga,
-      prof.alamat,
-      prof.no_hp,
-      prof.foto_profil,
-      prof.tanggal_bergabung || new Date().toISOString()
-    ];
-    
-    if (rowIdx !== -1) {
-      sheet.getRange(rowIdx, 1, 1, 12).setValues([rowData]);
-    } else {
-      sheet.appendRow([rowData]);
-    }
-    
-    var userSheet = ss.getSheetByName(SHEET_USERS);
-    var userData = userSheet.getDataRange().getValues();
-    for (var j = 1; j < userData.length; j++) {
-      if (userData[j][0].toString().toLowerCase() === uId) {
-        userSheet.getRange(j + 1, 3).setValue(prof.nama_lengkap);
-        break;
-      }
-    }
-    
-    writeLog(session.userId, "UPDATE_PROFILE", "Memperbarui data profil " + uId);
-    return { success: true, message: "Profil berhasil diperbarui." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * CHANGE PASSWORD
- */
-function changePassword(token, oldPassword, newPassword) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan", "Penggalang"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
-    var data = sheet.getDataRange().getValues();
-    
-    var pHashOld = hashPassword(oldPassword);
-    var pHashNew = hashPassword(newPassword);
-    
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0].toString().toLowerCase() === session.userId) {
-        if (data[i][1] === pHashOld) {
-          sheet.getRange(i + 1, 2).setValue(pHashNew);
-          writeLog(session.userId, "GANTI_PASSWORD", "Berhasil mengganti password");
-          return { success: true, message: "Password berhasil diganti." };
-        } else {
-          return { success: false, message: "Password lama salah." };
-        }
-      }
-    }
-    return { success: false, message: "User tidak ditemukan." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * GET ALL USERS (Hanya Admin)
- */
-function getUserList(token) {
-  try {
-    validateSession(token, ["Admin"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
-    var data = sheet.getDataRange().getValues();
-    
-    var list = [];
-    for (var i = 1; i < data.length; i++) {
-      list.push({
-        user_id: data[i][0],
-        nama_lengkap: data[i][2],
-        role: data[i][3],
-        status_aktif: data[i][4],
-        tanggal_dibuat: data[i][5]
-      });
-    }
-    return { success: true, list: list };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * SAVE USER (Khusus Admin: Membuat/Update User baru + sekaligus profil)
- */
-function saveUserByAdmin(token, userData) {
-  try {
-    var session = validateSession(token, ["Admin"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
-    var data = sheet.getDataRange().getValues();
-    
-    var uId = userData.user_id.trim().toLowerCase();
-    var rowIdx = -1;
-    
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0].toString().toLowerCase() === uId) {
-        rowIdx = i + 1;
-        break;
-      }
-    }
-    
-    if (rowIdx !== -1) {
-      sheet.getRange(rowIdx, 3, 1, 3).setValues([[
-        userData.nama_lengkap,
-        userData.role,
-        userData.status_aktif
-      ]]);
-      
-      if (userData.password) {
-        var pHash = hashPassword(userData.password);
-        sheet.getRange(rowIdx, 2).setValue(pHash);
-      }
-      writeLog(session.userId, "EDIT_USER", "Mengedit user " + uId);
-    } else {
-      if (!userData.password) {
-        return { success: false, message: "Password awal wajib diisi untuk user baru." };
-      }
-      var newPHash = hashPassword(userData.password);
-      sheet.appendRow([
-        uId,
-        newPHash,
-        userData.nama_lengkap,
-        userData.role,
-        userData.status_aktif,
-        new Date().toISOString()
-      ]);
-      
-      var profSheet = ss.getSheetByName(SHEET_PROFILE);
-      profSheet.appendRow([
-        uId,
-        "",
-        userData.nama_lengkap,
-        "", "", "", "", "", "", "", "",
-        new Date().toISOString()
-      ]);
-      
-      writeLog(session.userId, "TAMBAH_USER", "Mendaftarkan user baru " + uId);
-    }
-    
-    return { success: true, message: "User berhasil disimpan." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * DELETE USER (Hanya Admin)
- */
-function deleteUser(token, targetUserId) {
-  try {
-    var session = validateSession(token, ["Admin"]);
-    var ss = getSpreadsheet();
-    
-    var uId = targetUserId.toLowerCase();
-    if (uId === "admin") {
-      return { success: false, message: "Akun Super Admin utama tidak boleh dihapus!" };
-    }
-    
-    var userSheet = ss.getSheetByName(SHEET_USERS);
-    var userData = userSheet.getDataRange().getValues();
-    for (var i = 1; i < userData.length; i++) {
-      if (userData[i][0].toString().toLowerCase() === uId) {
-        userSheet.deleteRow(i + 1);
-        break;
-      }
-    }
-    
-    var profSheet = ss.getSheetByName(SHEET_PROFILE);
-    var profData = profSheet.getDataRange().getValues();
-    for (var j = 1; j < profData.length; j++) {
-      if (profData[j][0].toString().toLowerCase() === uId) {
-        profSheet.deleteRow(j + 1);
-        break;
-      }
-    }
-    
-    writeLog(session.userId, "HAPUS_USER", "Menghapus akun " + uId);
-    return { success: true, message: "User berhasil dihapus." };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * GET SYSTEM LOGS (Hanya Admin)
- */
-function getSystemLogs(token, filterUser) {
-  try {
-    validateSession(token, ["Admin"]);
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_LOG);
-    var data = sheet.getDataRange().getValues();
-    
-    var list = [];
-    for (var i = 1; i < data.length; i++) {
-      var show = true;
-      if (filterUser) {
-        if (data[i][2].toString().toLowerCase().indexOf(filterUser.toLowerCase()) === -1) {
-          show = false;
-        }
-      }
-      
-      if (show) {
-        list.push({
-          id_log: data[i][0],
-          timestamp: data[i][1],
-          user_id: data[i][2],
-          aksi: data[i][3],
-          detail: data[i][4],
-          ip: data[i][5]
-        });
-      }
-    }
-    
-    return { success: true, list: list.reverse().slice(0, 500) };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * EXPORT DATA TO EXCEL
- */
-function exportToExcel(token, moduleName) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = getSpreadsheet();
-    var sourceSheet = ss.getSheetByName(moduleName);
-    
-    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
-    
-    var tempSS = SpreadsheetApp.create("Export_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
-    var tempSheet = tempSS.getSheets()[0];
-    
-    var data = sourceSheet.getDataRange().getValues();
-    
-    var cleanData = data.map(function(row) {
-      return row.map(function(cell) {
-        var str = String(cell);
-        if (str.indexOf("data:image/") === 0) {
-          return "[GAMBAR_DISEMBUNYIKAN]";
-        }
-        return cell;
-      });
-    });
-    
-    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
-    
-    var fileId = tempSS.getId();
-    
-    var file = DriveApp.getFileById(fileId);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
-    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=xlsx";
-    
-    writeLog(session.userId, "EXPORT_EXCEL", "Mengekspor data modul " + moduleName + " ke Excel");
-    return { success: true, url: downloadUrl };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * EXPORT DATA TO PDF
- */
-function exportToPDF(token, moduleName) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = getSpreadsheet();
-    var sourceSheet = ss.getSheetByName(moduleName);
-    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
-    
-    var tempSS = SpreadsheetApp.create("Export_PDF_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
-    var tempSheet = tempSS.getSheets()[0];
-    
-    var data = sourceSheet.getDataRange().getValues();
-    var cleanData = data.map(function(row) {
-      return row.map(function(cell) {
-        var str = String(cell);
-        if (str.indexOf("data:image/") === 0) {
-          return "[GAMBAR]";
-        }
-        return cell;
-      });
-    });
-    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
-    
-    var fileId = tempSS.getId();
-    var file = DriveApp.getFileById(fileId);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
-    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=pdf&size=letter&portrait=false&fitw=true&gridlines=true";
-    
-    writeLog(session.userId, "EXPORT_PDF", "Mengekspor data modul " + moduleName + " ke PDF");
-    return { success: true, url: downloadUrl };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
- * Mengambil daftar anggota dari sheet "Anggota" atau cadangan sheet "Users".
- * Filter: Hanya menampilkan role 'penggalang' atau 'pembina'.
- */
-function getAnggotaUntukAbsen() {
-  try {
-    var ss = getSpreadsheet();
-    // Gunakan sheet "Anggota" sebagai prioritas, jika tidak ada fallback ke sheet "Users"
-    var sheet = ss.getSheetByName("Anggota") || ss.getSheetByName(SHEET_USERS);
-    if (!sheet) {
-      return { success: false, message: "Sheet data anggota tidak ditemukan." };
-    }
-    
-    var data = sheet.getDataRange().getValues();
-    var isAnggotaSheet = (sheet.getName() === "Anggota");
-    var result = [];
-    
-    for (var i = 1; i < data.length; i++) {
-      var userId = data[i][0];
-      var namaLengkap = isAnggotaSheet ? data[i][1] : data[i][2];
-      var role = isAnggotaSheet ? data[i][2] : data[i][3];
-      
-      if (userId && role) {
-        var roleLower = role.toString().trim().toLowerCase();
-        if (roleLower === "penggalang" || roleLower === "pembina") {
-          result.push({
-            user_id: userId.toString(),
-            nama_lengkap: namaLengkap.toString(),
-            role: role.toString()
-          });
-        }
-      }
-    }
-    return { success: true, data: result };
-  } catch (e) {
-    return { success: false, message: e.toString() };
-  }
-}
-
-/**
- * Menyimpan seluruh data kehadiran harian ke dalam sheet "Kehadiran".
- * Jika data dengan kombinasi Tanggal + user_id sudah ada, sistem akan memperbaruinya (UPDATE).
- * Jika belum ada, data baru akan ditambahkan (APPEND).
- */
-function saveKehadiran(dataAbsen) {
-  try {
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName("Kehadiran");
-    if (!sheet) {
-      sheet = ss.insertSheet("Kehadiran");
-      sheet.appendRow(["Tanggal", "user_id", "status"]);
-    }
-    
-    var data = sheet.getDataRange().getValues();
-    var tanggalStr = dataAbsen.tanggal; // format: 'YYYY-MM-DD'
-    var listRecord = dataAbsen.data;
-    
-    // Petakan data baris yang sudah ada untuk mempercepat verifikasi duplikasi
-    var mappedKeys = {};
-    for (var i = 1; i < data.length; i++) {
-      var rowDate = data[i][0];
-      var rowDateStr = (rowDate instanceof Date) ? Utilities.formatDate(rowDate, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd") : rowDate.toString().substring(0, 10);
-      var rowUserId = data[i][1].toString().trim();
-      
-      mappedKeys[rowDateStr + "_" + rowUserId] = i + 1; // Menyimpan index baris sheet (1-based)
-    }
-    
-    // Proses tulis/update data
-    for (var j = 0; j < listRecord.length; j++) {
-      var record = listRecord[j];
-      var key = tanggalStr + "_" + record.user_id.trim();
-      
-      if (mappedKeys[key]) {
-        // Jika sudah terdata pada tanggal yang sama, lakukan UPDATE pada kolom Status (Kolom C/3)
-        var targetRow = mappedKeys[key];
-        sheet.getRange(targetRow, 3).setValue(record.status);
-      } else {
-        // Jika belum ada, lakukan APPEND baris baru
-        sheet.appendRow([tanggalStr, record.user_id, record.status]);
-      }
-    }
-    
-    return { success: true, message: 'Data kehadiran harian berhasil disimpan' };
-  } catch (e) {
-    return { success: false, message: e.toString() };
-  }
-}
-function importMassal() {
-  const passwordBaku = "12345678";
-
-  // Bapak tinggal isi daftar di sini. Format: [user_id, nama, role]
-  const daftarUser = [
-    // CONTOH PEMBINA
-    ["PMB001", "Arif Nuur Iswahyudi", "Pembina"],
-    ["PMB002", "Ninik Masruroh", "Pembina"],
-
-    // CONTOH DEWAN PENGGALANG
-    ["DGW20261", "Rekyan Titis Arumdani", "Dewan Penggalang"],
-    ["DGW20262", "Atifa Agustia Rahma", "Dewan Penggalang"],
-
-    // CONTOH PENGGALANG
-    ["PGW20261", "Andi", "Penggalang"],
-    ["PGW20262", "Anto", "Penggalang"],
-    //... Bapak copy paste sampai 200 baris
-  ];
-
-  let berhasil = 0;
-  daftarUser.forEach(u => {
-    try {
-      addUser(u[0], passwordBaku, u[1], u[2]);
-      berhasil++;
-    } catch(e){}
-  });
-
-  return "Selesai. " + berhasil + " user berhasil dibuat dengan password: " + passwordBaku;
-}
-
-// ===== FITUR BARU: PROFIL & UPLOAD FOTO =====
-
-/**
- * Fungsi 1: uploadFileToFolder(fileObj, prefix)
- * Helper global untuk mengunggah file ke 1 folder Drive tujuan
- */
-function uploadFileToFolder(fileObj, prefix) {
-  try {
-    const folderId = '1Dc399KOxltIa8osp0blPv_GX0ap--ekq';
-    const folder = DriveApp.getFolderById(folderId);
-    
-    // Konversi unsigned bytes dari JS client ke signed byte array untuk Utilities.newBlob
-    const signedBytes = fileObj.bytes.map(function(val) {
-      return val > 127 ? val - 256 : val;
-    });
-    
-    const blob = Utilities.newBlob(signedBytes, fileObj.type, prefix + new Date().getTime() + "_" + fileObj.name);
-    const file = folder.createFile(blob);
-    
-    // Set permission Anyone with Link as Reader
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
-    return file.getUrl();
-  } catch (e) {
-    throw new Error("Gagal mengunggah berkas ke Google Drive: " + e.toString());
-  }
-}
-
-/**
- * Fungsi 2: getProfil(username)
- * Ambil data profil dari Sheet "profile"
- */
-function getProfil(username) {
-  try {
-    const ss = getSpreadsheet();
-    let sheet = ss.getSheetByName("profile");
-    if (!sheet) {
-      sheet = ss.insertSheet("profile");
-      sheet.appendRow(["user_id", "nama_lengkap", "no_hp", "foto_profil_url"]);
-    }
-    const data = sheet.getDataRange().getValues();
-    const targetUsername = String(username).trim().toLowerCase();
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim().toLowerCase() === targetUsername) {
-        return {
-          nama: data[i][1] || "",
-          noHp: data[i][2] || "",
-          fotoUrl: data[i][3] || ""
-        };
-      }
-    }
-    return {};
-  } catch (e) {
-    throw new Error("Gagal mengambil profil: " + e.toString());
-  }
-}
-
-/**
- * Fungsi 3: updateProfil(username, dataBaru, fileObj)
- * Memperbarui data profil, sandi, serta upload foto di Google Drive
- */
-function updateProfil(username, dataBaru, fileObj) {
-  try {
-    const ss = getSpreadsheet();
-    let sheet = ss.getSheetByName("profile");
-    if (!sheet) {
-      sheet = ss.insertSheet("profile");
-      sheet.appendRow(["user_id", "nama_lengkap", "no_hp", "foto_profil_url"]);
-    }
-    
-    const targetUsername = String(username).trim().toLowerCase();
-    const data = sheet.getDataRange().getValues();
-    let rowIdx = -1;
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim().toLowerCase() === targetUsername) {
-        rowIdx = i + 1;
-        break;
-      }
-    }
-    
-    let fotoUrl = "";
-    if (fileObj) {
-      fotoUrl = uploadFileToFolder(fileObj, "PROFIL_");
-    }
-    
-    if (rowIdx !== -1) {
-      sheet.getRange(rowIdx, 2).setValue(dataBaru.nama);
-      sheet.getRange(rowIdx, 3).setValue(dataBaru.noHp);
-      if (fotoUrl) {
-        sheet.getRange(rowIdx, 4).setValue(fotoUrl);
-      }
-    } else {
-      sheet.appendRow([username, dataBaru.nama, dataBaru.noHp, fotoUrl]);
-    }
-    
-    // Ganti password jika diisi
-    if (dataBaru.passwordBaru && String(dataBaru.passwordBaru).trim() !== "") {
-      const userSheet = ss.getSheetByName("Users");
-      if (userSheet) {
-        const userData = userSheet.getDataRange().getValues();
-        for (let j = 1; j < userData.length; j++) {
-          if (String(userData[j][0]).trim().toLowerCase() === targetUsername) {
-            const newHash = hashPassword(dataBaru.passwordBaru);
-            userSheet.getRange(j + 1, 2).setValue(newHash);
-            break;
-          }
-        }
-      }
-    }
-    
-    return {status: "success", message: "Profil berhasil diupdate"};
-  } catch (e) {
-    return {status: "error", message: "Gagal update profil: " + e.toString()};
-  }
-}
-</textarea>
-
-  <!-- SEKTOR 2: INDEX.HTML -->
-  <div class="action-bar" style="margin-top: 40px;">
-    <h2>2. File index.html (Antarmuka Client Frontend SPA)</h2>
-    <button class="btn-copy" onclick="copyCode('indexhtml')">Salin Kode index.html</button>
-  </div>
-  <textarea id="indexhtml" readonly>&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;head&gt;
-  &lt;base target="_top"&gt;
-  &lt;meta charset="UTF-8"&gt;
-  &lt;title&gt;SIAP WANAMSKA&lt;/title&gt;
-  &lt;style&gt;
     /* ==========================================
        TEMA VISUAL - MAJESTY THEME
        ========================================== */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&amp;display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
     :root {
       --color-primary: #6F4E37; /* Coklat Majesty */
@@ -2036,7 +657,7 @@ function updateProfil(username, dataBaru, fileObj) {
   </div>
 
   <!-- ==========================================
-       LOGIN SCREEN
+       LOGIN SCREEN (PERBAIKAN 2 &amp; 3)
        ========================================== -->
   <div id="login-screen">
     <div class="login-box">
@@ -2594,7 +1215,7 @@ function updateProfil(username, dataBaru, fileObj) {
           <label>Ganti Password Baru</label>
           <input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc;">
 
-          <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold;">Simpan Profil</button>
+          <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Simpan Profil</button>
         </section>
 
       </main>
@@ -2858,7 +1479,7 @@ function updateProfil(username, dataBaru, fileObj) {
       setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
-      }, 4000);
+      }, 4500);
     }
 
     function setLoader(show, text = "Sedang memproses data...") {
@@ -3096,7 +1717,7 @@ function updateProfil(username, dataBaru, fileObj) {
       canvas.width = 320;
       canvas.height = 240;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, 320, 240);
       base64SelfieString = canvas.toDataURL('image/jpeg', 0.7);
 
       video.style.display = "none";
@@ -3145,21 +1766,21 @@ function updateProfil(username, dataBaru, fileObj) {
             const tbody = document.getElementById('body-riwayat-absen');
             tbody.innerHTML = "";
             if (res.list.length === 0) {
-              tbody.innerHTML = `&lt;tr&gt;&lt;td colspan="6" style="text-align:center;"&gt;Tidak ada riwayat absensi.&lt;/td&gt;&lt;/tr&gt;`;
+              tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Tidak ada riwayat absensi.</td></tr>`;
               return;
             }
             res.list.forEach(row => {
               let badgeClass = row.status === "Hadir" ? "badge-hadir" : row.status === "Izin" ? "badge-izin" : "badge-sakit";
-              let imgTag = row.foto_base64 ? `&lt;img src="${row.foto_base64}" style="width: 60px; height: 45px; border-radius:4px; object-fit:cover; cursor:pointer;" onclick="viewFullImage('${row.foto_base64}')"&gt;` : "Tidak Ada";
+              let imgTag = row.foto_base64 ? `<img src="${row.foto_base64}" style="width: 60px; height: 45px; border-radius:4px; object-fit:cover; cursor:pointer;" onclick="viewFullImage('${row.foto_base64}')">` : "Tidak Ada";
               tbody.innerHTML += `
-                &lt;tr&gt;
-                  &lt;td&gt;${row.tanggal} &lt;br&gt; &lt;span style="font-size:0.75rem; color:var(--color-text-muted);"&gt;${row.jam}&lt;/span&gt;&lt;/td&gt;
-                  &lt;td&gt;&lt;strong&gt;${row.nama}&lt;/strong&gt;&lt;br&gt;&lt;span style="font-size:0.75rem;"&gt;${row.user_id}&lt;/span&gt;&lt;/td&gt;
-                  &lt;td&gt;&lt;span class="badge ${badgeClass}"&gt;${row.status}&lt;/span&gt;&lt;/td&gt;
-                  &lt;td&gt;${row.metode}&lt;/td&gt;
-                  &lt;td&gt;${row.kegiatan || "-"} &lt;br&gt; &lt;span style="font-size:0.8rem; font-style:italic;"&gt;${row.keterangan || ""}&lt;/span&gt;&lt;/td&gt;
-                  &lt;td&gt;${imgTag}&lt;/td&gt;
-                &lt;/tr&gt;`;
+                <tr>
+                  <td>${row.tanggal} <br> <span style="font-size:0.75rem; color:var(--color-text-muted);">${row.jam}</span></td>
+                  <td><strong>${row.nama}</strong><br><span style="font-size:0.75rem;">${row.user_id}</span></td>
+                  <td><span class="badge ${badgeClass}">${row.status}</span></td>
+                  <td>${row.metode}</td>
+                  <td>${row.kegiatan || "-"} <br> <span style="font-size:0.8rem; font-style:italic;">${row.keterangan || ""}</span></td>
+                  <td>${imgTag}</td>
+                </tr>`;
             });
           }
         })
@@ -3168,7 +1789,7 @@ function updateProfil(username, dataBaru, fileObj) {
 
     function viewFullImage(base64) {
       const w = window.open();
-      w.document.write(`&lt;img src="${base64}" style="max-width:100%; height:auto;" /&gt;`);
+      w.document.write(`<img src="${base64}" style="max-width:100%; height:auto;" />`);
     }
 
     function loadKegiatan() {
@@ -3178,24 +1799,24 @@ function updateProfil(username, dataBaru, fileObj) {
             const grid = document.getElementById('grid-list-kegiatan');
             grid.innerHTML = "";
             if (res.list.length === 0) {
-              grid.innerHTML = `&lt;p style="grid-column: 1/-1; text-align:center; color: var(--color-text-muted);"&gt;Belum ada agenda kegiatan.&lt;/p&gt;`;
+              grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--color-text-muted);">Belum ada agenda kegiatan.</p>`;
               return;
             }
             res.list.forEach(keg => {
               const defaultImg = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png";
               grid.innerHTML += `
-                &lt;div class="kegiatan-card"&gt;
-                  &lt;img class="kegiatan-img" src="${keg.foto1 || defaultImg}" alt="Foto"&gt;
-                  &lt;div class="kegiatan-body"&gt;
-                    &lt;div&gt;
-                      &lt;h3&gt;${keg.nama_kegiatan}&lt;/h3&gt;
-                      &lt;div class="meta"&gt;
-                        &lt;span&gt;&amp;#128197; ${keg.tanggal}&lt;/span&gt; | &lt;span&gt;&amp;#128205; ${keg.lokasi}&lt;/span&gt;
-                      &lt;/div&gt;
-                      &lt;p style="font-size:0.85rem; margin-bottom:15px; color:var(--color-text-dark);"&gt;${keg.deskripsi}&lt;/p&gt;
-                    &lt;/div&gt;
-                  &lt;/div&gt;
-                &lt;/div&gt;`;
+                <div class="kegiatan-card">
+                  <img class="kegiatan-img" src="${keg.foto1 || defaultImg}" alt="Foto">
+                  <div class="kegiatan-body">
+                    <div>
+                      <h3>${keg.nama_kegiatan}</h3>
+                      <div class="meta">
+                        <span>&#128197; ${keg.tanggal}</span> | <span>&#128205; ${keg.lokasi}</span>
+                      </div>
+                      <p style="font-size:0.85rem; margin-bottom:15px; color:var(--color-text-dark);">${keg.deskripsi}</p>
+                    </div>
+                  </div>
+                </div>`;
             });
           }
         })
@@ -3257,15 +1878,15 @@ function updateProfil(username, dataBaru, fileObj) {
             tbody.innerHTML = "";
             res.list.forEach(row => {
               tbody.innerHTML += `
-                &lt;tr&gt;
-                  &lt;td&gt;&lt;strong&gt;${row.id_barang}&lt;/strong&gt;&lt;/td&gt;
-                  &lt;td&gt;${row.nama_barang}&lt;/td&gt;
-                  &lt;td&gt;${row.kategori}&lt;/td&gt;
-                  &lt;td&gt;${row.jumlah} Unit&lt;/td&gt;
-                  &lt;td&gt;&lt;span class="badge badge-hadir"&gt;${row.kondisi}&lt;/span&gt;&lt;/td&gt;
-                  &lt;td&gt;${row.locations_simpan}&lt;/td&gt;
-                  &lt;td&gt;-&lt;/td&gt;
-                &lt;/tr&gt;`;
+                <tr>
+                  <td><strong>${row.id_barang}</strong></td>
+                  <td>${row.nama_barang}</td>
+                  <td>${row.kategori}</td>
+                  <td>${row.jumlah} Unit</td>
+                  <td><span class="badge badge-hadir">${row.kondisi}</span></td>
+                  <td>${row.locations_simpan}</td>
+                  <td>-</td>
+                </tr>`;
             });
           }
         })
@@ -3332,9 +1953,9 @@ function updateProfil(username, dataBaru, fileObj) {
       const payload = {
         jenis: document.getElementById('kas-jenis').value,
         kategori: document.getElementById('kas-kategori').value,
-        text_keterangan: document.getElementById('kas-keterangan-form').value,
         jumlah: document.getElementById('kas-jumlah').value,
-        tanggal: document.getElementById('kas-tanggal-form').value
+        tanggal: document.getElementById('kas-tanggal-form').value,
+        keterangan: document.getElementById('kas-keterangan-form').value
       };
       setLoader(true, "Mencatat...");
       google.script.run
@@ -3383,13 +2004,13 @@ function updateProfil(username, dataBaru, fileObj) {
             tbody.innerHTML = "";
             res.list.forEach(row => {
               tbody.innerHTML += `
-                &lt;tr&gt;
-                  &lt;td&gt;&lt;strong&gt;${row.user_id}&lt;/strong&gt;&lt;/td&gt;
-                  &lt;td&gt;${row.nama_lengkap}&lt;/td&gt;
-                  &lt;td&gt;&lt;span class="role"&gt;${row.role}&lt;/span&gt;&lt;/td&gt;
-                  &lt;td&gt;&lt;span class="badge badge-hadir"&gt;${row.status_aktif}&lt;/span&gt;&lt;/td&gt;
-                  &lt;td&gt;-&lt;/td&gt;
-                &lt;/tr&gt;`;
+                <tr>
+                  <td><strong>${row.user_id}</strong></td>
+                  <td>${row.nama_lengkap}</td>
+                  <td><span class="role">${row.role}</span></td>
+                  <td><span class="badge badge-hadir">${row.status_aktif}</span></td>
+                  <td>-</td>
+                </tr>`;
             });
           }
         })
@@ -3422,13 +2043,13 @@ function updateProfil(username, dataBaru, fileObj) {
             tbody.innerHTML = "";
             res.list.forEach(row => {
               tbody.innerHTML += `
-                &lt;tr&gt;
-                  &lt;td&gt;${row.timestamp}&lt;/td&gt;
-                  &lt;td&gt;&lt;strong&gt;${row.user_id}&lt;/strong&gt;&lt;/td&gt;
-                  &lt;td&gt;${row.aksi}&lt;/td&gt;
-                  &lt;td&gt;${row.detail}&lt;/td&gt;
-                  &lt;td&gt;${row.ip}&lt;/td&gt;
-                &lt;/tr&gt;`;
+                <tr>
+                  <td>${row.timestamp}</td>
+                  <td><strong>${row.user_id}</strong></td>
+                  <td>${row.aksi}</td>
+                  <td>${row.detail}</td>
+                  <td>${row.ip}</td>
+                </tr>`;
             });
           }
         })
@@ -3447,12 +2068,12 @@ function updateProfil(username, dataBaru, fileObj) {
             tbody.innerHTML = "";
             res.data.forEach(member => {
               tbody.innerHTML += `
-                &lt;tr&gt;
-                  &lt;td&gt;${member.user_id}&lt;/td&gt;
-                  &lt;td&gt;${member.nama_lengkap}&lt;/td&gt;
-                  &lt;td&gt;${member.role}&lt;/td&gt;
-                  &lt;td&gt;&lt;input type="radio" name="status_${member.user_id}" value="Hadir" checked&gt; Hadir&lt;/td&gt;
-                &lt;/tr&gt;`;
+                <tr>
+                  <td>${member.user_id}</td>
+                  <td>${member.nama_lengkap}</td>
+                  <td>${member.role}</td>
+                  <td><input type="radio" name="status_${member.user_id}" value="Hadir" checked> Hadir</td>
+                </tr>`;
             });
           }
         })
@@ -3491,7 +2112,7 @@ function updateProfil(username, dataBaru, fileObj) {
         targetSec.style.display = 'block';
       }
       
-      if(sectionId === 'section-absensi'){ // &lt;-- TAMBAHKAN INI
+      if(sectionId === 'section-absensi'){ // <-- TAMBAHKAN INI
         aktifkanKamera();
       }
     }
@@ -3509,7 +2130,7 @@ function updateProfil(username, dataBaru, fileObj) {
       if(data.fotoUrl && data.fotoUrl !== '') {
         document.getElementById('preview-foto').src = data.fotoUrl;
       } else {
-        document.getElementById('preview-foto').src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(currentUser ? currentUser.nama_lengkap : "User") + "&amp;background=0d6efd&amp;color=fff&amp;size=128";
+        document.getElementById('preview-foto').src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(currentUser ? currentUser.nama_lengkap : "User") + "&background=0d6efd&color=fff&size=128";
       }
     }).getProfil(currentUser.user_id);
   }
@@ -3575,21 +2196,6 @@ function updateProfil(username, dataBaru, fileObj) {
       google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
     }
   }
-  </script>
-</body>
-</html></textarea>
-
-  <footer>
-    &copy; 2026 SIAP WANAMSKA V2.0 | Pengembang Sistem Organisasi Kwartir Wanamska.
-  </footer>
-
-  <script>
-    function copyCode(id) {
-      const textarea = document.getElementById(id);
-      textarea.select();
-      document.execCommand('copy');
-      alert('Kode ' + id + ' berhasil disalin!');
-    }
   </script>
 </body>
 </html>
