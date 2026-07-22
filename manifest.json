@@ -1,0 +1,22 @@
+{
+  "name": "SIAP WANAMSKA V2.0",
+  "short_name": "SIAP",
+  "description": "Sistem Informasi Akademik Pelayanan - SMA Negeri Wanadadi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d6efd",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
