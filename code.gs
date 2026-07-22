@@ -154,24 +154,6 @@ function validateSession(token, allowedRoles) {
 }
 
 /**
- * Menambahkan user baru secara manual dari Apps Script Editor ke sheet "Users" dengan password terenkripsi SHA-256.
- */
-function addUser(userId, password, namaLengkap, role) {
-  try {
-    var ss = getSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_USERS);
-    if (!sheet) {
-      return { success: false, message: "Sheet Users tidak ditemukan." };
-    }
-    var hash = hashPassword(password);
-    sheet.appendRow([userId, hash, namaLengkap, role, 'Aktif', new Date().toISOString()]);
-    return 'User ' + userId + ' berhasil dibuat';
-  } catch (e) {
-    return 'Gagal membuat user: ' + e.toString();
-  }
-}
-
-/**
  * LOGOUT USER
  */
 function logoutUser(token) {
@@ -1127,5 +1109,120 @@ function saveKehadiran(dataAbsen) {
     return { success: true, message: 'Data kehadiran harian berhasil disimpan' };
   } catch (e) {
     return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * Fungsi A: getProfil(username)
+ * Mengambil data detail profil dari Sheet "profile"
+ */
+function getProfil(username) {
+  try {
+    const ss = getSpreadsheet();
+    let sheet = ss.getSheetByName("profile");
+    if (!sheet) {
+      sheet = ss.insertSheet("profile");
+      sheet.appendRow(["user_id", "nama_lengkap", "no_hp", "foto_profil_url"]);
+    }
+    const data = sheet.getDataRange().getValues();
+    const targetUsername = String(username).trim().toLowerCase();
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim().toLowerCase() === targetUsername) {
+        return {
+          nama: data[i][1] || "",
+          noHp: data[i][2] || "",
+          fotoUrl: data[i][3] || ""
+        };
+      }
+    }
+    return { nama: "", noHp: "", fotoUrl: "" };
+  } catch (e) {
+    throw new Error("Gagal mengambil profil: " + e.toString());
+  }
+}
+
+/**
+ * Fungsi B: updateProfil(username, dataBaru, fileObj)
+ * Memperbarui data profil dan sandi pengguna di Sheet "profile" dan Sheet "Users"
+ */
+function updateProfil(username, dataBaru, fileObj) {
+  try {
+    const ss = getSpreadsheet();
+    let sheet = ss.getSheetByName("profile");
+    if (!sheet) {
+      sheet = ss.insertSheet("profile");
+      sheet.appendRow(["user_id", "nama_lengkap", "no_hp", "foto_profil_url"]);
+    }
+    
+    const targetUsername = String(username).trim().toLowerCase();
+    const data = sheet.getDataRange().getValues();
+    let rowIdx = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim().toLowerCase() === targetUsername) {
+        rowIdx = i + 1;
+        break;
+      }
+    }
+    
+    let fotoUrl = "";
+    if (fileObj) {
+      const prefix = "PROFIL_" + username + "_" + new Date().getTime() + "_";
+      fotoUrl = uploadFileToFolder(fileObj, prefix);
+    }
+    
+    if (rowIdx !== -1) {
+      sheet.getRange(rowIdx, 2).setValue(dataBaru.nama);
+      sheet.getRange(rowIdx, 3).setValue(dataBaru.noHp);
+      if (fotoUrl) {
+        sheet.getRange(rowIdx, 4).setValue(fotoUrl);
+      }
+    } else {
+      sheet.appendRow([username, dataBaru.nama, dataBaru.noHp, fotoUrl]);
+    }
+    
+    // Ganti password jika disi
+    if (dataBaru.passwordBaru && String(dataBaru.passwordBaru).trim() !== "") {
+      const userSheet = ss.getSheetByName("Users");
+      if (userSheet) {
+        const userData = userSheet.getDataRange().getValues();
+        for (let j = 1; j < userData.length; j++) {
+          if (String(userData[j][0]).trim().toLowerCase() === targetUsername) {
+            const newHash = hashPassword(dataBaru.passwordBaru);
+            userSheet.getRange(j + 1, 2).setValue(newHash);
+            break;
+          }
+        }
+      }
+    }
+    
+    return {status: "success", message: "Profil berhasil diupdate"};
+  } catch (e) {
+    return {status: "error", message: "Gagal update profil: " + e.toString()};
+  }
+}
+
+/**
+ * Helper: uploadFileToFolder(fileObj, prefix)
+ * Mengunggah file ke folder Google Drive bersama shared access link Reader
+ */
+function uploadFileToFolder(fileObj, prefix) {
+  try {
+    const folderId = '1Dc399KOxltIa8osp0blPv_GX0ap--ekq';
+    const folder = DriveApp.getFolderById(folderId);
+    
+    // Konversi unsigned bytes dari JS client ke signed byte array untuk Utilities.newBlob
+    const signedBytes = fileObj.bytes.map(function(val) {
+      return val > 127 ? val - 256 : val;
+    });
+    
+    const blob = Utilities.newBlob(signedBytes, fileObj.type, prefix + fileObj.name);
+    const file = folder.createFile(blob);
+    
+    // Set permission Anyone with Link as Reader
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    return file.getUrl();
+  } catch (e) {
+    throw new Error("Gagal mengunggah berkas ke Google Drive: " + e.toString());
   }
 }
