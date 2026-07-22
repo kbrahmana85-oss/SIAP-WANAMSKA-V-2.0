@@ -1,3 +1,5 @@
+--- START OF FILE Paste July 22, 2026 - 9:48PM ---
+
 --- START OF FILE Paste July 22, 2026 - 9:37PM ---
 
 <!DOCTYPE html>
@@ -648,6 +650,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/6617026723758640553d6200fc06fbd27235214b/logo_PWA.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#5D4037">
 </head>
 <body>
 
@@ -2183,5 +2187,14 @@
     }
   });
   </script>
+<div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
+  <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi SIAP</button>
+</div>
+<script>
+let deferredPromptPWA;
+window.addEventListener('beforeinstallprompt', (e) => {e.preventDefault(); deferredPromptPWA = e; document.getElementById('installPWABox').style.display = 'block';});
+document.getElementById('btnInstallPWA').addEventListener('click', async () => {if(deferredPromptPWA) {deferredPromptPWA.prompt(); deferredPromptPWA = null;}});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
+</script>
 </body>
 </html>
