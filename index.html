@@ -685,9 +685,11 @@
       <button type="button" id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none; cursor: pointer;">Login</button>
       
       <div style="text-align:center; margin-bottom: 20px;">
-  <h2>SELAMAT DATANG</h2>
-  <p style="font-size:16px; color:#555;">MARI MENJADI PENGGALANG YANG SIAP BERDIGITALISASI</p>
-</div>
+        <h2>SELAMAT DATANG</h2>
+        <p style="font-size:16px; color:#555;">MARI MENJADI PENGGALANG YANG SIAP BERDIGITALISASI</p>
+      </div>
+    </div>
+  </div>
 
   <!-- APP LAYOUT CONTAINER -->
   <div id="app-container">
@@ -731,6 +733,10 @@
         <div class="menu-item" onclick="switchSection('section-profile', this)">
           <span class="icon">&#128100;</span> Profil Diri
         </div>
+        
+        <!-- BAGIAN A: TAMBAH TOMBOL DI MENU/NAVBAR -->
+        <button onclick="showSection('section-profil')" style="background:none; border:none; color:#D7CCC8; padding:12px 25px; cursor:pointer; text-align:left; width:100%; font-family:inherit; font-size:0.95rem; display:flex; align-items:center; gap:12px;">👤 Profil Saya</button>
+        
         <div class="menu-item role-restricted" id="menu-users" onclick="switchSection('section-users', this)">
           <span class="icon">&#128101;</span> Kelola User
         </div>
@@ -749,7 +755,7 @@
       </aside>
 
       <!-- MAIN CONTENT -->
-      <main>
+      <main id="main-content">
 
         <!-- SECTION 1: DASHBOARD -->
         <section id="section-dashboard" class="app-section active">
@@ -782,7 +788,7 @@
             </button>
           </div>
           
-          <!-- MODUL DEVELOPER DI DASHBOARD (Perbaikan 4) -->
+          <!-- MODUL DEVELOPER DI DASHBOARD -->
           <div class="dev">
             <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" alt="Arif Nuur Iswahyudi">
             <div>
@@ -799,11 +805,6 @@
 
         <!-- SECTION 2: ABSENSI -->
         <section id="section-absensi" class="app-section">
-          <div style="text-align:center; margin: 10px;">
-  <video id="video" width="100%" height="auto" autoplay playsinline style="border-radius:10px; border:1px solid #ccc;"></video>
-  <canvas id="canvas" style="display:none;"></canvas>
-</div>
-          
           <div class="absensi-layout">
             <div class="card">
               <h2 style="font-family: var(--font-title); margin-bottom: 20px;">Catat Kehadiran Anda</h2>
@@ -1188,6 +1189,30 @@
               </button>
             </div>
           </div>
+        </section>
+
+        <!-- ==========================================
+             BAGIAN B: TAMBAH SECTION BARU (PROFIL SAYA)
+             ========================================== -->
+        <section id="section-profil" class="app-section" style="display:none; padding: 20px;">
+          <h3>Profil Saya</h3>
+          <div style="text-align:center; margin-bottom:15px;">
+            <img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #0d6efd;">
+          </div>
+
+          <label>Upload Foto Profil</label>
+          <input type="file" id="foto-profil" accept="image/*" style="margin-bottom:15px; width:100%; padding:5px; border:1px solid #ccc;">
+
+          <label>Nama Lengkap</label>
+          <input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc;">
+
+          <label>No HP / WA</label>
+          <input type="text" id="nohp-profil" placeholder="08xxxxxxxxxx" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc;">
+
+          <label>Ganti Password Baru</label>
+          <input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc;">
+
+          <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold;">Simpan Profil</button>
         </section>
 
       </main>
@@ -1597,8 +1622,12 @@
             const saldoEl = document.getElementById('dash-saldo-kas');
             const cardKas = document.getElementById('card-dash-kas');
             if (res.saldo_kas !== undefined && res.saldo_kas !== null) {
-              if (saldoEl) saldoEl.innerText = "Rp " + Number(res.saldo_kas).toLocaleString('id-ID');
-              if (cardKas) cardKas.style.display = 'flex';
+              if (saldoEl) {
+                saldoEl.innerText = "Rp " + Number(res.saldo_kas).toLocaleString('id-ID');
+              }
+              if (cardKas) {
+                cardKas.style.display = 'flex';
+              }
             }
           }
         })
@@ -1935,10 +1964,11 @@
         .addKasTransaction(sessionToken, payload);
     }
 
-    function openKasModal() {
+    // GANTI NAMA FUNGSI BANTU AGAR AMAN SINKRONISASI
+    function openKasModal_v2() {
       document.getElementById('modal-kas').style.display = 'flex';
     }
-    function closeKasModal() {
+    function closeKasModal_v2() {
       document.getElementById('modal-kas').style.display = 'none';
     }
 
@@ -2059,28 +2089,110 @@
       showPage('dashboard-page');
     }
     
-async function aktifkanKamera() {
-  const video = document.getElementById('video'); 
-  if(!video) return; // biar aman kalau bukan di halaman absensi
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-    video.srcObject = stream;
-  } catch (err) {
-    alert("Izin kamera ditolak. Silakan buka lewat Chrome dan izinkan akses kamera.");
-    console.error("Camera Error: ", err);
-  }
-}
+    async function aktifkanKamera() {
+      const video = document.getElementById('video'); 
+      if(!video) return; // biar aman kalau bukan di halaman absensi
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+      } catch (err) {
+        alert("Izin kamera ditolak. Silakan buka lewat Chrome dan izinkan akses kamera.");
+        console.error("Camera Error: ", err);
+      }
+    }
 
-// panggil otomatis saat halaman absensi dibuka
-function showSection(sectionId){
-  document.querySelectorAll('.app-section').forEach(s => s.style.display = 'none');
-  document.getElementById(sectionId).style.display = 'block';
-  
-  if(sectionId === 'section-absensi'){ // <-- TAMBAHKAN INI
-    aktifkanKamera();
-  }
-}
+    // panggil otomatis saat halaman absensi dibuka
+    function showSection(sectionId){
+      document.querySelectorAll('.app-section').forEach(s => s.style.display = 'none');
+      const targetSec = document.getElementById(sectionId);
+      if (targetSec) {
+        targetSec.style.display = 'block';
+      }
+      
+      if(sectionId === 'section-absensi'){ // <-- TAMBAHKAN INI
+        aktifkanKamera();
+      }
+    }
+  </script>
 
+  <!-- ==========================================
+       BAGIAN C: TAMBAH JAVASCRIPT (TUGAS 2.3)
+       ========================================== -->
+  <script>
+  // ===== FITUR BARU: PROFIL & UPLOAD FOTO =====
+  function loadProfil() {
+    google.script.run.withSuccessHandler(function(data){
+      document.getElementById('nama-profil').value = data.nama || currentUser.nama_lengkap || currentUser.nama || '';
+      document.getElementById('nohp-profil').value = data.noHp || '';
+      if(data.fotoUrl && data.fotoUrl !== '') {
+        document.getElementById('preview-foto').src = data.fotoUrl;
+      } else {
+        document.getElementById('preview-foto').src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(currentUser ? currentUser.nama_lengkap : "User") + "&background=0d6efd&color=fff&size=128";
+      }
+    }).getProfil(currentUser.user_id);
+  }
+
+  // Override fungsi showSection agar bisa load profil secara dinamis
+  const _originalShowSection_profil = window.showSection || showSection;
+  window.showSection = function(id){
+    if (typeof _originalShowSection_profil === "function") {
+      _originalShowSection_profil(id);
+    } else {
+      document.querySelectorAll('.app-section').forEach(s => s.style.display = 'none');
+      const targetSec = document.getElementById(id);
+      if (targetSec) {
+        targetSec.style.display = 'block';
+      }
+    }
+    if(id === 'section-profil') {
+      loadProfil();
+    }
+  }
+
+  function simpanProfil(){
+    const btn = document.querySelector('#section-profil button');
+    btn.innerText = "Menyimpan...";
+    btn.disabled = true;
+
+    const fileInput = document.getElementById('foto-profil');
+    const data = {
+      nama: document.getElementById('nama-profil').value,
+      noHp: document.getElementById('nohp-profil').value,
+      passwordBaru: document.getElementById('password-baru').value
+    };
+
+    const afterSave = function(res){
+      alert(res.message);
+      btn.innerText = "Simpan Profil";
+      btn.disabled = false;
+      if(res.status === "success"){
+        document.getElementById('password-baru').value = "";
+        loadProfil();
+        // Perbarui visual nama di pojok kanan atas secara dinamis
+        document.getElementById('user-display-name').innerText = data.nama;
+        if (currentUser) {
+          currentUser.nama_lengkap = data.nama;
+          sessionStorage.setItem('user', JSON.stringify(currentUser));
+        }
+      }
+    };
+
+    if(fileInput.files.length > 0){
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e){
+        const fileObj = {
+          bytes: Array.from(new Uint8Array(e.target.result)),
+          type: file.type,
+          name: file.name
+        };
+        google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
+    }
+  }
   </script>
 </body>
 </html>
