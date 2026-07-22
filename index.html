@@ -6,8 +6,8 @@
   <title>SIAP WANAMSKA</title>
   
   <!-- MANIFEST INLINE UNTUK GOOGLE APPS SCRIPT -->
-  TAMBAHKAN DI <head>:
-<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU0lBUCBXQU5BTVNLIiwic2hvcnRfbmFtZSI6IlNJQVAiLCJzdGFydF91cmwiOiIvIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI0Y1RjVGNiIsInRoZW1lX2NvbG9yIjoiIzVEQjM4NyIsImljb25zIjpbeyJzcmMiOiJodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20va2JyYWhuYW1hODUtb3NzL1NJQVAtV0FOQU1TS0EtVi0yLjAvNDUxMjk0MjFlYjY2YjAyNjA2NGM1NGYxYmMzODEzYzAxYTc1YmU1Mi9sb2dvX1BXQS5wbmciLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
+  <meta name="theme-color" content="#5D4037">
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU0lBUCBXQU5BTVNLIiwic2hvcnRfbmFtZSI6IlNJQVAiLCJzdGFydF91cmwiOiIvIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI0Y1RjVGNiIsInRoZW1lX2NvbG9yIjoiIzVEQjM4NyIsImljb25zIjpbeyJzcmMiOiJodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20va2JyYWhuYW1hODUtb3NzL1NJQVAtV0FOQU1TS0EtVi0yLjAvNThiMDhkZDdjYmM5NjFkNDYwZjdiYzY2NmZlMmE5YmE0OWM5OTY3ZC9sb2dvX1BXQS5wbmciLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn0seyJzcmMiOiJodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20va2JyYWhuYW1hODUtb3NzL1NJQVAtV0FOQU1TS0EtVi0yLjAvNThiMDhkZDdjYmM5NjFkNDYwZjdiYzY2NmZlMmE5YmE0OWM5OTY3ZC9sb2dvX1BXQS5wbmciLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
 
   <style>
     /* ==========================================
@@ -1466,6 +1466,7 @@
       }
     }
 
+    // Catatan: Fungsi toggleSidebar dipertahankan utuh
     function toggleSidebar() {
       document.querySelector('.sidebar').classList.toggle('active');
       document.querySelector('.overlay').classList.toggle('active');
@@ -1826,58 +1827,6 @@
         id_kegiatan: document.getElementById('keg-id').value,
         nama_kegiatan: document.getElementById('keg-nama').value,
         tanggal: document.getElementById('keg-tanggal').value,
-        lokasi: document.getElementById('keg-lokasi').value,
-        deskripsi: document.getElementById('keg-deskripsi').value,
-        foto1: document.getElementById('keg-foto-1-base64').value,
-        foto2: document.getElementById('keg-foto-2-base64').value
-      };
-      setLoader(true, "Menyimpan agenda kegiatan...");
-      google.script.run
-        .withSuccessHandler(function(res) {
-          setLoader(false);
-          closeKegiatanModal();
-          loadKegiatan();
-        })
-        .saveKegiatan(sessionToken, payload);
-    }
-
-    function openKegiatanModal() {
-      document.getElementById('modal-kegiatan').style.display = 'flex';
-    }
-    function closeKegiatanModal() {
-      document.getElementById('modal-kegiatan').style.display = 'none';
-    }
-
-    function loadInventaris() {
-      google.script.run
-        .withSuccessHandler(function(res) {
-          if (res.success) {
-            const tbody = document.getElementById('body-inventaris');
-            tbody.innerHTML = "";
-            res.list.forEach(row => {
-              tbody.innerHTML += `
-                <tr>
-                  <td><strong>${row.id_barang}</strong></td>
-                  <td>${row.nama_barang}</td>
-                  <td>${row.kategori}</td>
-                  <td>${row.jumlah} Unit</td>
-                  <td><span class="badge badge-hadir">${row.kondisi}</span></td>
-                  <td>${row.locations_simpan}</td>
-                  <td>-</td>
-                </tr>`;
-            });
-          }
-        })
-        .getInventarisList(sessionToken);
-    }
-
-    function actionSaveInventaris() {
-      const payload = {
-        id_barang: document.getElementById('inv-id').value,
-        nama_barang: document.getElementById('inv-nama').value,
-        kategori: document.getElementById('inv-kategori').value,
-        jumlah: document.getElementById('inv-jumlah').value,
-        kondisi: document.getElementById('inv-kondisi').value,
         locations_simpan: document.getElementById('inv-lokasi').value,
         tanggal_masuk: document.getElementById('inv-tanggal').value,
         keterangan: document.getElementById('inv-keterangan').value
@@ -1912,6 +1861,7 @@
         .getKasData(sessionToken);
     }
 
+    // Ganti password jika diisi
     function drawKasChart(masuk, keluar) {
       const canvas = document.getElementById('canvas-kas-chart');
       const ctx = canvas.getContext('2d');
@@ -2126,45 +2076,27 @@
   }
   </script>
 
-  <!-- SERVICE WORKER INLINE UNTUK GOOGLE APPS SCRIPT -->
-  <script>
-  if('serviceWorker' in navigator) {
-    const swCode = `
-      self.addEventListener('install', e => self.skipWaiting());
-      self.addEventListener('fetch', e => {});
-    `;
-    const blob = new Blob([swCode], {type: 'text/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl);
-  }
-  </script>
-
-  <!-- BANNER FLOATING INSTALASI PWA -->
-  <div id="installContainer" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; display:none;">
-    <button id="btnInstallPWA" class="btn btn-warning shadow-lg" style="background-color: #F59E0B; color: #3D2B1F; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);">
-      📲 Install Aplikasi SIAP
-    </button>
+  <!-- LANGKAH 2: TAMBAHKAN DI AKHIR <body> SEBELUM </body> -->
+  <div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
+    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi SIAP</button>
   </div>
-
   <script>
-  let deferredPrompt;
+  let deferredPromptPWA;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
-    deferredPrompt = e;
-    document.getElementById('installContainer').style.display = 'block';
+    deferredPromptPWA = e;
+    document.getElementById('installPWABox').style.display = 'block';
   });
-
   document.getElementById('btnInstallPWA').addEventListener('click', async () => {
-    document.getElementById('installContainer').style.display = 'none';
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
+    if(deferredPromptPWA) {
+      document.getElementById('installPWABox').style.display = 'none';
+      deferredPromptPWA.prompt();
+      deferredPromptPWA = null;
+    }
   });
-
-  window.addEventListener('appinstalled', () => {
-    document.getElementById('installContainer').style.display = 'none';
-    alert('Aplikasi SIAP berhasil diinstall!');
-  });
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register(URL.createObjectURL(new Blob([`self.addEventListener('fetch',e=>{});`],{type:'text/javascript'})));
+  }
   </script>
 </body>
 </html>
