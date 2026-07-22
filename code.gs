@@ -1,10 +1,7 @@
-const SPREADSHEET_ID = '107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg';
+// =========================================================================
+// === API ROUTER & CORS HANDLER UNTUK FRONTEND VERCEL (KODE BARU DI ATAS) ===
+// =========================================================================
 
-// === API HANDLER FOR VERCEL / EXTERNAL FRONTEND ===
-
-/**
- * 1. Fungsi doGet(e) - Health Check & Status API
- */
 function doGet(e) {
   if (e && e.parameter && e.parameter.page === 'manifest') {
     var manifest = {
@@ -29,52 +26,59 @@ function doGet(e) {
     };
     return ContentService.createTextOutput(JSON.stringify(manifest)).setMimeType(ContentService.MimeType.JSON);
   }
-  return ContentService.createTextOutput("API SIAP WANAMSKA Aktif");
+  return ContentService.createTextOutput("API SIAP WANAMSKA Aktif")
+    .setMimeType(ContentService.MimeType.TEXT);
 }
 
-/**
- * 2. Fungsi doPost(e) - Router Utama Menerima Request POST dari Vercel
- * Menerima Payload JSON: { "func": "namaFungsi", "params": [param1, param2] }
- */
+function doOptions(e) {
+  return ContentService.createTextOutput("")
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
 function doPost(e) {
   try {
     var contents = e && e.postData && e.postData.contents ? e.postData.contents : "{}";
-    var requestData = JSON.parse(contents);
-    var funcName = requestData.func;
-    var params = requestData.params || [];
+    var body = JSON.parse(contents);
+    var funcName = body.func;
+    var params = body.params || [];
 
     if (!funcName) {
       return ContentService.createTextOutput(JSON.stringify({
-        success: false,
-        message: "Parameter 'func' tidak ditemukan dalam payload request."
+        status: "error",
+        message: "Parameter 'func' tidak ditemukan dalam payload"
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Mencari fungsi di scope global Apps Script
+    // Memanggil fungsi di scope global secara dinamis
     var targetFunc = this[funcName] || globalThis[funcName];
 
     if (typeof targetFunc === 'function') {
       var paramArray = Array.isArray(params) ? params : [params];
-      var result = targetFunc.apply(null, paramArray);
+      var hasil = targetFunc.apply(null, paramArray);
 
       return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        data: result,
-        result: result
+        status: "success",
+        data: hasil
       })).setMimeType(ContentService.MimeType.JSON);
     } else {
       return ContentService.createTextOutput(JSON.stringify({
-        success: false,
-        message: 'Fungsi "' + funcName + '" tidak ditemukan di server Apps Script.'
+        status: "error",
+        message: 'Fungsi "' + funcName + '" tidak ditemukan di server Apps Script'
       })).setMimeType(ContentService.MimeType.JSON);
     }
-  } catch (error) {
+  } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({
-      success: false,
-      message: "Error Server Apps Script: " + error.toString()
+      status: "error",
+      message: err.toString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }
+
+// =========================================================================
+// === KODE LAMA ANDA DI BAWAH INI (TETAP UTUH TANPA DIUBAH SAMA SEKALI) ===
+// =========================================================================
+
+const SPREADSHEET_ID = '107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg';
 
 // === MESIN LOGIN & UTILS BAWAAN ===
 
