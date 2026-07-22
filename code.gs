@@ -1044,6 +1044,44 @@ function exportToPDF(token, moduleName) {
 }
 
 /**
+ * EXPORT DATA TO PDF
+ */
+function exportToPDF(token, moduleName) {
+  try {
+    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
+    var ss = getSpreadsheet();
+    var sourceSheet = ss.getSheetByName(moduleName);
+    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
+    
+    var tempSS = SpreadsheetApp.create("Export_PDF_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
+    var tempSheet = tempSS.getSheets()[0];
+    
+    var data = sourceSheet.getDataRange().getValues();
+    var cleanData = data.map(function(row) {
+      return row.map(function(cell) {
+        var str = String(cell);
+        if (str.indexOf("data:image/") === 0) {
+          return "[GAMBAR]";
+        }
+        return cell;
+      });
+    });
+    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
+    
+    var fileId = tempSS.getId();
+    var file = DriveApp.getFileById(fileId);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=pdf&size=letter&portrait=false&fitw=true&gridlines=true";
+    
+    writeLog(session.userId, "EXPORT_PDF", "Mengekspor data modul " + moduleName + " ke PDF");
+    return { success: true, url: downloadUrl };
+  } catch (err) {
+    return { success: false, message: err.toString() };
+  }
+}
+
+/**
  * Mengambil daftar anggota dari sheet "Anggota" atau cadangan sheet "Users".
  * Filter: Hanya menampilkan role 'penggalang' atau 'pembina'.
  */
@@ -1419,7 +1457,7 @@ function updateProfil_step2(username, dataBaru, fileObj) {
 }
 
 // === TAMBAHAN KODE BARU DI PALING BAWAH SESUAI PERINTAH MUTLAK ===
-function uploadFileToFolder(fileObj, prefix) {
+function uploadFileToFolder_original_v2(fileObj, prefix) {
   if (!fileObj ||!fileObj.bytes) return '';
   const folder = DriveApp.getFolderById(FOLDER_FOTO_ID);
   const blob = Utilities.newBlob(fileObj.bytes, fileObj.type, fileObj.name);
@@ -1428,7 +1466,7 @@ function uploadFileToFolder(fileObj, prefix) {
   return file.getUrl();
 }
 
-function getProfil(username) {
+function getProfil_original_v2(username) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName('profile');
   if (!sheet) { sheet = ss.insertSheet('profile'); sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']); }
@@ -1437,7 +1475,7 @@ function getProfil(username) {
   return {};
 }
 
-function updateProfil(username, dataBaru, fileObj) {
+function updateProfil_original_v2(username, dataBaru, fileObj) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName('profile');
   if (!sheet) { sheet = ss.insertSheet('profile'); sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']); }
@@ -1447,5 +1485,34 @@ function updateProfil(username, dataBaru, fileObj) {
   else { sheet.getRange(rowIndex, 2).setValue(dataBaru.nama); sheet.getRange(rowIndex, 3).setValue(dataBaru.noHp); }
   if (fileObj && fileObj.bytes) { const fotoUrl = uploadFileToFolder(fileObj, 'PROFIL_'); if(fotoUrl) sheet.getRange(rowIndex, 4).setValue(fotoUrl); }
   if (dataBaru.passwordBaru && dataBaru.passwordBaru!== '') { const userSheet = ss.getSheetByName('users'); const userData = userSheet.getDataRange().getValues(); for (let i = 1; i < userData.length; i++) { if (userData[i][0].toString() === username.toString()) { userSheet.getRange(i + 1, 2).setValue(hashPassword(dataBaru.passwordBaru)); break; } } }
+  return { status: "success", message: "Profil berhasil disimpan" };
+}
+
+function uploadFileToFolder(fileObj, prefix) {
+  if (!fileObj ||!fileObj.bytes) return '';
+  const folder = DriveApp.getFolderById('1Dc399KOxltIa8osp0blPv_GX0ap--ekq');
+  const blob = Utilities.newBlob(fileObj.bytes, fileObj.type, fileObj.name);
+  const file = folder.createFile(blob).setName(prefix + new Date().getTime() + '_' + fileObj.name);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return file.getUrl();
+}
+function getProfil(username) {
+  const ss = SpreadsheetApp.openById('107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg');
+  let sheet = ss.getSheetByName('profile');
+  if (!sheet) { sheet = ss.insertSheet('profile'); sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']); }
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) { if (data[i][0] == username) { return { nama: data[i][1] || '', noHp: data[i][2] || '', fotoUrl: data[i][3] || '' }; } }
+  return {};
+}
+function updateProfil(username, dataBaru, fileObj) {
+  const ss = SpreadsheetApp.openById('107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg');
+  let sheet = ss.getSheetByName('profile');
+  if (!sheet) { sheet = ss.insertSheet('profile'); sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']); }
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1; for (let i = 1; i < data.length; i++) { if (data[i][0] == username) { rowIndex = i + 1; break; } }
+  if (rowIndex == -1) { sheet.appendRow([username, dataBaru.nama, dataBaru.noHp, '']); rowIndex = sheet.getLastRow(); }
+  else { sheet.getRange(rowIndex, 2).setValue(dataBaru.nama); sheet.getRange(rowIndex, 3).setValue(dataBaru.noHp); }
+  if (fileObj && fileObj.bytes) { const fotoUrl = uploadFileToFolder(fileObj, 'PROFIL_'); if(fotoUrl) sheet.getRange(rowIndex, 4).setValue(fotoUrl); }
+  if (dataBaru.passwordBaru && dataBaru.passwordBaru!= '') { const userSheet = ss.getSheetByName('users'); const userData = userSheet.getDataRange().getValues(); for (let i = 1; i < userData.length; i++) { if (userData[i][0] == username) { userSheet.getRange(i + 1, 2).setValue(hashPassword(dataBaru.passwordBaru)); break; } } }
   return { status: "success", message: "Profil berhasil disimpan" };
 }
