@@ -8,7 +8,7 @@ function doGet() {
 function hashPassword(password){
   if(!password) return "";
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password);
-  return digest.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
+  return digest.map(b => ('0' + (b & (0xFF)).toString(16)).slice(-2)).join('');
 }
 
 function loginUser(userId, password){
@@ -465,7 +465,7 @@ function getInventarisList(token) {
         kategori: data[i][2],
         jumlah: data[i][3],
         kondisi: data[i][4],
-        lokasi_simpan: data[i][5],
+        locations_simpan: data[i][5],
         tanggal_masuk: data[i][6],
         keterangan: data[i][7],
         dikelola_oleh: data[i][8]
@@ -507,7 +507,7 @@ function saveInventaris(token, dataBarang) {
         dataBarang.kategori,
         dataBarang.jumlah,
         dataBarang.kondisi,
-        dataBarang.lokasi_simpan,
+        dataBarang.locations_simpan,
         dataBarang.tanggal_masuk,
         dataBarang.keterangan,
         session.userId
@@ -520,7 +520,7 @@ function saveInventaris(token, dataBarang) {
         dataBarang.kategori,
         dataBarang.jumlah,
         dataBarang.kondisi,
-        dataBarang.lokasi_simpan,
+        dataBarang.locations_simpan,
         dataBarang.tanggal_masuk,
         dataBarang.keterangan,
         session.userId
