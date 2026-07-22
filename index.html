@@ -734,9 +734,6 @@
           <span class="icon">&#128100;</span> Profil Diri
         </div>
         
-        <!-- BAGIAN A: TAMBAH TOMBOL DI MENU/NAVBAR -->
-        <button onclick="showSection('section-profil')" style="background:none; border:none; color:#D7CCC8; padding:12px 25px; cursor:pointer; text-align:left; width:100%; font-family:inherit; font-size:0.95rem; display:flex; align-items:center; gap:12px;">👤 Profil Saya</button>
-        
         <div class="menu-item role-restricted" id="menu-users" onclick="switchSection('section-users', this)">
           <span class="icon">&#128101;</span> Kelola User
         </div>
@@ -1192,30 +1189,6 @@
               </button>
             </div>
           </div>
-        </section>
-
-        <!-- ==========================================
-             BAGIAN B: TAMBAH SECTION BARU (PROFIL SAYA)
-             ========================================== -->
-        <section id="section-profil" class="app-section" style="display:none; padding: 20px;">
-          <h3>Profil Saya</h3>
-          <div style="text-align:center; margin-bottom:15px;">
-            <img id="preview-foto" src="https://ui-avatars.com/api/?name=User&amp;background=0d6efd&amp;color=fff&amp;size=128" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #0d6efd;">
-          </div>
-
-          <label>Upload Foto Profil</label>
-          <input type="file" id="foto-profil" accept="image/*" style="margin-bottom:15px; width:100%; padding:5px; border:1px solid #ccc;">
-
-          <label>Nama Lengkap</label>
-          <input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc;">
-
-          <label>No HP / WA</label>
-          <input type="text" id="nohp-profil" placeholder="08xxxxxxxxxx" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc;">
-
-          <label>Ganti Password Baru</label>
-          <input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc;">
-
-          <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Simpan Profil</button>
         </section>
 
       </main>
@@ -2120,309 +2093,51 @@
     }
   </script>
 
-  <!-- ==========================================
-       BAGIAN C: TAMBAH JAVASCRIPT (TUGAS 2.3)
-       ========================================== -->
-  <script>
-  // ===== FITUR BARU: PROFIL & UPLOAD FOTO =====
-  function loadProfil_old() {
-    google.script.run.withSuccessHandler(function(data){
-      document.getElementById('nama-profil').value = data.nama || currentUser.nama_lengkap || currentUser.nama || '';
-      document.getElementById('nohp-profil').value = data.noHp || '';
-      if(data.fotoUrl && data.fotoUrl !== '') {
-        document.getElementById('preview-foto').src = data.fotoUrl;
-      } else {
-        document.getElementById('preview-foto').src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(currentUser ? currentUser.nama_lengkap : "User") + "&background=0d6efd&color=fff&size=128";
-      }
-    }).getProfil(currentUser.user_id);
-  }
-
-  // Override fungsi showSection agar bisa load profil secara dinamis
-  const _originalShowSection_profil = window.showSection || showSection;
-  window.showSection = function(id){
-    if (typeof _originalShowSection_profil === "function") {
-      _originalShowSection_profil(id);
-    } else {
-      document.querySelectorAll('.app-section').forEach(s => s.style.display = 'none');
-      const targetSec = document.getElementById(id);
-      if (targetSec) {
-        targetSec.style.display = 'block';
-      }
-    }
-    if(id === 'section-profil') {
-      loadProfil();
-    }
-  }
-
-  function simpanProfil_old(){
-    const btn = document.querySelector('#section-profil button');
-    btn.innerText = "Menyimpan...";
-    btn.disabled = true;
-
-    const fileInput = document.getElementById('foto-profil');
-    const data = {
-      nama: document.getElementById('nama-profil').value,
-      noHp: document.getElementById('nohp-profil').value,
-      passwordBaru: document.getElementById('password-baru').value
-    };
-
-    const afterSave = function(res){
-      alert(res.message);
-      btn.innerText = "Simpan Profil";
-      btn.disabled = false;
-      if(res.status === "success"){
-        document.getElementById('password-baru').value = "";
-        loadProfil();
-        // Perbarui visual nama di pojok kanan atas secara dinamis
-        document.getElementById('user-display-name').innerText = data.nama;
-        if (currentUser) {
-          currentUser.nama_lengkap = data.nama;
-          sessionStorage.setItem('user', JSON.stringify(currentUser));
-        }
-      }
-    };
-
-    if(fileInput.files.length > 0){
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-      reader.onload = function(e){
-        const fileObj = {
-          bytes: Array.from(new Uint8Array(e.target.result)),
-          type: file.type,
-          name: file.name
-        };
-        google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj);
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
-    }
-  }
-  </script>
-
-  <!-- === KODE BARU DI PALING BAWAH (HUKUMAN DIHINDARI: NO MODIFICATIONS) === -->
-  <button onclick="showSection('section-profil')" style="margin:5px; padding:8px 12px;">👤 Profil Saya</button>
-
-  <section id="section-profil" class="app-section" style="display:none; padding:20px; max-width:500px; margin:auto;">
-    <h3>Profil Saya</h3>
-    <div style="text-align:center; margin-bottom:15px;">
-      <img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #0d6efd;">
-    </div>
-    <label>Upload Foto Profil</label>
-    <input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
-    <label>Nama Lengkap</label>
-    <input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-    <label>No HP / WA</label>
-    <input type="text" id="nohp-profil" placeholder="08xxxxxxxxxx" style="width:100%; padding:8px; margin-bottom:10px;">
-    <label>Ganti Password Baru</label>
-    <input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px;">
-    <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold;">Simpan Profil</button>
-  </section>
-
-  <script>
-  function loadProfil_original() {
-    google.script.run.withSuccessHandler(function(data){
-      document.getElementById('nama-profil').value = data.nama || currentUser.nama || '';
-      document.getElementById('nohp-profil').value = data.noHp || '';
-      if(data.fotoUrl && data.fotoUrl!== '') {
-        document.getElementById('preview-foto').src = data.fotoUrl;
-      }
-    }).getProfil(currentUser.user_id);
-  }
-
-  if(typeof window.showSection === 'function') {
-    const _originalShowSection = window.showSection;
-    window.showSection = function(id){
-      _originalShowSection(id);
-      if(id === 'section-profil') {
-        loadProfil_original();
-      }
-    }
-  }
-
-  function simpanProfil_original(){
-    const btn = document.querySelector('#section-profil button');
-    btn.innerText = "Menyimpan...";
-    btn.disabled = true;
-    const fileInput = document.getElementById('foto-profil');
-    const data = {
-      nama: document.getElementById('nama-profil').value,
-      noHp: document.getElementById('nohp-profil').value,
-      passwordBaru: document.getElementById('password-baru').value
-    };
-    const afterSave = function(res){
-      alert(res.message);
-      btn.innerText = "Simpan Profil";
-      btn.disabled = false;
-      if(res.status === "success"){
-        document.getElementById('password-baru').value = "";
-        loadProfil_original();
-      }
-    };
-    if(fileInput.files.length > 0){
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-      reader.onload = function(e){
-        const fileObj = {
-          bytes: Array.from(new Uint8Array(e.target.result)),
-          type: file.type,
-          name: file.name
-        };
-        google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj);
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
-    }
-  }
-  </script>
-
-  <!-- === TAMBAHAN KODE BARU DI PALING BAWAH SESUAI PERINTAH LANGKAH 2 === -->
-  <button onclick="showSection('section-profil')" style="margin:5px; padding:8px 12px; background:#0d6efd; color:white; border:none; border-radius:5px;">👤 Profil Saya</button>
-
-  <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-    <h3>Profil Saya</h3>
-    <div style="text-align:center; margin-bottom:15px;">
-      <img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #0d6efd;">
-    </div>
-    <label>Upload Foto Profil</label><input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
-    <label>Nama Lengkap</label><input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-    <label>No HP / WA</label><input type="text" id="nohp-profil" placeholder="08xxxxxxxxxx" style="width:100%; padding:8px; margin-bottom:10px;">
-    <label>Ganti Password Baru</label><input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px;">
-    <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold;">Simpan Profil</button>
-  </section>
-
-  <script>
-  function loadProfil() { google.script.run.withSuccessHandler(function(data){ document.getElementById('nama-profil').value = data.nama || currentUser.nama || ''; document.getElementById('nohp-profil').value = data.noHp || ''; if(data.fotoUrl && data.fotoUrl!== '') { document.getElementById('preview-foto').src = data.fotoUrl; } }).getProfil(currentUser.user_id); }
-  const _originalShowSection = window.showSection; window.showSection = function(id){ _originalShowSection(id); if(id === 'section-profil') { loadProfil(); } }
-  function simpanProfil(){ const btn = event.target; btn.innerText = "Menyimpan..."; btn.disabled = true; const fileInput = document.getElementById('foto-profil'); const data = {nama: document.getElementById('nama-profil').value, noHp: document.getElementById('nohp-profil').value, passwordBaru: document.getElementById('password-baru').value}; const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status === "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } }; if(fileInput.files.length > 0){ const file = fileInput.files[0]; const reader = new FileReader(); reader.onload = function(e){ const fileObj = {bytes: Array.from(new Uint8Array(e.target.result)), type: file.type, name: file.name}; google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj); }; reader.readAsArrayBuffer(file); } else { google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null); } }
-  </script>
-
-  <!-- === KODE UNTUK DITEMPEL DI AKHIR index.html SEBELUM </body> === -->
+  <!-- TOMBOL MENU PROFIL - CUMA 1 -->
   <div style="margin-top:10px;">
     <button onclick="showSection('section-profil')" style="margin:5px; padding:8px 12px; background:#0d6efd; color:white; border:none; border-radius:5px; cursor:pointer;">👤 Profil Saya</button>
   </div>
 
+  <!-- SECTION PROFIL - CUMA 1 -->
   <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
     <h3>Profil Saya</h3>
-    <div style="text-align:center; margin-bottom:15px;">
-      <img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #0d6efd;">
-    </div>
-    <label style="display:block; margin-bottom:5px; font-weight:bold;">Upload Foto Profil</label>
-    <input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
-    <label style="display:block; margin-bottom:5px; font-weight:bold;">Nama Lengkap</label>
-    <input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
-    <label style="display:block; margin-bottom:5px; font-weight:bold;">No HP / WA</label>
-    <input type="text" id="nohp-profil" placeholder="08xxxxxxxxxx" style="width:100%; padding:8px; margin-bottom:10px; box-sizing:border-box;">
-    <label style="display:block; margin-bottom:5px; font-weight:bold;">Ganti Password Baru</label>
-    <input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px; box-sizing:border-box;">
+    <div style="text-align:center;"><img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; border:3px solid #0d6efd; margin-bottom:15px; object-fit:cover;"></div>
+    <label style="font-weight:bold;">Upload Foto Profil</label><input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
+    <label style="font-weight:bold;">Nama Lengkap</label><input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px;">
+    <label style="font-weight:bold;">No HP / WA</label><input type="text" id="nohp-profil" style="width:100%; padding:8px; margin-bottom:10px;">
+    <label style="font-weight:bold;">Ganti Password Baru</label><input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px;">
     <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Simpan Profil</button>
   </section>
 
   <script>
-  function loadProfil() {
-    if(!currentUser ||!currentUser.user_id) return;
-    google.script.run.withSuccessHandler(function(data){
-      document.getElementById('nama-profil').value = data.nama || currentUser.nama || '';
-      document.getElementById('nohp-profil').value = data.noHp || '';
-      if(data.fotoUrl && data.fotoUrl!== '') { document.getElementById('preview-foto').src = data.fotoUrl; }
-    }).getProfil(currentUser.user_id);
-  }
-  const _originalShowSection = window.showSection;
-  window.showSection = function(id){
-    _originalShowSection(id);
-    if(id === 'section-profil') { loadProfil(); }
-  }
-  function simpanProfil(){
-    const btn = document.querySelector('#section-profil button');
-    btn.innerText = "Menyimpan..."; btn.disabled = true;
-    const fileInput = document.getElementById('foto-profil');
-    const data = {nama: document.getElementById('nama-profil').value, noHp: document.getElementById('nohp-profil').value, passwordBaru: document.getElementById('password-baru').value};
-    const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status === "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } };
-    if(fileInput.files.length > 0){
-      const file = fileInput.files[0]; const reader = new FileReader();
-      reader.onload = function(e){
-        const fileObj = {bytes: Array.from(new Uint8Array(e.target.result)), type: file.type, name: file.name};
-        google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj);
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
+  // SCRIPT PROFIL - DIBUNGKUS BIAR TIDAK DUPLIKAT
+  if(!window.profilScriptLoaded){
+    window.profilScriptLoaded = true;
+    function loadProfil() {
+      if(typeof currentUser == 'undefined') return;
+      google.script.run.withSuccessHandler(function(data){
+        document.getElementById('nama-profil').value = data.nama || currentUser.nama || '';
+        document.getElementById('nohp-profil').value = data.noHp || '';
+        if(data.fotoUrl) document.getElementById('preview-foto').src = data.fotoUrl;
+      }).getProfil(currentUser.user_id);
+    }
+    const _oldShow = window.showSection;
+    window.showSection = function(id){ _oldShow(id); if(id == 'section-profil') loadProfil(); }
+    function simpanProfil(){
+      const btn = event.target; btn.innerText = "Menyimpan..."; btn.disabled = true;
+      const fileInput = document.getElementById('foto-profil');
+      const data = {nama: document.getElementById('nama-profil').value, noHp: document.getElementById('nohp-profil').value, passwordBaru: document.getElementById('password-baru').value};
+      const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status == "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } };
+      if(fileInput.files.length > 0){
+        const reader = new FileReader(); reader.onload = function(e){
+          const fileObj = {bytes: Array.from(new Uint8Array(e.target.result)), type: fileInput.files[0].type, name: fileInput.files[0].name};
+          google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj);
+        }; reader.readAsArrayBuffer(fileInput.files[0]);
+      } else {
+        google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
+      }
     }
   }
-  </script>
-
-  <!-- === TAMBAHAN KODE BARU DI PALING BAWAH SESUAI PERINTAH MUTLAK === -->
-  <button onclick="showSection('section-profil')" style="margin:5px; padding:8px 12px; background:#0d6efd; color:white; border:none; border-radius:5px;">👤 Profil Saya</button>
-
-  <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px;">
-    <h3>Profil Saya</h3>
-    <center><img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; border:3px solid #0d6efd; margin-bottom:15px;"></center>
-    <label>Upload Foto Profil</label><input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
-    <label>Nama Lengkap</label><input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-    <label>No HP / WA</label><input type="text" id="nohp-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-    <label>Ganti Password Baru</label><input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px;">
-    <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px;">Simpan Profil</button>
-  </section>
-
-  <script>
-  function loadProfil() {
-    if(!currentUser) return;
-    google.script.run.withSuccessHandler(function(data){
-      document.getElementById('nama-profil').value = data.nama || currentUser.nama || '';
-      document.getElementById('nohp-profil').value = data.noHp || '';
-      if(data.fotoUrl) document.getElementById('preview-foto').src = data.fotoUrl;
-    }).getProfil(currentUser.user_id);
-  }
-  const _oldShow = window.showSection;
-  window.showSection = function(id){ _oldShow(id); if(id === 'section-profil') loadProfil(); }
-  function simpanProfil(){
-    const btn = event.target; btn.innerText = "Menyimpan..."; btn.disabled = true;
-    const fileInput = document.getElementById('foto-profil');
-    const data = {nama: document.getElementById('nama-profil').value, noHp: document.getElementById('nohp-profil').value, passwordBaru: document.getElementById('password-baru').value};
-    const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status === "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } };
-    if(fileInput.files.length > 0){
-      const reader = new FileReader(); reader.onload = function(e){
-        const fileObj = {bytes: Array.from(new Uint8Array(e.target.result)), type: fileInput.files[0].type, name: fileInput.files[0].name};
-        google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj);
-      }; reader.readAsArrayBuffer(fileInput.files[0]);
-    } else {
-      google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
-    }
-  }
-  </script>
-
-  <button onclick="showSection('section-profil')" style="margin:5px; padding:8px 12px; background:#0d6efd; color:white; border:none; border-radius:5px;">👤 Profil Saya</button>
-  <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px;">
-  <h3>Profil Saya</h3>
-  <div style="text-align:center;"><img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; border:3px solid #0d6efd; margin-bottom:15px;"></div>
-  <label>Upload Foto Profil</label><input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
-  <label>Nama Lengkap</label><input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-  <label>No HP / WA</label><input type="text" id="nohp-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-  <label>Ganti Password Baru</label><input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px;">
-  <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px;">Simpan Profil</button>
-  </section>
-  <script>
-  function loadProfil() { if(!currentUser) return; google.script.run.withSuccessHandler(function(data){ document.getElementById('nama-profil').value = data.nama || currentUser.nama || ''; document.getElementById('nohp-profil').value = data.noHp || ''; if(data.fotoUrl) document.getElementById('preview-foto').src = data.fotoUrl; }).getProfil(currentUser.user_id); }
-  const _oldShow = window.showSection; window.showSection = function(id){ _oldShow(id); if(id == 'section-profil') loadProfil(); }
-  function simpanProfil(){ const btn = event.target; btn.innerText = "Menyimpan..."; btn.disabled = true; const fileInput = document.getElementById('foto-profil'); const data = {nama: document.getElementById('nama-profil').value, noHp: document.getElementById('nohp-profil').value, passwordBaru: document.getElementById('password-baru').value}; const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status == "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } }; if(fileInput.files.length > 0){ const reader = new FileReader(); reader.onload = function(e){ const fileObj = {bytes: Array.from(new Uint8Array(e.target.result)), type: fileInput.files[0].type, name: fileInput.files[0].name}; google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj); }; reader.readAsArrayBuffer(fileInput.files[0]); } else { google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null); } }
-  </script>
-
-  <!-- === BLOK KODE BARU index.html === -->
-  <button onclick="showSection('section-profil')" style="margin:5px; padding:8px 12px; background:#0d6efd; color:white; border:none; border-radius:5px; cursor:pointer;">👤 Profil Saya</button>
-  <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-  <h3>Profil Saya</h3>
-  <div style="text-align:center;"><img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; border:3px solid #0d6efd; margin-bottom:15px; object-fit:cover;"></div>
-  <label style="font-weight:bold;">Upload Foto Profil</label><input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
-  <label style="font-weight:bold;">Nama Lengkap</label><input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-  <label style="font-weight:bold;">No HP / WA</label><input type="text" id="nohp-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-  <label style="font-weight:bold;">Ganti Password Baru</label><input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px;">
-  <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Simpan Profil</button>
-  </section>
-  <script>
-  function loadProfil() { if(typeof currentUser == 'undefined') return; google.script.run.withSuccessHandler(function(data){ document.getElementById('nama-profil').value = data.nama || currentUser.nama || ''; document.getElementById('nohp-profil').value = data.noHp || ''; if(data.fotoUrl) document.getElementById('preview-foto').src = data.fotoUrl; }).getProfil(currentUser.user_id); }
-  const _oldShow = window.showSection; window.showSection = function(id){ _oldShow(id); if(id == 'section-profil') loadProfil(); }
-  function simpanProfil(){ const btn = event.target; btn.innerText = "Menyimpan..."; btn.disabled = true; const fileInput = document.getElementById('foto-profil'); const data = {nama: document.getElementById('nama-profil').value, noHp: document.getElementById('nohp-profil').value, passwordBaru: document.getElementById('password-baru').value}; const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status == "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } }; if(fileInput.files.length > 0){ const reader = new FileReader(); reader.onload = function(e){ const fileObj = {bytes: Array.from(new Uint8Array(e.target.result)), type: fileInput.files[0].type, name: fileInput.files[0].name}; google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj); }; reader.readAsArrayBuffer(fileInput.files[0]); } else { google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null); } }
   </script>
 </body>
 </html>
