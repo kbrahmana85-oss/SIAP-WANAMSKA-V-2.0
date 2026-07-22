@@ -1996,6 +1996,7 @@
       google.script.run.saveUserProfile(sessionToken, payload);
     }
 
+    // Catatan: Fungsi loadProfil_old, simpanProfil_old di bawah ini dipertahankan utuh
     function loadUsers() {
       google.script.run
         .withSuccessHandler(function(res) {
@@ -2218,7 +2219,7 @@
   </section>
 
   <script>
-  function loadProfil() {
+  function loadProfil_original() {
     google.script.run.withSuccessHandler(function(data){
       document.getElementById('nama-profil').value = data.nama || currentUser.nama || '';
       document.getElementById('nohp-profil').value = data.noHp || '';
@@ -2233,12 +2234,12 @@
     window.showSection = function(id){
       _originalShowSection(id);
       if(id === 'section-profil') {
-        loadProfil();
+        loadProfil_original();
       }
     }
   }
 
-  function simpanProfil(){
+  function simpanProfil_original(){
     const btn = document.querySelector('#section-profil button');
     btn.innerText = "Menyimpan...";
     btn.disabled = true;
@@ -2254,7 +2255,7 @@
       btn.disabled = false;
       if(res.status === "success"){
         document.getElementById('password-baru').value = "";
-        loadProfil();
+        loadProfil_original();
       }
     };
     if(fileInput.files.length > 0){
@@ -2273,6 +2274,27 @@
       google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
     }
   }
+  </script>
+
+  <!-- === TAMBAHAN KODE BARU DI PALING BAWAH SESUAI PERINTAH LANGKAH 2 === -->
+  <button onclick="showSection('section-profil')" style="margin:5px; padding:8px 12px; background:#0d6efd; color:white; border:none; border-radius:5px;">👤 Profil Saya</button>
+
+  <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+    <h3>Profil Saya</h3>
+    <div style="text-align:center; margin-bottom:15px;">
+      <img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #0d6efd;">
+    </div>
+    <label>Upload Foto Profil</label><input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
+    <label>Nama Lengkap</label><input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px;">
+    <label>No HP / WA</label><input type="text" id="nohp-profil" placeholder="08xxxxxxxxxx" style="width:100%; padding:8px; margin-bottom:10px;">
+    <label>Ganti Password Baru</label><input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px;">
+    <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold;">Simpan Profil</button>
+  </section>
+
+  <script>
+  function loadProfil() { google.script.run.withSuccessHandler(function(data){ document.getElementById('nama-profil').value = data.nama || currentUser.nama || ''; document.getElementById('nohp-profil').value = data.noHp || ''; if(data.fotoUrl && data.fotoUrl!== '') { document.getElementById('preview-foto').src = data.fotoUrl; } }).getProfil(currentUser.user_id); }
+  const _originalShowSection = window.showSection; window.showSection = function(id){ _originalShowSection(id); if(id === 'section-profil') { loadProfil(); } }
+  function simpanProfil(){ const btn = event.target; btn.innerText = "Menyimpan..."; btn.disabled = true; const fileInput = document.getElementById('foto-profil'); const data = {nama: document.getElementById('nama-profil').value, noHp: document.getElementById('nohp-profil').value, passwordBaru: document.getElementById('password-baru').value}; const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status === "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } }; if(fileInput.files.length > 0){ const file = fileInput.files[0]; const reader = new FileReader(); reader.onload = function(e){ const fileObj = {bytes: Array.from(new Uint8Array(e.target.result)), type: file.type, name: file.name}; google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj); }; reader.readAsArrayBuffer(file); } else { google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null); } }
   </script>
 </body>
 </html>
