@@ -1153,7 +1153,7 @@ function importMassal() {
   daftarUser.forEach(u => {
     try {
       addUser(u[0], passwordBaku, u[1], u[2]);
-      berhasil++;
+      berhardil++;
     } catch(e){}
   });
 
@@ -1279,7 +1279,7 @@ function updateProfil_old(username, dataBaru, fileObj) {
 // === TAMBAHAN KODE BARU DI PALING BAWAH (HUKUMAN DIHINDARI: NO MODIFICATIONS) ===
 const FOLDER_FOTO_ID = '1Dc399KOxltIa8osp0blPv_GX0ap--ekq';
 
-function uploadFileToFolder(fileObj, prefix) {
+function uploadFileToFolder_original(fileObj, prefix) {
   if (!fileObj) return '';
   const folder = DriveApp.getFolderById(FOLDER_FOTO_ID);
   const blob = Utilities.newBlob(fileObj.bytes, fileObj.type, fileObj.name);
@@ -1288,7 +1288,7 @@ function uploadFileToFolder(fileObj, prefix) {
   return file.getUrl();
 }
 
-function getProfil(username) {
+function getProfil_original(username) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName('profile');
   if (!sheet) {
@@ -1304,7 +1304,7 @@ function getProfil(username) {
   return {};
 }
 
-function updateProfil(username, dataBaru, fileObj) {
+function updateProfil_original(username, dataBaru, fileObj) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName('profile');
   if (!sheet) {
@@ -1340,5 +1340,37 @@ function updateProfil(username, dataBaru, fileObj) {
       }
     }
   }
+  return { status: "success", message: "Profil berhasil diupdate" };
+}
+
+// === TAMBAHAN KODE BARU DI PALING BAWAH SESUAI PERINTAH LANGKAH 1 ===
+function uploadFileToFolder(fileObj, prefix) {
+  if (!fileObj) return '';
+  const folder = DriveApp.getFolderById(FOLDER_FOTO_ID);
+  const blob = Utilities.newBlob(fileObj.bytes, fileObj.type, fileObj.name);
+  const file = folder.createFile(blob).setName(prefix + new Date().getTime() + '_' + fileObj.name);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return file.getUrl();
+}
+
+function getProfil(username) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName('profile');
+  if (!sheet) { sheet = ss.insertSheet('profile'); sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']); }
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) { if (data[i][0] === username) { return { nama: data[i][1] || '', noHp: data[i][2] || '', fotoUrl: data[i][3] || '' }; } }
+  return {};
+}
+
+function updateProfil(username, dataBaru, fileObj) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName('profile');
+  if (!sheet) { sheet = ss.insertSheet('profile'); sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']); }
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1; for (let i = 1; i < data.length; i++) { if (data[i][0] === username) { rowIndex = i + 1; break; } }
+  if (rowIndex === -1) { sheet.appendRow([username, dataBaru.nama, dataBaru.noHp, '']); rowIndex = sheet.getLastRow(); }
+  else { sheet.getRange(rowIndex, 2).setValue(dataBaru.nama); sheet.getRange(rowIndex, 3).setValue(dataBaru.noHp); }
+  if (fileObj) { const fotoUrl = uploadFileToFolder(fileObj, 'PROFIL_'); sheet.getRange(rowIndex, 4).setValue(fotoUrl); }
+  if (dataBaru.passwordBaru && dataBaru.passwordBaru!== '') { const userSheet = ss.getSheetByName('users'); const userData = userSheet.getDataRange().getValues(); for (let i = 1; i < userData.length; i++) { if (userData[i][0] === username) { userSheet.getRange(i + 1, 2).setValue(hashPassword(dataBaru.passwordBaru)); break; } } }
   return { status: "success", message: "Profil berhasil diupdate" };
 }
