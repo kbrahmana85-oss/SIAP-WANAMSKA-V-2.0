@@ -154,6 +154,24 @@ function validateSession(token, allowedRoles) {
 }
 
 /**
+ * Menambahkan user baru secara manual dari Apps Script Editor ke sheet "Users" dengan password terenkripsi SHA-256.
+ */
+function addUser_v2(userId, password, namaLengkap, role) {
+  try {
+    var ss = getSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    if (!sheet) {
+      return { success: false, message: "Sheet Users tidak ditemukan." };
+    }
+    var hash = hashPassword(password);
+    sheet.appendRow([userId, hash, namaLengkap, role, 'Aktif', new Date().toISOString()]);
+    return 'User ' + userId + ' berhasil dibuat';
+  } catch (e) {
+    return 'Gagal membuat user: ' + e.toString();
+  }
+}
+
+/**
  * LOGOUT USER
  */
 function logoutUser(token) {
@@ -730,7 +748,7 @@ function saveUserProfile(token, prof) {
     if (rowIdx !== -1) {
       sheet.getRange(rowIdx, 1, 1, 12).setValues([rowData]);
     } else {
-      sheet.appendRow(rowData);
+      sheet.appendRow([rowData]);
     }
     
     var userSheet = ss.getSheetByName(SHEET_USERS);
@@ -1111,10 +1129,67 @@ function saveKehadiran(dataAbsen) {
     return { success: false, message: e.toString() };
   }
 }
+function importMassal() {
+  const passwordBaku = "12345678";
+
+  // Bapak tinggal isi daftar di sini. Format: [user_id, nama, role]
+  const daftarUser = [
+    // CONTOH PEMBINA
+    ["PMB001", "Arif Nuur Iswahyudi", "Pembina"],
+    ["PMB002", "Ninik Masruroh", "Pembina"],
+
+    // CONTOH DEWAN PENGGALANG
+    ["DGW20261", "Rekyan Titis Arumdani", "Dewan Penggalang"],
+    ["DGW20262", "Atifa Agustia Rahma", "Dewan Penggalang"],
+
+    // CONTOH PENGGALANG
+    ["PGW20261", "Andi", "Penggalang"],
+    ["PGW20262", "Anto", "Penggalang"],
+    //... Bapak copy paste sampai 200 baris
+  ];
+
+  let berhasil = 0;
+  daftarUser.forEach(u => {
+    try {
+      addUser(u[0], passwordBaku, u[1], u[2]);
+      berhasil++;
+    } catch(e){}
+  });
+
+  return "Selesai. " + berhasil + " user berhasil dibuat dengan password: " + passwordBaku;
+}
+
+// ===== FITUR BARU: PROFIL & UPLOAD FOTO =====
 
 /**
- * Fungsi A: getProfil(username)
- * Mengambil data detail profil dari Sheet "profile"
+ * Fungsi 1: uploadFileToFolder(fileObj, prefix)
+ * Helper global untuk mengunggah file ke 1 folder Drive tujuan
+ */
+function uploadFileToFolder(fileObj, prefix) {
+  try {
+    const folderId = '1Dc399KOxltIa8osp0blPv_GX0ap--ekq';
+    const folder = DriveApp.getFolderById(folderId);
+    
+    // Konversi unsigned bytes dari JS client ke signed byte array untuk Utilities.newBlob
+    const signedBytes = fileObj.bytes.map(function(val) {
+      return val > 127 ? val - 256 : val;
+    });
+    
+    const blob = Utilities.newBlob(signedBytes, fileObj.type, prefix + new Date().getTime() + "_" + fileObj.name);
+    const file = folder.createFile(blob);
+    
+    // Set permission Anyone with Link as Reader
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    return file.getUrl();
+  } catch (e) {
+    throw new Error("Gagal mengunggah berkas ke Google Drive: " + e.toString());
+  }
+}
+
+/**
+ * Fungsi 2: getProfil(username)
+ * Ambil data profil dari Sheet "profile"
  */
 function getProfil(username) {
   try {
@@ -1135,15 +1210,15 @@ function getProfil(username) {
         };
       }
     }
-    return { nama: "", noHp: "", fotoUrl: "" };
+    return {};
   } catch (e) {
     throw new Error("Gagal mengambil profil: " + e.toString());
   }
 }
 
 /**
- * Fungsi B: updateProfil(username, dataBaru, fileObj)
- * Memperbarui data profil dan sandi pengguna di Sheet "profile" dan Sheet "Users"
+ * Fungsi 3: updateProfil(username, dataBaru, fileObj)
+ * Memperbarui data profil, sandi, serta upload foto di Google Drive
  */
 function updateProfil(username, dataBaru, fileObj) {
   try {
@@ -1166,8 +1241,7 @@ function updateProfil(username, dataBaru, fileObj) {
     
     let fotoUrl = "";
     if (fileObj) {
-      const prefix = "PROFIL_" + username + "_" + new Date().getTime() + "_";
-      fotoUrl = uploadFileToFolder(fileObj, prefix);
+      fotoUrl = uploadFileToFolder(fileObj, "PROFIL_");
     }
     
     if (rowIdx !== -1) {
@@ -1180,7 +1254,7 @@ function updateProfil(username, dataBaru, fileObj) {
       sheet.appendRow([username, dataBaru.nama, dataBaru.noHp, fotoUrl]);
     }
     
-    // Ganti password jika disi
+    // Ganti password jika diisi
     if (dataBaru.passwordBaru && String(dataBaru.passwordBaru).trim() !== "") {
       const userSheet = ss.getSheetByName("Users");
       if (userSheet) {
@@ -1198,31 +1272,5 @@ function updateProfil(username, dataBaru, fileObj) {
     return {status: "success", message: "Profil berhasil diupdate"};
   } catch (e) {
     return {status: "error", message: "Gagal update profil: " + e.toString()};
-  }
-}
-
-/**
- * Helper: uploadFileToFolder(fileObj, prefix)
- * Mengunggah file ke folder Google Drive bersama shared access link Reader
- */
-function uploadFileToFolder(fileObj, prefix) {
-  try {
-    const folderId = '1Dc399KOxltIa8osp0blPv_GX0ap--ekq';
-    const folder = DriveApp.getFolderById(folderId);
-    
-    // Konversi unsigned bytes dari JS client ke signed byte array untuk Utilities.newBlob
-    const signedBytes = fileObj.bytes.map(function(val) {
-      return val > 127 ? val - 256 : val;
-    });
-    
-    const blob = Utilities.newBlob(signedBytes, fileObj.type, prefix + fileObj.name);
-    const file = folder.createFile(blob);
-    
-    // Set permission Anyone with Link as Reader
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
-    return file.getUrl();
-  } catch (e) {
-    throw new Error("Gagal mengunggah berkas ke Google Drive: " + e.toString());
   }
 }
