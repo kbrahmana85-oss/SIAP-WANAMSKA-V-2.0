@@ -613,39 +613,25 @@
       padding: 25px;
     }
 
-    /* RESPONSIVE DESIGN (Hamburger Menu) */
-    .menu-toggle {
-      display: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--color-white);
-    }
+    /* RESPONSIVE DESIGN (Hamburger Menu & Sidebar) */
+    .menu-toggle { display:none; position:fixed; top:15px; left:15px; z-index:1001; font-size:24px; background:#6F4E37; color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer; }
+    .sidebar { width:260px; background:#3E2723; padding:20px 0; transition:0.3s; z-index:1000; }
+    .main-content { flex:1; padding:30px; background-color: var(--color-bg-cream); overflow-y: auto; transition:0.3s; }
+    .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; }
 
-    @media (max-width: 768px) {
-      .menu-toggle {
-        display: block;
-      }
-      .main-wrapper {
-        position: relative;
-      }
-      aside {
-        position: absolute;
-        left: -260px;
-        top: 0;
-        bottom: 0;
-        z-index: 999;
-        box-shadow: var(--shadow-bold);
-      }
-      aside.open {
-        left: 0;
-      }
-      main {
-        padding: 15px;
-      }
+    @media screen and (max-width: 768px) {
+      .menu-toggle { display:block; }
+      .sidebar { position:fixed; left:-260px; top:0; height:100%; width:260px; box-shadow: var(--shadow-bold); }
+      .sidebar.active { left:0; }
+      .main-content { margin-left:0; padding:15px; }
+      .overlay.active { display:block; }
     }
   </style>
 </head>
 <body>
+
+  <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+  <div class="overlay" onclick="toggleSidebar()"></div>
 
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container"></div>
@@ -697,7 +683,7 @@
     <!-- HEADER -->
     <header>
       <div class="header-logo">
-        <span class="menu-toggle" onclick="toggleSidebar()">&#9776;</span>
+        <span class="header-menu-toggle-old" onclick="toggleSidebar()" style="display:none !important;">&#9776;</span>
         <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo">
         <div class="header-title">
           <h2>SIAP WANAMSKA</h2>
@@ -714,7 +700,7 @@
 
     <div class="main-wrapper">
       <!-- SIDEBAR MENU -->
-      <aside id="sidebar">
+      <aside id="sidebar" class="sidebar">
         <div class="menu-item active" onclick="switchSection('section-dashboard', this)">
           <span class="icon">&#128202;</span> Dashboard
         </div>
@@ -746,13 +732,18 @@
         <div class="menu-item" onclick="switchSection('section-about', this)">
           <span class="icon">&#128227;</span> Tentang Dev
         </div>
+        
+        <button onclick="showSection('section-profil')" class="menu-item" style="background: none; border: none; width: 100%; text-align: left; font-family: inherit; color: inherit; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+          👤 Profil Saya
+        </button>
+
         <div class="menu-item" onclick="actionLogout()" style="color: var(--color-danger-red); margin-top: 30px;">
           <span class="icon">&#128682;</span> Keluar Sesi
         </div>
       </aside>
 
       <!-- MAIN CONTENT -->
-      <main id="main-content">
+      <main id="main-content" class="main-content">
 
         <!-- SECTION 1: DASHBOARD -->
         <section id="section-dashboard" class="app-section active">
@@ -1467,8 +1458,8 @@
     }
 
     function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      sidebar.classList.toggle('open');
+      document.querySelector('.sidebar').classList.toggle('active');
+      document.querySelector('.overlay').classList.toggle('active');
     }
 
     function switchSection(sectionId, elementMenu) {
@@ -1490,7 +1481,9 @@
         elementMenu.classList.add('active');
       }
 
-      document.getElementById('sidebar').classList.remove('open');
+      // Pastikan sidebar tertutup di handphone saat menu diklik
+      document.querySelector('.sidebar').classList.remove('active');
+      document.querySelector('.overlay').classList.remove('active');
 
       if (sectionId === 'section-dashboard') loadDashboard();
       else if (sectionId === 'section-absensi') loadAbsenHistory();
@@ -1678,6 +1671,7 @@
       }
     }
 
+    // Ganti password jika diisi
     function captureSnapshot() {
       const video = document.getElementById('camera-video');
       const preview = document.getElementById('selfie-canvas-preview');
@@ -2078,25 +2072,7 @@
         console.error("Camera Error: ", err);
       }
     }
-
-    // panggil otomatis saat halaman absensi dibuka
-    function showSection(sectionId){
-      document.querySelectorAll('.app-section').forEach(s => s.style.display = 'none');
-      const targetSec = document.getElementById(sectionId);
-      if (targetSec) {
-        targetSec.style.display = 'block';
-      }
-      
-      if(sectionId === 'section-absensi'){ // <-- TAMBAHKAN INI
-        aktifkanKamera();
-      }
-    }
   </script>
-
-  <!-- TOMBOL MENU PROFIL - CUMA 1 -->
-  <div style="margin-top:10px;">
-    <button onclick="showSection('section-profil')" style="margin:5px; padding:8px 12px; background:#0d6efd; color:white; border:none; border-radius:5px; cursor:pointer;">👤 Profil Saya</button>
-  </div>
 
   <!-- SECTION PROFIL - CUMA 1 -->
   <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
