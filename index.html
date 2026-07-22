@@ -4,6 +4,14 @@
   <base target="_top">
   <meta charset="UTF-8">
   <title>SIAP WANAMSKA</title>
+  
+  <!-- MANIFEST INLINE UNTUK GOOGLE APPS SCRIPT (BAGIAN A) -->
+  <link rel="manifest" href="<?= ScriptApp.getService().getUrl() ?>?page=manifest">
+  <meta name="theme-color" content="#5D4037">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_PWA.png">
 
   <style>
     /* ==========================================
@@ -632,10 +640,6 @@
       .overlay.active { display:block; }
     }
   </style>
-
-  <!-- LANGKAH 1: TAMBAHKAN DI DALAM TAG <head> PALING BAWAH -->
-  <meta name="theme-color" content="#5D4037">
-  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU0lBUCBXQU5BTVNLIiwic2hvcnRfbmFtZSI6IlNJQVAiLCJzdGFydF91cmwiOiIvIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI0Y1RjVGNiIsInRoZW1lX2NvbG9yIjoiIzVEQjM4NyIsImljb25zIjpbeyJzcmMiOih0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9rYnJhaG1hbmE4NS1vc3MvU0lBUC1XQU5BTVNLLSAtVi0yLjAvNThiMDhkZDdjYmM5NjFkNDYwZjdiYzY2NmZlMmE5YmE0OWM5OTY3ZC9sb2dvX1BXQS5wbmciLCJzaXplcyI6IjUxMng1MTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn0seyJzcmMiOiJodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20va2JyYWhuYW1hODUtb3NzL1NJQVAtV0FOQU1TS0EtVi0yLjAvNThiMDhkZDdjYmM5NjFkNDYwZjdiYzY2NmZlMmE5YmE0OWM5OTY3ZC9sb2dvX1BXQS5wbmciLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
 </head>
 <body>
 
@@ -772,7 +776,7 @@
               <h3>Kegiatan Terbaru</h3>
               <div class="val" style="font-size: 1.1rem; padding-top: 10px;" id="dash-kegiatan-terbaru">-</div>
             </div>
-            <div class="card-stat danger" id="card-dash-kas" style="display: none; {">
+            <div class="card-stat danger" id="card-dash-kas" style="display: none;">
               <h3>Saldo Kas</h3>
               <div class="val" style="font-size: 1.3rem;" id="dash-saldo-kas">Rp 0</div>
             </div>
@@ -910,7 +914,7 @@
                     <th>Kategori</th>
                     <th>Jumlah</th>
                     <th>Kondisi</th>
-                    <th>Locations Simpan</th>
+                    <th>Lokasi Simpan</th>
                     <th>Opsi</th>
                   </tr>
                 </thead>
@@ -2035,6 +2039,37 @@
     }
   </script>
 
+  <!-- BAGIAN C: FUNCTION BARU UNTUK SERVER-SIDE MANIFEST -->
+  <script>
+  function doGet(e) {
+    if(e.parameter.page === 'manifest'){
+      const manifest = {
+        "name": "SIAP WANAMSKA",
+        "short_name": "SIAP",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#F5F5F6",
+        "theme_color": "#5D4037",
+        "icons": [
+          {
+            "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_PWA.png",
+            "sizes": "512x512",
+            "type": "image/png"
+          },
+          {
+            "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_PWA.png",
+            "sizes": "192x192",
+            "type": "image/png"
+          }
+        ]
+      };
+      return ContentService.createTextOutput(JSON.stringify(manifest))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return HtmlService.createTemplateFromFile('index').evaluate();
+  }
+  </script>
+
   <!-- SECTION PROFIL - CUMA 1 -->
   <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
     <h3>Profil Saya</h3>
@@ -2077,7 +2112,20 @@
   }
   </script>
 
-  <!-- LANGKAH 2: TAMBAHKAN DI AKHIR <body> SEBELUM </body> -->
+  <!-- SERVICE WORKER INLINE UNTUK GOOGLE APPS SCRIPT -->
+  <script>
+  if('serviceWorker' in navigator) {
+    const swCode = `
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('fetch', e => {});
+    `;
+    const blob = new Blob([swCode], {type: 'text/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl);
+  }
+  </script>
+
+  <!-- BAGIAN B: BANNER FLOATING INSTALASI PWA -->
   <div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
     <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi SIAP</button>
   </div>
@@ -2095,9 +2143,6 @@
       deferredPromptPWA = null;
     }
   });
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(URL.createObjectURL(new Blob([`self.addEventListener('fetch',e=>{});`],{type:'text/javascript'})));
-  }
   </script>
 </body>
 </html>
