@@ -1,19 +1,14 @@
 {
-  "name": "SIAP WANAMSKA",
-  "short_name": "SIAP",
+  "name": "SIAP WANAMSKA V2",
+  "short_name": "SIAP V2",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F5F5F6",
-  "theme_color": "#5D4037",
+  "background_color": "#ffffff",
+  "theme_color": "#c62828",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_PWA.png",
+      "src": "/logo_PWA.png",
       "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_PWA.png",
-      "sizes": "192x192",
       "type": "image/png"
     }
   ]
