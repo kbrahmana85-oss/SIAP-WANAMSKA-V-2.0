@@ -1,9 +1,82 @@
 const SPREADSHEET_ID = '107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg';
 
-// === MESIN LOGIN BARU V2 ===
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('index').setTitle('SIAP WANAMSKA V2');
+// === API HANDLER FOR VERCEL / EXTERNAL FRONTEND ===
+
+/**
+ * 1. Fungsi doGet(e) - Health Check & Status API
+ */
+function doGet(e) {
+  if (e && e.parameter && e.parameter.page === 'manifest') {
+    var manifest = {
+      "name": "SIAP WANAMSKA",
+      "short_name": "SIAP",
+      "start_url": "/",
+      "display": "standalone",
+      "background_color": "#F5F5F6",
+      "theme_color": "#5D4037",
+      "icons": [
+        {
+          "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_PWA.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_PWA.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    };
+    return ContentService.createTextOutput(JSON.stringify(manifest)).setMimeType(ContentService.MimeType.JSON);
+  }
+  return ContentService.createTextOutput("API SIAP WANAMSKA Aktif");
 }
+
+/**
+ * 2. Fungsi doPost(e) - Router Utama Menerima Request POST dari Vercel
+ * Menerima Payload JSON: { "func": "namaFungsi", "params": [param1, param2] }
+ */
+function doPost(e) {
+  try {
+    var contents = e && e.postData && e.postData.contents ? e.postData.contents : "{}";
+    var requestData = JSON.parse(contents);
+    var funcName = requestData.func;
+    var params = requestData.params || [];
+
+    if (!funcName) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        message: "Parameter 'func' tidak ditemukan dalam payload request."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Mencari fungsi di scope global Apps Script
+    var targetFunc = this[funcName] || globalThis[funcName];
+
+    if (typeof targetFunc === 'function') {
+      var paramArray = Array.isArray(params) ? params : [params];
+      var result = targetFunc.apply(null, paramArray);
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        data: result,
+        result: result
+      })).setMimeType(ContentService.MimeType.JSON);
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        message: 'Fungsi "' + funcName + '" tidak ditemukan di server Apps Script.'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      message: "Error Server Apps Script: " + error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// === MESIN LOGIN & UTILS BAWAAN ===
 
 function hashPassword(password){
   if(!password) return "";
@@ -11,9 +84,8 @@ function hashPassword(password){
   return digest.map(b => ('0' + (b & (0xFF)).toString(16)).slice(-2)).join('');
 }
 
-// Catatan: Nama fungsi doGet, loginUser, hashPassword, dan logic bawaan di bawah ini dipertahankan utuh 100% tanpa diubah
 function loginUser(userId, password){
-  if(!userId ||!password) return {success: false, message: 'User ID dan Password wajib diisi'};
+  if(!userId || !password) return {success: false, message: 'User ID dan Password wajib diisi'};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName('Users');
   if(!sheet) return {success: false, message: 'Sheet "Users" tidak ditemukan'};
@@ -35,6 +107,7 @@ function addUser(userId, password, namaLengkap, role){
   sheet.appendRow([userId, hash, namaLengkap, role, 'Aktif', new Date()]);
   return 'SUKSES: User '+userId+' dibuat dengan role '+role;
 }
+
 // Konstanta Nama Sheet
 const SHEET_USERS = "Users";
 const SHEET_PROFILE = "profile";
@@ -1044,44 +1117,6 @@ function exportToPDF(token, moduleName) {
 }
 
 /**
- * EXPORT DATA TO PDF
- */
-function exportToPDF(token, moduleName) {
-  try {
-    var session = validateSession(token, ["Admin", "Pembina", "Dewan"]);
-    var ss = getSpreadsheet();
-    var sourceSheet = ss.getSheetByName(moduleName);
-    if (!sourceSheet) throw new Error("Modul data tidak ditemukan.");
-    
-    var tempSS = SpreadsheetApp.create("Export_PDF_" + moduleName + "_" + new Date().toISOString().substring(0, 10));
-    var tempSheet = tempSS.getSheets()[0];
-    
-    var data = sourceSheet.getDataRange().getValues();
-    var cleanData = data.map(function(row) {
-      return row.map(function(cell) {
-        var str = String(cell);
-        if (str.indexOf("data:image/") === 0) {
-          return "[GAMBAR]";
-        }
-        return cell;
-      });
-    });
-    tempSheet.getRange(1, 1, cleanData.length, cleanData[0].length).setValues(cleanData);
-    
-    var fileId = tempSS.getId();
-    var file = DriveApp.getFileById(fileId);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    
-    var downloadUrl = "https://docs.google.com/spreadsheets/d/" + fileId + "/export?format=pdf&size=letter&portrait=false&fitw=true&gridlines=true";
-    
-    writeLog(session.userId, "EXPORT_PDF", "Mengekspor data modul " + moduleName + " ke PDF");
-    return { success: true, url: downloadUrl };
-  } catch (err) {
-    return { success: false, message: err.toString() };
-  }
-}
-
-/**
  * Mengambil daftar anggota dari sheet "Anggota" atau cadangan sheet "Users".
  * Filter: Hanya menampilkan role 'penggalang' atau 'pembina'.
  */
@@ -1168,56 +1203,44 @@ function saveKehadiran(dataAbsen) {
     return { success: false, message: e.toString() };
   }
 }
+
 function importMassal() {
   const passwordBaku = "12345678";
 
-  // Bapak tinggal isi daftar di sini. Format: [user_id, nama, role]
+  // Daftar user
   const daftarUser = [
-    // CONTOH PEMBINA
     ["PMB001", "Arif Nuur Iswahyudi", "Pembina"],
     ["PMB002", "Ninik Masruroh", "Pembina"],
-
-    // CONTOH DEWAN PENGGALANG
     ["DGW20261", "Rekyan Titis Arumdani", "Dewan Penggalang"],
     ["DGW20262", "Atifa Agustia Rahma", "Dewan Penggalang"],
-
-    // CONTOH PENGGALANG
     ["PGW20261", "Andi", "Penggalang"],
-    ["PGW20262", "Anto", "Penggalang"],
-    //... Bapak copy paste sampai 200 baris
+    ["PGW20262", "Anto", "Penggalang"]
   ];
 
   let berhasil = 0;
   daftarUser.forEach(u => {
     try {
       addUser(u[0], passwordBaku, u[1], u[2]);
-      berhardil++;
+      berhasil++;
     } catch(e){}
   });
 
   return "Selesai. " + berhasil + " user berhasil dibuat dengan password: " + passwordBaku;
 }
 
-// ===== FITUR BARU: PROFIL & UPLOAD FOTO =====
+// ===== FITUR PROFIL & UPLOAD FOTO =====
 
-/**
- * Fungsi 1: uploadFileToFolder(fileObj, prefix)
- * Helper global untuk mengunggah file ke 1 folder Drive tujuan
- */
 function uploadFileToFolder_old(fileObj, prefix) {
   try {
     const folderId = '1Dc399KOxltIa8osp0blPv_GX0ap--ekq';
     const folder = DriveApp.getFolderById(folderId);
     
-    // Konversi unsigned bytes dari JS client ke signed byte array untuk Utilities.newBlob
     const signedBytes = fileObj.bytes.map(function(val) {
       return val > 127 ? val - 256 : val;
     });
     
     const blob = Utilities.newBlob(signedBytes, fileObj.type, prefix + new Date().getTime() + "_" + fileObj.name);
     const file = folder.createFile(blob);
-    
-    // Set permission Anyone with Link as Reader
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     
     return file.getUrl();
@@ -1226,10 +1249,6 @@ function uploadFileToFolder_old(fileObj, prefix) {
   }
 }
 
-/**
- * Fungsi 2: getProfil(username)
- * Ambil data profil dari Sheet "profile"
- */
 function getProfil_old(username) {
   try {
     const ss = getSpreadsheet();
@@ -1255,10 +1274,6 @@ function getProfil_old(username) {
   }
 }
 
-/**
- * Fungsi 3: updateProfil(username, dataBaru, fileObj)
- * Memperbarui data profil, sandi, serta upload foto di Google Drive
- */
 function updateProfil_old(username, dataBaru, fileObj) {
   try {
     const ss = getSpreadsheet();
@@ -1293,7 +1308,6 @@ function updateProfil_old(username, dataBaru, fileObj) {
       sheet.appendRow([username, dataBaru.nama, dataBaru.noHp, fotoUrl]);
     }
     
-    // Ganti password jika diisi
     if (dataBaru.passwordBaru && String(dataBaru.passwordBaru).trim() !== "") {
       const userSheet = ss.getSheetByName("Users");
       if (userSheet) {
@@ -1314,7 +1328,6 @@ function updateProfil_old(username, dataBaru, fileObj) {
   }
 }
 
-// === TAMBAHAN KODE BARU DI PALING BAWAH (HUKUMAN DIHINDARI: NO MODIFICATIONS) ===
 const FOLDER_FOTO_ID = '1Dc399KOxltIa8osp0blPv_GX0ap--ekq';
 
 function uploadFileToFolder_original(fileObj, prefix) {
@@ -1381,7 +1394,6 @@ function updateProfil_original(username, dataBaru, fileObj) {
   return { status: "success", message: "Profil berhasil diupdate" };
 }
 
-// === TAMBAHAN KODE BARU DI PALING BAWAH SESUAI PERINTAH LANGKAH 1 ===
 function uploadFileToFolder_step1(fileObj, prefix) {
   if (!fileObj) return '';
   const folder = DriveApp.getFolderById(FOLDER_FOTO_ID);
@@ -1413,9 +1425,8 @@ function updateProfil_step1(username, dataBaru, fileObj) {
   return { status: "success", message: "Profil berhasil diupdate" };
 }
 
-// === TAMBAHAN KODE BARU DI PALING BAWAH SESUAI PERINTAH ===
 function uploadFileToFolder_step2(fileObj, prefix) {
-  if (!fileObj ||!fileObj.bytes) return '';
+  if (!fileObj || !fileObj.bytes) return '';
   try {
     const folder = DriveApp.getFolderById(FOLDER_FOTO_ID);
     const blob = Utilities.newBlob(fileObj.bytes, fileObj.type, fileObj.name);
@@ -1456,9 +1467,8 @@ function updateProfil_step2(username, dataBaru, fileObj) {
   return { status: "success", message: "Profil berhasil diupdate" };
 }
 
-// === TAMBAHAN KODE BARU DI PALING BAWAH SESUAI PERINTAH MUTLAK ===
 function uploadFileToFolder_original_v2(fileObj, prefix) {
-  if (!fileObj ||!fileObj.bytes) return '';
+  if (!fileObj || !fileObj.bytes) return '';
   const folder = DriveApp.getFolderById(FOLDER_FOTO_ID);
   const blob = Utilities.newBlob(fileObj.bytes, fileObj.type, fileObj.name);
   const file = folder.createFile(blob).setName(prefix + new Date().getTime() + '_' + fileObj.name);
@@ -1489,43 +1499,14 @@ function updateProfil_original_v2(username, dataBaru, fileObj) {
 }
 
 function uploadFileToFolder(fileObj, prefix) {
-  if (!fileObj ||!fileObj.bytes) return '';
-  const folder = DriveApp.getFolderById('1Dc399KOxltIa8osp0blPv_GX0ap--ekq');
-  const blob = Utilities.newBlob(fileObj.bytes, fileObj.type, fileObj.name);
-  const file = folder.createFile(blob).setName(prefix + new Date().getTime() + '_' + fileObj.name);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return file.getUrl();
-}
-function getProfil(username) {
-  const ss = SpreadsheetApp.openById('107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg');
-  let sheet = ss.getSheetByName('profile');
-  if (!sheet) { sheet = ss.insertSheet('profile'); sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']); }
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) { if (data[i][0] == username) { return { nama: data[i][1] || '', noHp: data[i][2] || '', fotoUrl: data[i][3] || '' }; } }
-  return {};
-}
-function updateProfil(username, dataBaru, fileObj) {
-  const ss = SpreadsheetApp.openById('107uW-UxApF4Ecb-BT9-gRGg-0awaa_lKUkbsNRBupLg');
-  let sheet = ss.getSheetByName('profile');
-  if (!sheet) { sheet = ss.insertSheet('profile'); sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']); }
-  const data = sheet.getDataRange().getValues();
-  let rowIndex = -1; for (let i = 1; i < data.length; i++) { if (data[i][0] == username) { rowIndex = i + 1; break; } }
-  if (rowIndex == -1) { sheet.appendRow([username, dataBaru.nama, dataBaru.noHp, '']); rowIndex = sheet.getLastRow(); }
-  else { sheet.getRange(rowIndex, 2).setValue(dataBaru.nama); sheet.getRange(rowIndex, 3).setValue(dataBaru.noHp); }
-  if (fileObj && fileObj.bytes) { const fotoUrl = uploadFileToFolder(fileObj, 'PROFIL_'); if(fotoUrl) sheet.getRange(rowIndex, 4).setValue(fotoUrl); }
-  if (dataBaru.passwordBaru && dataBaru.passwordBaru!= '') { const userSheet = ss.getSheetByName('users'); const userData = userSheet.getDataRange().getValues(); for (let i = 1; i < userData.length; i++) { if (userData[i][0] == username) { userSheet.getRange(i + 1, 2).setValue(hashPassword(dataBaru.passwordBaru)); break; } } }
-  return { status: "success", message: "Profil berhasil disimpan" };
-}
-
-// === TAMBAHAN BLOK KODE BARU code.gs ===
-function uploadFileToFolder(fileObj, prefix) {
-  if (!fileObj ||!fileObj.bytes) return '';
+  if (!fileObj || !fileObj.bytes) return '';
   const folder = DriveApp.getFolderById(FOLDER_FOTO_ID);
   const blob = Utilities.newBlob(fileObj.bytes, fileObj.type, fileObj.name);
   const file = folder.createFile(blob).setName(prefix + new Date().getTime() + '_' + fileObj.name);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return file.getUrl();
 }
+
 function getProfil(username) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName('profile');
@@ -1534,6 +1515,7 @@ function getProfil(username) {
   for (let i = 1; i < data.length; i++) { if (data[i][0] == username) { return { nama: data[i][1] || '', noHp: data[i][2] || '', fotoUrl: data[i][3] || '' }; } }
   return {};
 }
+
 function updateProfil(username, dataBaru, fileObj) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName('profile');
