@@ -1,7 +1,3 @@
---- START OF FILE Paste July 22, 2026 - 9:48PM ---
-
---- START OF FILE Paste July 22, 2026 - 9:37PM ---
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -644,14 +640,10 @@
       .overlay.active { display:block; }
     }
   </style>
-  <!-- BAGIAN 1: TAMBAH DI DALAM <head> PALING BAWAH -->
-  <link rel="manifest" href="<?= ScriptApp.getService().getUrl() ?>?page=manifest">
+  
+  <!-- DIUBAH UNTUK VERCEL -->
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#5D4037">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
-  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/6617026723758640553d6200fc06fbd27235214b/logo_PWA.png">
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#5D4037">
 </head>
 <body>
 
@@ -668,7 +660,7 @@
   </div>
 
   <!-- ==========================================
-       LOGIN SCREEN (PERBAIKAN 2 &amp; 3)
+       LOGIN SCREEN (PERBAIKAN 2 & 3)
        ========================================== -->
   <div id="login-screen">
     <div class="login-box">
@@ -1398,37 +1390,6 @@
     </div>
   </div>
 
-  <!-- BAGIAN 3: TAMBAH FUNCTION INI DI PALING ATAS FILE, SEBELUM <script> LAMA -->
-  <script>
-  function doGet(e) {
-    if(e && e.parameter && e.parameter.page === 'manifest'){
-      var manifest = {
-        "name": "SIAP WANAMSKA",
-        "short_name": "SIAP",
-        "start_url": ScriptApp.getService().getUrl(),
-        "display": "standalone",
-        "background_color": "#F5F5F6",
-        "theme_color": "#5D4037",
-        "icons": [
-          {
-            "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/6617026723758640553d6200fc06fbd27235214b/logo_PWA.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-          },
-          {
-            "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/6617026723758640553d6200fc06fbd27235214b/logo_PWA.png",
-            "sizes": "192x192",
-            "type": "image/png"
-          }
-        ]
-      };
-      return ContentService.createTextOutput(JSON.stringify(manifest)).setMimeType(ContentService.MimeType.JSON);
-    }
-    return HtmlService.createTemplateFromFile('index').evaluate().setTitle('SIAP WANAMSKA');
-  }
-  </script>
-
   <!-- FRONTEND LOGIC (JS Murni) -->
   <script>
     // CEK SESSION SAAT LOAD
@@ -1564,9 +1525,17 @@
         return; 
       }
       showToast('Sedang login...');
-      
-      google.script.run
-        .withSuccessHandler(function(res){
+
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'loginUser', params: [userIdVal, passwordVal]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var res = response.data;
           if(res.success){
             sessionStorage.setItem('sessionToken', res.sessionToken);
             sessionStorage.setItem('user', JSON.stringify(res.user));
@@ -1588,11 +1557,13 @@
           } else { 
             showToast(res.message || 'Login gagal', true); 
           }
-        })
-        .withFailureHandler(function(err){ 
-          showToast('Error: ' + err.message, true); 
-        })
-        .loginUser(userIdVal, passwordVal);
+        } else {
+          showToast(response.message || 'Login gagal', true);
+        }
+      })
+      .catch(err => {
+        showToast('Error: ' + err.message, true);
+      });
     }
 
     function actionLogout() {
@@ -1638,8 +1609,16 @@
      * Untuk mengimbangi aturan audit code.gs, antarmuka fungsional dipertahankan via penanganan lokal.
      */
     function loadDashboard() {
-      google.script.run
-        .withSuccessHandler(function(res) {
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'getDashboardData', params: [sessionToken]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var res = response.data;
           if (res.success) {
             document.getElementById('dash-total-anggota').innerText = res.total_anggota;
             document.getElementById('dash-hadir-hari-ini').innerText = res.hadir_hari_ini;
@@ -1656,8 +1635,9 @@
               }
             }
           }
-        })
-        .getDashboardData(sessionToken);
+        } else { console.error(response.message); }
+      })
+      .catch(err => console.error(err));
     }
 
     function togglePassword() {
@@ -1766,9 +1746,18 @@
       }
 
       setLoader(true, "Mengirim Absensi...");
-      google.script.run
-        .withSuccessHandler(function(res) {
-          setLoader(false);
+
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'submitAbsen', params: [sessionToken, status, base64SelfieString, metode, kegiatanCode, keterangan]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        setLoader(false);
+        if(response.status === 'success') {
+          var res = response.data;
           if (res.success) {
             showToast(res.message);
             stopCamera();
@@ -1778,14 +1767,29 @@
           } else {
             showToast(res.message, true);
           }
-        })
-        .submitAbsen(sessionToken, status, base64SelfieString, metode, kegiatanCode, keterangan);
+        } else {
+          showToast(response.message, true);
+        }
+      })
+      .catch(err => {
+        setLoader(false);
+        console.error(err);
+      });
     }
 
     function loadAbsenHistory() {
       const filter = document.getElementById('filter-absen-date').value;
-      google.script.run
-        .withSuccessHandler(function(res) {
+
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'getAbsenHistory', params: [sessionToken, filter]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var res = response.data;
           if (res.success) {
             const tbody = document.getElementById('body-riwayat-absen');
             tbody.innerHTML = "";
@@ -1807,8 +1811,9 @@
                 </tr>`;
             });
           }
-        })
-        .getAbsenHistory(sessionToken, filter);
+        } else { console.error(response.message); }
+      })
+      .catch(err => console.error(err));
     }
 
     // Ganti password jika diisi
@@ -1818,8 +1823,16 @@
     }
 
     function loadKegiatan() {
-      google.script.run
-        .withSuccessHandler(function(res) {
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'getKegiatanList', params: [sessionToken]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var res = response.data;
           if (res.success) {
             const grid = document.getElementById('grid-list-kegiatan');
             grid.innerHTML = "";
@@ -1844,8 +1857,9 @@
                 </div>`;
             });
           }
-        })
-        .getKegiatanList(sessionToken);
+        } else { console.error(response.message); }
+      })
+      .catch(err => console.error(err));
     }
 
     function processKegiatanPhoto(index, event) {
@@ -1861,7 +1875,7 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, 300, 200);
           document.getElementById(`keg-foto-${index}-base64`).value = canvas.toDataURL('image/jpeg', 0.65);
-          showToast(`Foto ${index} berhasil diproses.`);
+          showToast(`Foto ${index} berhasil dipproses.`);
         };
         img.src = e.target.result;
       };
@@ -1879,13 +1893,23 @@
         keterangan: document.getElementById('inv-keterangan').value
       };
       setLoader(true, "Menyimpan...");
-      google.script.run
-        .withSuccessHandler(function() {
-          setLoader(false);
-          closeInventarisModal();
-          loadInventaris();
-        })
-        .saveInventaris(sessionToken, payload);
+
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'saveInventaris', params: [sessionToken, payload]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        setLoader(false);
+        closeInventarisModal();
+        loadInventaris();
+      })
+      .catch(err => {
+        setLoader(false);
+        console.error(err);
+      });
     }
 
     function openInventarisModal() {
@@ -1896,16 +1920,25 @@
     }
 
     function loadKas() {
-      google.script.run
-        .withSuccessHandler(function(res) {
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'getKasData', params: [sessionToken]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var res = response.data;
           if (res.success) {
             document.getElementById('kas-total-pemasukan').innerText = "Rp " + res.totalMasuk.toLocaleString('id-ID');
             document.getElementById('kas-total-pengeluaran').innerText = "Rp " + res.totalKeluar.toLocaleString('id-ID');
             document.getElementById('kas-saldo-akhir').innerText = "Rp " + res.saldoAkhir.toLocaleString('id-ID');
             drawKasChart(res.totalMasuk, res.totalKeluar);
           }
-        })
-        .getKasData(sessionToken);
+        } else { console.error(response.message); }
+      })
+      .catch(err => console.error(err));
     }
 
     // Ganti password jika diisi
@@ -1933,13 +1966,23 @@
         keterangan: document.getElementById('kas-keterangan-form').value
       };
       setLoader(true, "Mencatat...");
-      google.script.run
-        .withSuccessHandler(function() {
-          setLoader(false);
-          closeKasModal();
-          loadKas();
-        })
-        .addKasTransaction(sessionToken, payload);
+
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'addKasTransaction', params: [sessionToken, payload]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        setLoader(false);
+        closeKasModal();
+        loadKas();
+      })
+      .catch(err => {
+        setLoader(false);
+        console.error(err);
+      });
     }
 
     // GANTI NAMA FUNGSI BANTU AGAR AMAN SINKRONISASI
@@ -1951,15 +1994,24 @@
     }
 
     function loadProfileDiri() {
-      google.script.run
-        .withSuccessHandler(function(res) {
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'getUserProfile', params: [sessionToken, userId]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var res = response.data;
           if (res.success) {
             document.getElementById('prof-user-id').value = res.profile.user_id;
             document.getElementById('prof-nama').value = res.profile.nama_lengkap;
             document.getElementById('prof-nta').value = res.profile.nta || "";
           }
-        })
-        .getUserProfile(sessionToken, userId);
+        } else { console.error(response.message); }
+      })
+      .catch(err => console.error(err));
     }
 
     function actionSaveProfile() {
@@ -1968,13 +2020,30 @@
         nama_lengkap: document.getElementById('prof-nama').value,
         nta: document.getElementById('prof-nta').value
       };
-      google.script.run.saveUserProfile(sessionToken, payload);
+
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'saveUserProfile', params: [sessionToken, payload]})
+      })
+      .then(res => res.json())
+      .then(response => { if(response.status !== 'success') console.error(response.message); })
+      .catch(err => console.error(err));
     }
 
     // Catatan: Fungsi loadProfil_old, simpanProfil_old di bawah ini dipertahankan utuh
     function loadUsers() {
-      google.script.run
-        .withSuccessHandler(function(res) {
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'getUserList', params: [sessionToken]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var res = response.data;
           if (res.success) {
             const tbody = document.getElementById('body-users');
             tbody.innerHTML = "";
@@ -1989,8 +2058,9 @@
                 </tr>`;
             });
           }
-        })
-        .getUserList(sessionToken);
+        } else { console.error(response.message); }
+      })
+      .catch(err => console.error(err));
     }
 
     function actionSaveUser() {
@@ -2001,7 +2071,16 @@
         role: document.getElementById('usr-role').value,
         status_aktif: document.getElementById('usr-status').value
       };
-      google.script.run.saveUserByAdmin(sessionToken, payload);
+
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'saveUserByAdmin', params: [sessionToken, payload]})
+      })
+      .then(res => res.json())
+      .then(response => { if(response.status !== 'success') console.error(response.message); })
+      .catch(err => console.error(err));
     }
 
     function openUserModal() {
@@ -2012,8 +2091,16 @@
     }
 
     function loadSystemLogs() {
-      google.script.run
-        .withSuccessHandler(function(res) {
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'getSystemLogs', params: [sessionToken, ""]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var res = response.data;
           if (res.success) {
             const tbody = document.getElementById('body-logs');
             tbody.innerHTML = "";
@@ -2028,8 +2115,9 @@
                 </tr>`;
             });
           }
-        })
-        .getSystemLogs(sessionToken, "");
+        } else { console.error(response.message); }
+      })
+      .catch(err => console.error(err));
     }
 
     function showAbsenPage() {
@@ -2037,8 +2125,16 @@
     }
 
     function loadDaftarAnggota() {
-      google.script.run
-        .withSuccessHandler(function(res) {
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'getAnggotaUntukAbsen', params: []})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var res = response.data;
           if (res.success) {
             const tbody = document.getElementById('daftarAnggotaAbsen');
             tbody.innerHTML = "";
@@ -2052,8 +2148,9 @@
                 </tr>`;
             });
           }
-        })
-        .getAnggotaUntukAbsen();
+        } else { console.error(response.message); }
+      })
+      .catch(err => console.error(err));
     }
 
     function simpanKehadiran() {
@@ -2061,7 +2158,16 @@
         tanggal: document.getElementById('tanggalAbsen').value,
         data: []
       };
-      google.script.run.saveKehadiran(payload);
+
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'saveKehadiran', params: [payload]})
+      })
+      .then(res => res.json())
+      .then(response => { if(response.status !== 'success') console.error(response.message); })
+      .catch(err => console.error(err));
     }
 
     // Catatan: Fungsi kembaliKeDashboard dipertahankan utuh
@@ -2130,26 +2236,58 @@
     window.profilScriptLoaded = true;
     function loadProfil() {
       if(typeof currentUser == 'undefined') return;
-      google.script.run.withSuccessHandler(function(data){
-        document.getElementById('nama-profil').value = data.nama || currentUser.nama || '';
-        document.getElementById('nohp-profil').value = data.noHp || '';
-        if(data.fotoUrl) document.getElementById('preview-foto').src = data.fotoUrl;
-      }).getProfil(currentUser.user_id);
+
+      // DIUBAH UNTUK VERCEL
+      fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: 'getProfil', params: [currentUser.user_id]})
+      })
+      .then(res => res.json())
+      .then(response => {
+        if(response.status === 'success') {
+          var data = response.data;
+          document.getElementById('nama-profil').value = data.nama || currentUser.nama || '';
+          document.getElementById('nohp-profil').value = data.noHp || '';
+          if(data.fotoUrl) document.getElementById('preview-foto').src = data.fotoUrl;
+        } else { console.error(response.message); }
+      })
+      .catch(err => console.error(err));
     }
+
     const _oldShow = window.showSection;
     window.showSection = function(id){ _oldShow(id); if(id == 'section-profil') loadProfil(); }
+    
     function simpanProfil(){
       const btn = event.target; btn.innerText = "Menyimpan..."; btn.disabled = true;
       const fileInput = document.getElementById('foto-profil');
       const data = {nama: document.getElementById('nama-profil').value, noHp: document.getElementById('nohp-profil').value, passwordBaru: document.getElementById('password-baru').value};
       const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status == "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } };
+      
       if(fileInput.files.length > 0){
         const reader = new FileReader(); reader.onload = function(e){
           const fileObj = {bytes: Array.from(new Uint8Array(e.target.result)), type: fileInput.files[0].type, name: fileInput.files[0].name};
-          google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, fileObj);
+          
+          // DIUBAH UNTUK VERCEL
+          fetch('/api', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({func: 'updateProfil', params: [currentUser.user_id, data, fileObj]})
+          })
+          .then(res => res.json())
+          .then(response => { if(response.status === 'success') afterSave(response.data); else console.error(response.message); })
+          .catch(err => console.error(err));
         }; reader.readAsArrayBuffer(fileInput.files[0]);
       } else {
-        google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
+        // DIUBAH UNTUK VERCEL
+        fetch('/api', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({func: 'updateProfil', params: [currentUser.user_id, data, null]})
+        })
+        .then(res => res.json())
+        .then(response => { if(response.status === 'success') afterSave(response.data); else console.error(response.message); })
+        .catch(err => console.error(err));
       }
     }
   }
@@ -2187,14 +2325,16 @@
     }
   });
   </script>
-<div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
-  <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi SIAP</button>
-</div>
-<script>
-let deferredPromptPWA;
-window.addEventListener('beforeinstallprompt', (e) => {e.preventDefault(); deferredPromptPWA = e; document.getElementById('installPWABox').style.display = 'block';});
-document.getElementById('btnInstallPWA').addEventListener('click', async () => {if(deferredPromptPWA) {deferredPromptPWA.prompt(); deferredPromptPWA = null;}});
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
-</script>
+
+  <!-- DIUBAH UNTUK VERCEL -->
+  <div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
+    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi SIAP</button>
+  </div>
+  <script>
+  let deferredPromptPWA;
+  window.addEventListener('beforeinstallprompt', (e) => {e.preventDefault(); deferredPromptPWA = e; document.getElementById('installPWABox').style.display = 'block';});
+  document.getElementById('btnInstallPWA').addEventListener('click', async () => {if(deferredPromptPWA) {deferredPromptPWA.prompt(); deferredPromptPWA = null;}});
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
+  </script>
 </body>
 </html>
