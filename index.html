@@ -4,6 +4,8 @@
   <base target="_top">
   <meta charset="UTF-8">
   <title>SIAP WANAMSKA</title>
+
+  <!-- 1. PWA MANIFEST & THEME COLOR -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#c62828">
   
@@ -2113,6 +2115,7 @@
     });
   </script>
 
+  <!-- 2. SERVICE WORKER REGISTRATION -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
