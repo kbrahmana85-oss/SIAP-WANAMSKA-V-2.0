@@ -677,9 +677,6 @@
       
       <!-- Tombol Masuk Tunggal -->
       <button type="button" id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none; cursor: pointer;">Login</button>
-      
-      <!-- Tombol Install Aplikasi Manual -->
-      <button id="btnInstall" class="btn btn-success w-100 mt-2" style="display:none; width: 100%; margin-top: 10px; background-color: #198754; color: white; border: none; padding: 12px; border-radius: var(--rounded-btn); font-weight: 700; cursor: pointer;">📲 Instal Aplikasi SIAP</button>
 
       <div style="text-align:center; margin-bottom: 20px; margin-top: 15px;">
         <h2>SELAMAT DATANG</h2>
@@ -1346,7 +1343,7 @@
   <div class="modal-overlay" id="modal-user">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 id="user-modal-title">Form Tambah User</h3>
+        <h3>Form Tambah User</h3>
         <span class="modal-close" onclick="closeUserModal()">&times;</span>
       </div>
       <div class="modal-body">
@@ -2141,30 +2138,31 @@
   }
   </script>
 
-  <!-- MODUL DETEKSI & PROMPT INSTALASI PWA -->
+  <!-- BANNER FLOATING INSTALASI PWA -->
+  <div id="installContainer" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; display:none;">
+    <button id="btnInstallPWA" class="btn btn-warning shadow-lg" style="background-color: #F59E0B; color: #3D2B1F; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);">
+      📲 Install Aplikasi SIAP
+    </button>
+  </div>
+
   <script>
   let deferredPrompt;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    document.getElementById('btnInstall').style.display = 'block';
+    document.getElementById('installContainer').style.display = 'block';
   });
 
-  document.getElementById('btnInstall').addEventListener('click', async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      document.getElementById('btnInstall').style.display = 'none';
-    } else {
-      // Fallback untuk iPhone & Android yang tidak support beforeinstallprompt
-      alert('Cara Install:\nAndroid: Klik titik 3 > Instal aplikasi\niPhone: Klik Share > Tambah ke Layar Utama');
-    }
+  document.getElementById('btnInstallPWA').addEventListener('click', async () => {
+    document.getElementById('installContainer').style.display = 'none';
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
   });
 
-  // Deteksi sudah install
   window.addEventListener('appinstalled', () => {
-    document.getElementById('btnInstall').style.display = 'none';
+    document.getElementById('installContainer').style.display = 'none';
+    alert('Aplikasi SIAP berhasil diinstall!');
   });
   </script>
 </body>
