@@ -4,6 +4,10 @@
   <base target="_top">
   <meta charset="UTF-8">
   <title>SIAP WANAMSKA</title>
+  
+  <!-- MANIFEST INLINE UNTUK GOOGLE APPS SCRIPT -->
+  <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNJQVAgV0FOQU1TS0EgVjIuMCIsCiAgInNob3J0X25hbWUiOiAiU0lBUDIuMCIsCiAgImRlc2NyaXB0aW9uIjogIlNpc3RlbSBJbmZvcm1hc2kgQWthZGVtaWsgUGVsYXlhbmFuIC0gU01BIE5lZ2VyaSBXYW5hZGFkaSIsCiAgInN0YXJ0X3VybCI6ICIvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzBkNmVmZCIsCiAgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwKICAiaWNvbnMiOiBbXQp9">
+
   <style>
     /* ==========================================
        TEMA VISUAL - MAJESTY THEME
@@ -818,7 +822,7 @@
                 <label for="absen-kegiatan-id">Kode ID / Nama Kegiatan</label>
                 <input type="text" id="absen-kegiatan-id" class="form-control" placeholder="Contoh: KEG-XXXXXX">
                 <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 5px;">
-                  * Catatan Teknis: Untuk menghindari pemuatan library eksternal (CDN), kami menyediakan kolom input manual kode ini sebagai fallback scanner QR bawaan.
+                  * Catatan Teknis: Untuk menghindari pemuatan library eksternal (CDN), kami menyediakan kolom input manual kode ini as fallback scanner QR bawaan.
                 </p>
               </div>
 
@@ -2113,6 +2117,19 @@
         google.script.run.withSuccessHandler(afterSave).updateProfil(currentUser.user_id, data, null);
       }
     }
+  }
+  </script>
+
+  <!-- SERVICE WORKER INLINE UNTUK GOOGLE APPS SCRIPT -->
+  <script>
+  if('serviceWorker' in navigator) {
+    const swCode = `
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('fetch', e => {});
+    `;
+    const blob = new Blob([swCode], {type: 'text/javascript'});
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl);
   }
   </script>
 </body>
