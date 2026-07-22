@@ -1,6 +1,7 @@
 {
   "name": "SIAP WANAMSKA V2",
   "short_name": "SIAP V2",
+  "description": "Sistem Informasi & Absensi Pegawai",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
