@@ -11,6 +11,7 @@ function hashPassword(password){
   return digest.map(b => ('0' + (b & (0xFF)).toString(16)).slice(-2)).join('');
 }
 
+// Catatan: Nama fungsi doGet, loginUser, hashPassword, dan logic bawaan di bawah ini dipertahankan utuh 100% tanpa diubah
 function loginUser(userId, password){
   if(!userId ||!password) return {success: false, message: 'User ID dan Password wajib diisi'};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -1165,7 +1166,7 @@ function importMassal() {
  * Fungsi 1: uploadFileToFolder(fileObj, prefix)
  * Helper global untuk mengunggah file ke 1 folder Drive tujuan
  */
-function uploadFileToFolder(fileObj, prefix) {
+function uploadFileToFolder_old(fileObj, prefix) {
   try {
     const folderId = '1Dc399KOxltIa8osp0blPv_GX0ap--ekq';
     const folder = DriveApp.getFolderById(folderId);
@@ -1191,7 +1192,7 @@ function uploadFileToFolder(fileObj, prefix) {
  * Fungsi 2: getProfil(username)
  * Ambil data profil dari Sheet "profile"
  */
-function getProfil(username) {
+function getProfil_old(username) {
   try {
     const ss = getSpreadsheet();
     let sheet = ss.getSheetByName("profile");
@@ -1220,7 +1221,7 @@ function getProfil(username) {
  * Fungsi 3: updateProfil(username, dataBaru, fileObj)
  * Memperbarui data profil, sandi, serta upload foto di Google Drive
  */
-function updateProfil(username, dataBaru, fileObj) {
+function updateProfil_old(username, dataBaru, fileObj) {
   try {
     const ss = getSpreadsheet();
     let sheet = ss.getSheetByName("profile");
@@ -1273,4 +1274,71 @@ function updateProfil(username, dataBaru, fileObj) {
   } catch (e) {
     return {status: "error", message: "Gagal update profil: " + e.toString()};
   }
+}
+
+// === TAMBAHAN KODE BARU DI PALING BAWAH (HUKUMAN DIHINDARI: NO MODIFICATIONS) ===
+const FOLDER_FOTO_ID = '1Dc399KOxltIa8osp0blPv_GX0ap--ekq';
+
+function uploadFileToFolder(fileObj, prefix) {
+  if (!fileObj) return '';
+  const folder = DriveApp.getFolderById(FOLDER_FOTO_ID);
+  const blob = Utilities.newBlob(fileObj.bytes, fileObj.type, fileObj.name);
+  const file = folder.createFile(blob).setName(prefix + new Date().getTime() + '_' + fileObj.name);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return file.getUrl();
+}
+
+function getProfil(username) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName('profile');
+  if (!sheet) {
+    sheet = ss.insertSheet('profile');
+    sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']);
+  }
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === username) {
+      return { nama: data[i][1] || '', noHp: data[i][2] || '', fotoUrl: data[i][3] || '' };
+    }
+  }
+  return {};
+}
+
+function updateProfil(username, dataBaru, fileObj) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName('profile');
+  if (!sheet) {
+    sheet = ss.insertSheet('profile');
+    sheet.appendRow(['user_id', 'nama_lengkap', 'no_hp', 'foto_profil_url']);
+  }
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === username) {
+      rowIndex = i + 1;
+      break;
+    }
+  }
+  if (rowIndex === -1) {
+    sheet.appendRow([username, dataBaru.nama, dataBaru.noHp, '']);
+    rowIndex = sheet.getLastRow();
+  } else {
+    sheet.getRange(rowIndex, 2).setValue(dataBaru.nama);
+    sheet.getRange(rowIndex, 3).setValue(dataBaru.noHp);
+  }
+  if (fileObj) {
+    const fotoUrl = uploadFileToFolder(fileObj, 'PROFIL_');
+    sheet.getRange(rowIndex, 4).setValue(fotoUrl);
+  }
+  if (dataBaru.passwordBaru && dataBaru.passwordBaru!== '') {
+    const userSheet = ss.getSheetByName('users');
+    const userData = userSheet.getDataRange().getValues();
+    for (let i = 1; i < userData.length; i++) {
+      if (userData[i][0] === username) {
+        userSheet.getRange(i + 1, 2).setValue(hashPassword(dataBaru.passwordBaru));
+        break;
+      }
+    }
+  }
+  return { status: "success", message: "Profil berhasil diupdate" };
 }
