@@ -5,13 +5,14 @@
   <meta charset="UTF-8">
   <title>SIAP WANAMSKA</title>
   
-  <!-- MANIFEST INLINE UNTUK GOOGLE APPS SCRIPT (BAGIAN A) -->
-  <link rel="manifest" href="<?= ScriptApp.getService().getUrl() ?>?page=manifest">
-  <meta name="theme-color" content="#5D4037">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_PWA.png">
+
+  <!-- ATURAN 4: PWA MANIFEST & THEME COLOR -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#5D4037">
 
   <style>
     /* ==========================================
@@ -119,7 +120,7 @@
       margin: 0;
     }
 
-    /* CSS Modul Developer di Dashboard (Perbaikan 4) */
+    /* CSS Modul Developer di Dashboard */
     .dev {
       display: flex;
       align-items: center;
@@ -306,10 +307,6 @@
       height: 45px;
       width: auto;
     }
-    .header-logo img {
-      height: 45px;
-      width: auto;
-    }
     .header-title h2 {
       font-family: var(--font-title);
       font-size: 1.4rem;
@@ -347,7 +344,7 @@
       width: 260px;
       background-color: #3E2723;
       padding: 20px 0;
-      color: var(--white);
+      color: var(--color-white);
       transition: all 0.3s;
     }
     .menu-item {
@@ -355,7 +352,7 @@
       align-items: center;
       gap: 12px;
       padding: 12px 25px;
-      color: var(--light-brown);
+      color: var(--color-light-brown);
       text-decoration: none;
       cursor: pointer;
       font-size: 0.95rem;
@@ -640,10 +637,6 @@
       .overlay.active { display:block; }
     }
   </style>
-  
-  <!-- DIUBAH UNTUK VERCEL -->
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#5D4037">
 </head>
 <body>
 
@@ -659,9 +652,7 @@
     <p id="loader-text">Memproses data...</p>
   </div>
 
-  <!-- ==========================================
-       LOGIN SCREEN (PERBAIKAN 2 & 3)
-       ========================================== -->
+  <!-- LOGIN SCREEN -->
   <div id="login-screen">
     <div class="login-box">
       <!-- Logo SIAP WANAMSKA V-2.0 -->
@@ -887,6 +878,7 @@
             </div>
           </div>
         </section>
+        
         <section id="section-profil-lama" class="app-section" style="display:none;">
           <!-- Content Profile Lama -->
         </section>
@@ -1390,8 +1382,31 @@
     </div>
   </div>
 
-  <!-- FRONTEND LOGIC (JS Murni) -->
+  <!-- SECTION PROFIL -->
+  <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+    <h3>Profil Saya</h3>
+    <div style="text-align:center;"><img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; border:3px solid #0d6efd; margin-bottom:15px; object-fit:cover;"></div>
+    <label style="font-weight:bold;">Upload Foto Profil</label><input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
+    <label style="font-weight:bold;">Nama Lengkap</label><input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px;">
+    <label style="font-weight:bold;">No HP / WA</label><input type="text" id="nohp-profil" style="width:100%; padding:8px; margin-bottom:10px;">
+    <label style="font-weight:bold;">Ganti Password Baru</label><input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px;">
+    <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Simpan Profil</button>
+  </section>
+
+  <!-- FRONTEND LOGIC (JS Murni & Fetch API Router) -->
   <script>
+    // ATURAN 2: FUNGSI GLOBAL UTAMA UNTUK PROKSINYA VERCEL -> APPS SCRIPT
+    async function callAPI(funcName, params = []) {
+      const res = await fetch('/api', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({func: funcName, params: params})
+      });
+      const response = await res.json();
+      if(response.status === 'success') return response.data;
+      else throw new Error(response.message);
+    }
+
     // CEK SESSION SAAT LOAD
     document.addEventListener('DOMContentLoaded', function() {
       sessionToken = sessionStorage.getItem('sessionToken');
@@ -1474,7 +1489,6 @@
       }
     }
 
-    // Catatan: Fungsi toggleSidebar dipertahankan utuh
     function toggleSidebar() {
       document.querySelector('.sidebar').classList.toggle('active');
       document.querySelector('.overlay').classList.toggle('active');
@@ -1499,7 +1513,6 @@
         elementMenu.classList.add('active');
       }
 
-      // Pastikan sidebar tertutup di handphone saat menu diklik
       document.querySelector('.sidebar').classList.remove('active');
       document.querySelector('.overlay').classList.remove('active');
 
@@ -1513,9 +1526,7 @@
       else if (sectionId === 'section-logs') loadSystemLogs();
     }
 
-    // ==========================================
-    // FUNGSI UTAMA handleLogin() - PERBAIKAN 5
-    // ==========================================
+    // FUNGSI UTAMA handleLogin()
     function handleLogin(){
       const userIdVal = document.getElementById('userId').value.trim();
       const passwordVal = document.getElementById('password').value.trim();
@@ -1526,21 +1537,12 @@
       }
       showToast('Sedang login...');
 
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'loginUser', params: [userIdVal, passwordVal]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('loginUser', [userIdVal, passwordVal])
+        .then(res => {
           if(res.success){
             sessionStorage.setItem('sessionToken', res.sessionToken);
             sessionStorage.setItem('user', JSON.stringify(res.user));
             
-            // Set data sesi lokal
             sessionToken = res.sessionToken;
             currentUser = res.user;
             userRole = res.user.role;
@@ -1550,20 +1552,15 @@
             document.getElementById('user-display-role').innerText = res.user.role;
 
             setupRBACUI(res.user.role);
-            
-            // Menyembunyikan loginBox dan menampilkan dashboardBox
             showPage('dashboard-page'); 
             loadDashboard();
           } else { 
             showToast(res.message || 'Login gagal', true); 
           }
-        } else {
-          showToast(response.message || 'Login gagal', true);
-        }
-      })
-      .catch(err => {
-        showToast('Error: ' + err.message, true);
-      });
+        })
+        .catch(err => {
+          showToast(err.message || 'Login gagal', true);
+        });
     }
 
     function actionLogout() {
@@ -1604,21 +1601,9 @@
       }
     }
 
-    /**
-     * RESTRICTED API CLIENT-SIDE FALLBACKS (MOCK-UP CONTROLLER)
-     * Untuk mengimbangi aturan audit code.gs, antarmuka fungsional dipertahankan via penanganan lokal.
-     */
     function loadDashboard() {
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'getDashboardData', params: [sessionToken]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('getDashboardData', [sessionToken])
+        .then(res => {
           if (res.success) {
             document.getElementById('dash-total-anggota').innerText = res.total_anggota;
             document.getElementById('dash-hadir-hari-ini').innerText = res.hadir_hari_ini;
@@ -1635,9 +1620,8 @@
               }
             }
           }
-        } else { console.error(response.message); }
-      })
-      .catch(err => console.error(err));
+        })
+        .catch(err => alert(err.message));
     }
 
     function togglePassword() {
@@ -1708,7 +1692,6 @@
       }
     }
 
-    // Ganti password jika diisi
     function captureSnapshot() {
       const video = document.getElementById('camera-video');
       const preview = document.getElementById('selfie-canvas-preview');
@@ -1747,17 +1730,9 @@
 
       setLoader(true, "Mengirim Absensi...");
 
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'submitAbsen', params: [sessionToken, status, base64SelfieString, metode, kegiatanCode, keterangan]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        setLoader(false);
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('submitAbsen', [sessionToken, status, base64SelfieString, metode, kegiatanCode, keterangan])
+        .then(res => {
+          setLoader(false);
           if (res.success) {
             showToast(res.message);
             stopCamera();
@@ -1767,29 +1742,18 @@
           } else {
             showToast(res.message, true);
           }
-        } else {
-          showToast(response.message, true);
-        }
-      })
-      .catch(err => {
-        setLoader(false);
-        console.error(err);
-      });
+        })
+        .catch(err => {
+          setLoader(false);
+          alert(err.message);
+        });
     }
 
     function loadAbsenHistory() {
       const filter = document.getElementById('filter-absen-date').value;
 
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'getAbsenHistory', params: [sessionToken, filter]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('getAbsenHistory', [sessionToken, filter])
+        .then(res => {
           if (res.success) {
             const tbody = document.getElementById('body-riwayat-absen');
             tbody.innerHTML = "";
@@ -1811,28 +1775,18 @@
                 </tr>`;
             });
           }
-        } else { console.error(response.message); }
-      })
-      .catch(err => console.error(err));
+        })
+        .catch(err => alert(err.message));
     }
 
-    // Ganti password jika diisi
     function viewFullImage(base64) {
       const w = window.open();
       w.document.write(`<img src="${base64}" style="max-width:100%; height:auto;" />`);
     }
 
     function loadKegiatan() {
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'getKegiatanList', params: [sessionToken]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('getKegiatanList', [sessionToken])
+        .then(res => {
           if (res.success) {
             const grid = document.getElementById('grid-list-kegiatan');
             grid.innerHTML = "";
@@ -1857,9 +1811,8 @@
                 </div>`;
             });
           }
-        } else { console.error(response.message); }
-      })
-      .catch(err => console.error(err));
+        })
+        .catch(err => alert(err.message));
     }
 
     function processKegiatanPhoto(index, event) {
@@ -1875,14 +1828,13 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, 300, 200);
           document.getElementById(`keg-foto-${index}-base64`).value = canvas.toDataURL('image/jpeg', 0.65);
-          showToast(`Foto ${index} berhasil dipproses.`);
+          showToast(`Foto ${index} berhasil diproses.`);
         };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
 
-    // Ganti password jika diisi
     function actionSaveKegiatan() {
       const payload = {
         id_kegiatan: document.getElementById('keg-id').value,
@@ -1894,22 +1846,16 @@
       };
       setLoader(true, "Menyimpan...");
 
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'saveInventaris', params: [sessionToken, payload]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        setLoader(false);
-        closeInventarisModal();
-        loadInventaris();
-      })
-      .catch(err => {
-        setLoader(false);
-        console.error(err);
-      });
+      callAPI('saveInventaris', [sessionToken, payload])
+        .then(() => {
+          setLoader(false);
+          closeInventarisModal();
+          loadInventaris();
+        })
+        .catch(err => {
+          setLoader(false);
+          alert(err.message);
+        });
     }
 
     function openInventarisModal() {
@@ -1920,28 +1866,18 @@
     }
 
     function loadKas() {
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'getKasData', params: [sessionToken]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('getKasData', [sessionToken])
+        .then(res => {
           if (res.success) {
             document.getElementById('kas-total-pemasukan').innerText = "Rp " + res.totalMasuk.toLocaleString('id-ID');
             document.getElementById('kas-total-pengeluaran').innerText = "Rp " + res.totalKeluar.toLocaleString('id-ID');
             document.getElementById('kas-saldo-akhir').innerText = "Rp " + res.saldoAkhir.toLocaleString('id-ID');
             drawKasChart(res.totalMasuk, res.totalKeluar);
           }
-        } else { console.error(response.message); }
-      })
-      .catch(err => console.error(err));
+        })
+        .catch(err => alert(err.message));
     }
 
-    // Ganti password jika diisi
     function drawKasChart(masuk, keluar) {
       const canvas = document.getElementById('canvas-kas-chart');
       const ctx = canvas.getContext('2d');
@@ -1967,25 +1903,18 @@
       };
       setLoader(true, "Mencatat...");
 
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'addKasTransaction', params: [sessionToken, payload]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        setLoader(false);
-        closeKasModal();
-        loadKas();
-      })
-      .catch(err => {
-        setLoader(false);
-        console.error(err);
-      });
+      callAPI('addKasTransaction', [sessionToken, payload])
+        .then(() => {
+          setLoader(false);
+          closeKasModal();
+          loadKas();
+        })
+        .catch(err => {
+          setLoader(false);
+          alert(err.message);
+        });
     }
 
-    // GANTI NAMA FUNGSI BANTU AGAR AMAN SINKRONISASI
     function openKasModal_v2() {
       document.getElementById('modal-kas').style.display = 'flex';
     }
@@ -1994,24 +1923,15 @@
     }
 
     function loadProfileDiri() {
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'getUserProfile', params: [sessionToken, userId]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('getUserProfile', [sessionToken, userId])
+        .then(res => {
           if (res.success) {
             document.getElementById('prof-user-id').value = res.profile.user_id;
             document.getElementById('prof-nama').value = res.profile.nama_lengkap;
             document.getElementById('prof-nta').value = res.profile.nta || "";
           }
-        } else { console.error(response.message); }
-      })
-      .catch(err => console.error(err));
+        })
+        .catch(err => alert(err.message));
     }
 
     function actionSaveProfile() {
@@ -2021,29 +1941,13 @@
         nta: document.getElementById('prof-nta').value
       };
 
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'saveUserProfile', params: [sessionToken, payload]})
-      })
-      .then(res => res.json())
-      .then(response => { if(response.status !== 'success') console.error(response.message); })
-      .catch(err => console.error(err));
+      callAPI('saveUserProfile', [sessionToken, payload])
+        .catch(err => alert(err.message));
     }
 
-    // Catatan: Fungsi loadProfil_old, simpanProfil_old di bawah ini dipertahankan utuh
     function loadUsers() {
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'getUserList', params: [sessionToken]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('getUserList', [sessionToken])
+        .then(res => {
           if (res.success) {
             const tbody = document.getElementById('body-users');
             tbody.innerHTML = "";
@@ -2058,9 +1962,8 @@
                 </tr>`;
             });
           }
-        } else { console.error(response.message); }
-      })
-      .catch(err => console.error(err));
+        })
+        .catch(err => alert(err.message));
     }
 
     function actionSaveUser() {
@@ -2072,15 +1975,8 @@
         status_aktif: document.getElementById('usr-status').value
       };
 
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'saveUserByAdmin', params: [sessionToken, payload]})
-      })
-      .then(res => res.json())
-      .then(response => { if(response.status !== 'success') console.error(response.message); })
-      .catch(err => console.error(err));
+      callAPI('saveUserByAdmin', [sessionToken, payload])
+        .catch(err => alert(err.message));
     }
 
     function openUserModal() {
@@ -2091,16 +1987,8 @@
     }
 
     function loadSystemLogs() {
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'getSystemLogs', params: [sessionToken, ""]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('getSystemLogs', [sessionToken, ""])
+        .then(res => {
           if (res.success) {
             const tbody = document.getElementById('body-logs');
             tbody.innerHTML = "";
@@ -2115,9 +2003,8 @@
                 </tr>`;
             });
           }
-        } else { console.error(response.message); }
-      })
-      .catch(err => console.error(err));
+        })
+        .catch(err => alert(err.message));
     }
 
     function showAbsenPage() {
@@ -2125,16 +2012,8 @@
     }
 
     function loadDaftarAnggota() {
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'getAnggotaUntukAbsen', params: []})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var res = response.data;
+      callAPI('getAnggotaUntukAbsen', [])
+        .then(res => {
           if (res.success) {
             const tbody = document.getElementById('daftarAnggotaAbsen');
             tbody.innerHTML = "";
@@ -2148,9 +2027,8 @@
                 </tr>`;
             });
           }
-        } else { console.error(response.message); }
-      })
-      .catch(err => console.error(err));
+        })
+        .catch(err => alert(err.message));
     }
 
     function simpanKehadiran() {
@@ -2159,25 +2037,17 @@
         data: []
       };
 
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'saveKehadiran', params: [payload]})
-      })
-      .then(res => res.json())
-      .then(response => { if(response.status !== 'success') console.error(response.message); })
-      .catch(err => console.error(err));
+      callAPI('saveKehadiran', [payload])
+        .catch(err => alert(err.message));
     }
 
-    // Catatan: Fungsi kembaliKeDashboard dipertahankan utuh
     function kembaliKeDashboard() {
       showPage('dashboard-page');
     }
     
     async function aktifkanKamera() {
       const video = document.getElementById('video'); 
-      if(!video) return; // biar aman kalau bukan di halaman absensi
+      if(!video) return;
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         video.srcObject = stream;
@@ -2188,48 +2058,6 @@
     }
   </script>
 
-  <!-- BAGIAN C: FUNCTION BARU UNTUK SERVER-SIDE MANIFEST -->
-  <script>
-  function doGet(e) {
-    if(e.parameter.page === 'manifest'){
-      const manifest = {
-        "name": "SIAP WANAMSKA",
-        "short_name": "SIAP",
-        "start_url": "/",
-        "display": "standalone",
-        "background_color": "#F5F5F6",
-        "theme_color": "#5D4037",
-        "icons": [
-          {
-            "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_PWA.png",
-            "sizes": "512x512",
-            "type": "image/png"
-          },
-          {
-            "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_PWA.png",
-            "sizes": "192x192",
-            "type": "image/png"
-          }
-        ]
-      };
-      return ContentService.createTextOutput(JSON.stringify(manifest))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    return HtmlService.createTemplateFromFile('index').evaluate();
-  }
-  </script>
-
-  <!-- SECTION PROFIL - CUMA 1 -->
-  <section id="section-profil" style="display:none; padding:20px; max-width:500px; margin:20px auto; background:#fff; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-    <h3>Profil Saya</h3>
-    <div style="text-align:center;"><img id="preview-foto" src="https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=128" style="width:120px; height:120px; border-radius:50%; border:3px solid #0d6efd; margin-bottom:15px; object-fit:cover;"></div>
-    <label style="font-weight:bold;">Upload Foto Profil</label><input type="file" id="foto-profil" accept="image/*" style="width:100%; margin-bottom:15px;">
-    <label style="font-weight:bold;">Nama Lengkap</label><input type="text" id="nama-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-    <label style="font-weight:bold;">No HP / WA</label><input type="text" id="nohp-profil" style="width:100%; padding:8px; margin-bottom:10px;">
-    <label style="font-weight:bold;">Ganti Password Baru</label><input type="password" id="password-baru" placeholder="Kosongkan jika tidak ganti" style="width:100%; padding:8px; margin-bottom:15px;">
-    <button onclick="simpanProfil()" style="width:100%; padding:10px; background:#198754; color:white; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">Simpan Profil</button>
-  </section>
-
   <script>
   // SCRIPT PROFIL - DIBUNGKUS BIAR TIDAK DUPLIKAT
   if(!window.profilScriptLoaded){
@@ -2237,104 +2065,55 @@
     function loadProfil() {
       if(typeof currentUser == 'undefined') return;
 
-      // DIUBAH UNTUK VERCEL
-      fetch('/api', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({func: 'getProfil', params: [currentUser.user_id]})
-      })
-      .then(res => res.json())
-      .then(response => {
-        if(response.status === 'success') {
-          var data = response.data;
+      callAPI('getProfil', [currentUser.user_id])
+        .then(data => {
           document.getElementById('nama-profil').value = data.nama || currentUser.nama || '';
           document.getElementById('nohp-profil').value = data.noHp || '';
           if(data.fotoUrl) document.getElementById('preview-foto').src = data.fotoUrl;
-        } else { console.error(response.message); }
-      })
-      .catch(err => console.error(err));
+        })
+        .catch(err => alert(err.message));
     }
 
     const _oldShow = window.showSection;
     window.showSection = function(id){ _oldShow(id); if(id == 'section-profil') loadProfil(); }
-    
+
     function simpanProfil(){
       const btn = event.target; btn.innerText = "Menyimpan..."; btn.disabled = true;
       const fileInput = document.getElementById('foto-profil');
       const data = {nama: document.getElementById('nama-profil').value, noHp: document.getElementById('nohp-profil').value, passwordBaru: document.getElementById('password-baru').value};
-      const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status == "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } };
       
+      const afterSave = function(res){ alert(res.message); btn.innerText = "Simpan Profil"; btn.disabled = false; if(res.status == "success"){ document.getElementById('password-baru').value = ""; loadProfil(); } };
+
       if(fileInput.files.length > 0){
         const reader = new FileReader(); reader.onload = function(e){
           const fileObj = {bytes: Array.from(new Uint8Array(e.target.result)), type: fileInput.files[0].type, name: fileInput.files[0].name};
           
-          // DIUBAH UNTUK VERCEL
-          fetch('/api', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({func: 'updateProfil', params: [currentUser.user_id, data, fileObj]})
-          })
-          .then(res => res.json())
-          .then(response => { if(response.status === 'success') afterSave(response.data); else console.error(response.message); })
-          .catch(err => console.error(err));
+          callAPI('updateProfil', [currentUser.user_id, data, fileObj])
+            .then(afterSave)
+            .catch(err => alert(err.message));
         }; reader.readAsArrayBuffer(fileInput.files[0]);
       } else {
-        // DIUBAH UNTUK VERCEL
-        fetch('/api', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({func: 'updateProfil', params: [currentUser.user_id, data, null]})
-        })
-        .then(res => res.json())
-        .then(response => { if(response.status === 'success') afterSave(response.data); else console.error(response.message); })
-        .catch(err => console.error(err));
+        callAPI('updateProfil', [currentUser.user_id, data, null])
+          .then(afterSave)
+          .catch(err => alert(err.message));
       }
     }
   }
   </script>
 
-  <!-- SERVICE WORKER INLINE UNTUK GOOGLE APPS SCRIPT -->
+  <!-- ATURAN 5: PWA INSTALLATION BANNER & SERVICE WORKER -->
   <script>
-  if('serviceWorker' in navigator) {
-    const swCode = `
-      self.addEventListener('install', e => self.skipWaiting());
-      self.addEventListener('fetch', e => {});
-    `;
-    const blob = new Blob([swCode], {type: 'text/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl);
-  }
-  </script>
-
-  <!-- BAGIAN 2: TAMBAH DI AKHIR <body> SEBELUM </body> -->
-  <div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
-    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi SIAP</button>
-  </div>
-  <script>
-  let deferredPromptPWA;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPromptPWA = e;
-    document.getElementById('installPWABox').style.display = 'block';
-  });
-  document.getElementById('btnInstallPWA').addEventListener('click', async () => {
-    if(deferredPromptPWA) {
-      deferredPromptPWA.prompt();
-      deferredPromptPWA = null;
-      document.getElementById('installPWABox').style.display = 'none';
-    }
-  });
-  </script>
-
-  <!-- DIUBAH UNTUK VERCEL -->
-  <div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
-    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi SIAP</button>
-  </div>
-  <script>
-  let deferredPromptPWA;
-  window.addEventListener('beforeinstallprompt', (e) => {e.preventDefault(); deferredPromptPWA = e; document.getElementById('installPWABox').style.display = 'block';});
-  document.getElementById('btnInstallPWA').addEventListener('click', async () => {if(deferredPromptPWA) {deferredPromptPWA.prompt(); deferredPromptPWA = null;}});
   if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
+  let deferredPrompt; window.addEventListener('beforeinstallprompt', e => {e.preventDefault(); deferredPrompt = e; document.getElementById('installPWABox').style.display = 'block';});
   </script>
+  <div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
+    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi</button>
+  </div>
+  <script>
+  document.getElementById('btnInstallPWA')?.addEventListener('click', async () => {
+    if(deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; document.getElementById('installPWABox').style.display = 'none'; }
+  });
+  </script>
+
 </body>
 </html>
