@@ -5,7 +5,7 @@ const ASSETS_TO_CACHE = [
   '/style.css',
   '/script.js',
   '/manifest.json',
-  '/logo_PWA.png'
+  '/logo_pwa.png'
 ];
 
 // Install Event
