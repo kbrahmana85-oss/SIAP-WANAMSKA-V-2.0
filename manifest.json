@@ -1,16 +1,24 @@
 {
-  "name": "SIAP WANAMSKA V2",
-  "short_name": "SIAP V2",
-  "description": "Sistem Informasi & Absensi Pegawai",
+  "name": "SIAP WANAMSKA V-2.0",
+  "short_name": "WANAMSKA",
+  "description": "Sistem Informasi & Absensi Penggalang Wanamska",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#c62828",
+  "background_color": "#FDF8F4",
+  "theme_color": "#6F4E37",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/logo_PWA.png",
+      "src": "logo_PWA.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo_PWA.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
