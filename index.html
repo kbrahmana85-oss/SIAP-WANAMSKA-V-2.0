@@ -5,31 +5,26 @@
   <meta charset="UTF-8">
   <title>SIAP WANAMSKA</title>
 
-  <!-- 1. PWA MANIFEST & THEME COLOR -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#c62828">
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
-  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_PWA.png">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
   <style>
-    /* ==========================================
-       TEMA VISUAL - MAJESTY THEME
-       ========================================== */
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
     :root {
-      --color-primary: #6F4E37; /* Coklat Majesty */
-      --color-bg: #FDF8F4;      /* Krem */
-      --color-accent: #F59E0B;  /* Emas */
-      --color-danger: #B91C1C;  /* Merah Marun */
+      --color-primary: #6F4E37;
+      --color-bg: #FDF8F4;
+      --color-accent: #F59E0B;
+      --color-danger: #B91C1C;
       --color-text: #3D2B1F;
       --radius: 12px;
       --shadow: 0 4px 12px rgba(0,0,0,0.08);
       
-      /* Variabel fallback pendukung modul */
       --color-primary-brown: #6F4E37;
       --color-bg-cream: #FDF8F4;
       --color-accent-gold: #F59E0B;
@@ -60,7 +55,6 @@
       line-height: 1.5;
     }
 
-    /* Modifikasi Box Login */
     .login-box {
       background-color: #FFFFFF !important;
       padding: 30px !important;
@@ -81,7 +75,6 @@
       margin-bottom: 5px;
     }
 
-    /* CSS Wajib Toggle Password */
     .password-toggle {
       position: absolute; 
       right: 12px; 
@@ -92,7 +85,6 @@
       user-select: none;
     }
 
-    /* CSS Foto Developer Login */
     .developer {
       margin-top: 25px;
       border-top: 1px solid #E0E0E0;
@@ -113,14 +105,7 @@
       object-fit: cover;
       border: 2px solid var(--color-accent);
     }
-    .developer p {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--color-text);
-      margin: 0;
-    }
 
-    /* CSS Modul Developer di Dashboard */
     .dev {
       display: flex;
       align-items: center;
@@ -139,13 +124,7 @@
       object-fit: cover;
       border: 2px solid var(--color-accent);
     }
-    .dev div {
-      font-size: 0.9rem;
-      color: var(--color-text);
-      text-align: left;
-    }
 
-    /* TOAST NOTIFICATION */
     #toast-container {
       position: fixed;
       top: 20px;
@@ -173,7 +152,6 @@
       border-left: 5px solid var(--color-danger-red);
     }
 
-    /* LOADING SPINNER SCREEN */
     #global-loader {
       position: fixed;
       inset: 0;
@@ -200,7 +178,6 @@
       to { transform: rotate(360deg); }
     }
 
-    /* LOGIN SCREEN (Full Screen) */
     #login-screen {
       display: flex;
       align-items: center;
@@ -210,7 +187,6 @@
       padding: 20px;
     }
 
-    /* INPUT STYLES */
     .form-group {
       text-align: left;
       margin-bottom: 20px;
@@ -238,7 +214,6 @@
       border-color: var(--color-accent-gold);
     }
 
-    /* BUTTONS */
     .btn {
       display: inline-block;
       padding: 10px 20px;
@@ -261,9 +236,6 @@
       background-color: var(--color-primary) !important;
       color: white !important;
     }
-    .btn-primary:hover {
-      background-color: #553C2A !important;
-    }
     .btn-gold {
       background-color: var(--color-accent-gold);
       color: var(--color-text-dark);
@@ -274,21 +246,16 @@
     .btn-danger {
       background-color: var(--color-danger-red);
     }
-    .btn-danger:hover {
-      background-color: #961212;
-    }
     .btn-full {
       width: 100%;
     }
 
-    /* APPLICATION LAYOUT */
     #app-container {
       display: none;
       min-height: 100vh;
       flex-direction: column;
     }
 
-    /* HEADER */
     header {
       background-color: var(--color-primary-brown);
       color: var(--color-white);
@@ -310,7 +277,6 @@
     .header-title h2 {
       font-family: var(--font-title);
       font-size: 1.4rem;
-      letter-spacing: 1px;
     }
     .header-title p {
       font-size: 0.75rem;
@@ -333,13 +299,11 @@
       font-weight: bold;
     }
 
-    /* MAIN CONTAINER (Sidebar + Content) */
     .main-wrapper {
       display: flex;
       flex: 1;
     }
 
-    /* SIDEBAR */
     aside {
       width: 260px;
       background-color: #3E2723;
@@ -356,7 +320,6 @@
       text-decoration: none;
       cursor: pointer;
       font-size: 0.95rem;
-      transition: background 0.2s, color 0.2s;
     }
     .menu-item:hover, .menu-item.active {
       background-color: var(--color-primary-brown);
@@ -367,7 +330,6 @@
       font-size: 1.2rem;
     }
 
-    /* MAIN CONTENT */
     main {
       flex: 1;
       padding: 30px;
@@ -387,7 +349,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* SECTION TITLE */
     .section-header {
       margin-bottom: 25px;
       border-bottom: 2px solid var(--color-light-brown);
@@ -402,7 +363,6 @@
       font-size: 1.8rem;
     }
 
-    /* CARDS */
     .grid-dashboard {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -434,7 +394,6 @@
       color: var(--color-text-dark);
     }
 
-    /* GENERAL CARD CONTAINER */
     .card {
       background-color: var(--color-white);
       border-radius: var(--rounded-box);
@@ -443,7 +402,6 @@
       margin-bottom: 25px;
     }
 
-    /* TABLES */
     .table-responsive {
       width: 100%;
       overflow-x: auto;
@@ -468,7 +426,6 @@
       background-color: #FAF2EB;
     }
 
-    /* BADGES */
     .badge {
       display: inline-block;
       padding: 4px 10px;
@@ -479,9 +436,7 @@
     .badge-hadir { background-color: #DEF7EC; color: #03543F; }
     .badge-izin { background-color: #E1EFFE; color: #1E429F; }
     .badge-sakit { background-color: #FEF08A; color: #713F12; }
-    .badge-alpa { background-color: #FDE8E8; color: #9B1C1C; }
 
-    /* ABSEN CAMERA & CANVAS */
     .absensi-layout {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -514,7 +469,6 @@
       justify-content: center;
     }
 
-    /* KEGIATAN CARDS */
     .kegiatan-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -541,18 +495,7 @@
       flex-direction: column;
       justify-content: space-between;
     }
-    .kegiatan-body h3 {
-      font-family: var(--font-title);
-      font-size: 1.1rem;
-      margin-bottom: 8px;
-    }
-    .kegiatan-body .meta {
-      font-size: 0.8rem;
-      color: var(--color-text-muted);
-      margin-bottom: 10px;
-    }
 
-    /* GRAPH CANVAS */
     .chart-container {
       width: 100%;
       max-width: 600px;
@@ -566,7 +509,6 @@
       max-width: 100%;
     }
 
-    /* DEVELOPER SECTION */
     .dev-profile {
       display: flex;
       flex-direction: column;
@@ -574,15 +516,7 @@
       text-align: center;
       gap: 20px;
     }
-    .dev-profile img {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      border: 4px solid var(--color-accent-gold);
-      object-fit: cover;
-    }
 
-    /* MODAL WINDOWS */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -610,10 +544,6 @@
       justify-content: space-between;
       align-items: center;
     }
-    .modal-header h3 {
-      font-family: var(--font-title);
-      color: var(--color-primary-brown);
-    }
     .modal-close {
       cursor: pointer;
       font-size: 1.5rem;
@@ -623,7 +553,6 @@
       padding: 25px;
     }
 
-    /* RESPONSIVE DESIGN (Hamburger Menu & Sidebar) */
     .menu-toggle { display:none; position:fixed; top:15px; left:15px; z-index:1001; font-size:24px; background:#6F4E37; color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer; }
     .sidebar { width:260px; background:#3E2723; padding:20px 0; transition:0.3s; z-index:1000; }
     .main-content { flex:1; padding:30px; background-color: var(--color-bg-cream); overflow-y: auto; transition:0.3s; }
@@ -636,6 +565,73 @@
       .main-content { margin-left:0; padding:15px; }
       .overlay.active { display:block; }
     }
+
+    .dashboard-widgets {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 25px;
+    }
+    .widget-box {
+      background: var(--color-white);
+      border-radius: var(--rounded-box);
+      box-shadow: var(--shadow-soft);
+      padding: 20px;
+      border-top: 4px solid var(--color-primary-brown);
+    }
+    .live-timer {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--color-primary-brown);
+      text-align: center;
+      font-family: monospace;
+      margin: 10px 0;
+    }
+    .live-date {
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    .calendar-container {
+      margin-top: 10px;
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      color: var(--color-primary-brown);
+      margin-bottom: 10px;
+    }
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-weight: bold;
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      margin-bottom: 5px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    .calendar-grid span {
+      padding: 6px;
+      border-radius: 50%;
+    }
+    .calendar-grid span.active-day {
+      background-color: var(--color-primary-brown);
+      color: white;
+      font-weight: bold;
+    }
+    .calendar-grid span.empty-day {
+      cursor: default;
+    }
   </style>
 </head>
 <body>
@@ -643,10 +639,8 @@
   <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
   <div class="overlay" onclick="toggleSidebar()"></div>
 
-  <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container"></div>
 
-  <!-- GLOBAL LOADER -->
   <div id="global-loader">
     <div class="spinner"></div>
     <p id="loader-text">Memproses data...</p>
@@ -655,18 +649,15 @@
   <!-- LOGIN SCREEN -->
   <div id="login-screen">
     <div class="login-box">
-      <!-- Logo SIAP WANAMSKA V-2.0 -->
       <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo SIAP WANAMSKA">
       <h1>SIAP WANAMSKA</h1>
       <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
       
-      <!-- Input User ID -->
       <div class="form-group">
         <label for="userId">User ID</label>
         <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required style="width: 100%;">
       </div>
       
-      <!-- Input Password dengan Ikon Interaktif -->
       <div class="form-group">
         <label for="password">Password</label>
         <div style="position: relative;">
@@ -675,8 +666,7 @@
         </div>
       </div>
       
-      <!-- Tombol Masuk Tunggal -->
-      <button type="button" id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none; cursor: pointer;">Login</button>
+      <button type="button" id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none;">Login</button>
 
       <div style="text-align:center; margin-bottom: 20px; margin-top: 15px;">
         <h2>SELAMAT DATANG</h2>
@@ -688,10 +678,8 @@
   <!-- APP LAYOUT CONTAINER -->
   <div id="app-container">
     
-    <!-- HEADER -->
     <header>
       <div class="header-logo">
-        <span class="header-menu-toggle-old" onclick="toggleSidebar()" style="display:none !important;">&#9776;</span>
         <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo">
         <div class="header-title">
           <h2>SIAP WANAMSKA</h2>
@@ -707,16 +695,18 @@
     </header>
 
     <div class="main-wrapper">
-      <!-- SIDEBAR MENU -->
       <aside id="sidebar" class="sidebar">
         <div class="menu-item active" onclick="switchSection('section-dashboard', this)">
           <span class="icon">&#128202;</span> Dashboard
+        </div>
+        <div class="menu-item" onclick="switchSection('section-agenda', this)">
+          <span class="icon">&#128198;</span> Agenda Kegiatan
         </div>
         <div class="menu-item" onclick="switchSection('section-absensi', this)">
           <span class="icon">&#128197;</span> Absensi Mandiri
         </div>
         <div class="menu-item" onclick="switchSection('section-kegiatan', this)">
-          <span class="icon">&#127941;</span> Kegiatan
+          <span class="icon">&#127941;</span> Dokumentasi Kegiatan
         </div>
         <div class="menu-item role-restricted" id="menu-inventaris" onclick="switchSection('section-inventaris', this)">
           <span class="icon">&#128230;</span> Inventaris
@@ -773,15 +763,34 @@
             </div>
           </div>
           
-          <!-- Tombol Akses Fitur Kehadiran -->
           <div style="margin-top: 15px; margin-bottom: 25px;">
-            <button class="btn btn-primary btn-gold" onclick="showAbsenPage()" style="padding: 12px 24px; font-weight: bold; border-radius: var(--radius); cursor: pointer;">
+            <button class="btn btn-primary btn-gold" onclick="showAbsenPage()" style="padding: 12px 24px; font-weight: bold; border-radius: var(--radius);">
               Input Kehadiran Anggota
             </button>
           </div>
+
+          <!-- WIDGET LIVE TIMER DAN KALENDER KREATIF -->
+          <div class="dashboard-widgets">
+            <div class="widget-box">
+              <h3 style="font-family: var(--font-title); color: var(--color-primary-brown); border-bottom: 2px solid var(--color-light-brown); padding-bottom: 5px;">Waktu Saat Ini</h3>
+              <div class="live-timer" id="widget-timer">00:00:00</div>
+              <div class="live-date" id="widget-date">Memuat waktu...</div>
+            </div>
+            
+            <div class="widget-box">
+              <div class="calendar-container">
+                <div class="calendar-header">
+                  <span id="calendar-month-year">Kalender</span>
+                </div>
+                <div class="calendar-days">
+                  <span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span><span>M</span>
+                </div>
+                <div class="calendar-grid" id="calendar-grid-cells"></div>
+              </div>
+            </div>
+          </div>
           
-          <!-- MODUL DEVELOPER DI DASHBOARD -->
-          <div class="dev">
+          <div class="dev" style="margin-top: 25px;">
             <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" alt="Arif Nuur Iswahyudi">
             <div>
               <b>Arif Nuur Iswahyudi (Developer)</b><br>
@@ -795,7 +804,35 @@
           </div>
         </section>
 
-        <!-- SECTION 2: ABSENSI -->
+        <!-- SECTION 2: AGENDA BARU -->
+        <section id="section-agenda" class="app-section">
+          <div class="section-header">
+            <h1>Agenda Kegiatan</h1>
+            <button class="btn btn-gold" id="btn-tambah-agenda-trigger" onclick="openAgendaModal()">+ Tambah Agenda</button>
+          </div>
+          <div class="card">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Kegiatan / Acara</th>
+                    <th>Jenis</th>
+                    <th>Tanggal Pelaksanaan</th>
+                    <th>Waktu</th>
+                    <th>Penanggung Jawab</th>
+                    <th>Keterangan</th>
+                    <th class="opsi-header">Opsi</th>
+                  </tr>
+                </thead>
+                <tbody id="body-agenda">
+                  <tr><td colspan="7" style="text-align:center;">Memuat data agenda...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: ABSENSI -->
         <section id="section-absensi" class="app-section">
           <div class="absensi-layout">
             <div class="card">
@@ -821,9 +858,6 @@
               <div class="form-group" id="form-kegiatan-code">
                 <label for="absen-kegiatan-id">Kode ID / Nama Kegiatan</label>
                 <input type="text" id="absen-kegiatan-id" class="form-control" placeholder="Contoh: KEG-XXXXXX">
-                <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 5px;">
-                  * Catatan Teknis: Untuk menghindari pemuatan library eksternal (CDN), kami menyediakan kolom input manual kode ini as fallback scanner QR bawaan.
-                </p>
               </div>
 
               <div class="form-group">
@@ -845,6 +879,7 @@
               <div class="camera-controls">
                 <button class="btn" onclick="startCamera()">Aktifkan Kamera</button>
                 <button class="btn btn-gold" id="btn-capture" onclick="captureSnapshot()">Ambil Foto</button>
+                <button class="btn btn-primary" id="btn-flip-camera" onclick="flipCamera()">Balik Kamera 🔄</button>
               </div>
             </div>
           </div>
@@ -874,28 +909,22 @@
             </div>
           </div>
         </section>
-        
-        <section id="section-profil-lama" class="app-section" style="display:none;">
-          <!-- Content Profile Lama -->
-        </section>
 
-        <!-- SECTION 3: KEGIATAN -->
+        <!-- SECTION 4: DOKUMENTASI KEGIATAN -->
         <section id="section-kegiatan" class="app-section">
           <div class="section-header">
             <h1>Agenda Kegiatan</h1>
             <button class="btn btn-gold" id="btn-tambah-kegiatan-trigger" onclick="openKegiatanModal()">+ Tambah Kegiatan</button>
           </div>
-
           <div class="kegiatan-grid" id="grid-list-kegiatan"></div>
         </section>
 
-        <!-- SECTION 4: INVENTARIS -->
+        <!-- SECTION 5: INVENTARIS -->
         <section id="section-inventaris" class="app-section">
           <div class="section-header">
             <h1>Inventaris Barang</h1>
             <button class="btn btn-gold" onclick="openInventarisModal()">+ Tambah Barang</button>
           </div>
-
           <div class="card">
             <div class="table-responsive">
               <table>
@@ -916,13 +945,12 @@
           </div>
         </section>
 
-        <!-- SECTION 5: KAS PRAMUKA -->
+        <!-- SECTION 6: KAS PRAMUKA -->
         <section id="section-kas" class="app-section">
           <div class="section-header">
             <h1>Arus Kas Pramuka</h1>
             <button class="btn btn-gold" id="btn-tambah-kas" onclick="openKasModal()">+ Catat Kas Baru</button>
           </div>
-
           <div class="grid-dashboard">
             <div class="card-stat">
               <h3>Total Pemasukan</h3>
@@ -937,16 +965,13 @@
               <div class="val" id="kas-saldo-akhir">Rp 0</div>
             </div>
           </div>
-
           <div class="card">
-            <h3 style="font-family: var(--font-title); margin-bottom: 15px; text-align: center;">Grafik Cash Flow Bulanan (Native Canvas API)</h3>
+            <h3 style="font-family: var(--font-title); margin-bottom: 15px; text-align: center;">Grafik Cash Flow (Native Canvas)</h3>
             <div class="chart-container">
               <canvas id="canvas-kas-chart" width="500" height="300"></canvas>
             </div>
           </div>
-
           <div class="card">
-            <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Daftar Transaksi</h3>
             <div class="table-responsive">
               <table>
                 <thead>
@@ -965,17 +990,15 @@
           </div>
         </section>
 
-        <!-- SECTION 6: PROFIL DIRI -->
+        <!-- SECTION 7: PROFIL DIRI -->
         <section id="section-profile" class="app-section">
           <div class="section-header">
             <h1>Profil Anggota</h1>
           </div>
-
           <div class="absensi-layout">
             <div class="card">
               <h3 style="font-family: var(--font-title); margin-bottom: 20px;">Lengkapi Data Diri</h3>
               <input type="hidden" id="prof-user-id">
-              
               <div class="form-group">
                 <label>Nomor Tanda Anggota (NTA)</label>
                 <input type="text" id="prof-nta" class="form-control">
@@ -1001,7 +1024,7 @@
               </div>
               <div class="form-group">
                 <label>Golongan / Tingkat</label>
-                <input type="text" id="prof-golongan" class="form-control" placeholder="Penggalang Ramu / Rakit / Terap">
+                <input type="text" id="prof-golongan" class="form-control" placeholder="Ramu / Rakit / Terap">
               </div>
               <div class="form-group">
                 <label>Nama Regu / Sangga</label>
@@ -1015,19 +1038,19 @@
                 <label>No. HP (WhatsApp)</label>
                 <input type="text" id="prof-hp" class="form-control">
               </div>
-              
               <button class="btn btn-gold btn-full" onclick="actionSaveProfile()">SIMPAN PROFIL</button>
             </div>
 
             <div>
               <div class="card text-center">
                 <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Foto Profil</h3>
-                <img id="prof-preview-img" src="" alt="Foto Profil" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; background-color: var(--color-light-brown); margin-bottom: 15px;">
+                <!-- UKURAN FOTO DIPERBESAR (MINIMAL 150PX) DENGAN OBJECT-FIT COVER -->
+                <img id="prof-preview-img" src="" alt="Foto Profil" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-accent-gold); box-shadow: var(--shadow-soft); background-color: var(--color-light-brown); margin-bottom: 15px; display: inline-block;">
                 <input type="file" id="prof-file" class="form-control" accept="image/*" onchange="previewAndResizeProfilePhoto(event)">
               </div>
 
               <div class="card" style="margin-top: 20px;">
-                <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Keamanan (Ganti Password)</h3>
+                <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Keamanan</h3>
                 <div class="form-group">
                   <label>Password Lama</label>
                   <input type="password" id="pass-lama" class="form-control">
@@ -1042,13 +1065,12 @@
           </div>
         </section>
 
-        <!-- SECTION 7: KELOLA USER (Admin) -->
+        <!-- SECTION 8: KELOLA USER (Admin) -->
         <section id="section-users" class="app-section">
           <div class="section-header">
             <h1>Manajemen Pengguna</h1>
             <button class="btn btn-gold" onclick="openUserModal()">+ Pendaftaran Anggota Baru</button>
           </div>
-
           <div class="card">
             <div class="table-responsive">
               <table>
@@ -1067,28 +1089,26 @@
           </div>
         </section>
 
-        <!-- SECTION 8: EXPORT DATA -->
+        <!-- SECTION 9: EXPORT DATA -->
         <section id="section-exports" class="app-section">
           <div class="section-header">
             <h1>Export Database Administrasi</h1>
           </div>
           <div class="card">
-            <h2 style="font-family: var(--font-title); margin-bottom: 15px;">Ekspor Laporan Cepat</h2>
-            <p style="margin-bottom: 25px; color: var(--color-text-muted); margin-top: 10px;">Format yang dihasilkan disinkronisasi langsung dengan salinan Google Drive secara realtime tanpa risiko data korup.</p>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-              <div class="card" style="border: 1px solid var(--color-light-brown);">
-                <h3 style="margin-bottom: 15px;">Laporan Absensi</h3>
+            <h2>Ekspor Laporan Cepat</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 15px;">
+              <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;">
+                <h3>Laporan Absensi</h3>
                 <button class="btn btn-full btn-gold" onclick="triggerExport('absensi', 'excel')">Excel (.xlsx)</button>
                 <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('absensi', 'pdf')">PDF</button>
               </div>
-              <div class="card" style="border: 1px solid var(--color-light-brown);">
-                <h3 style="margin-bottom: 15px;">Buku Inventaris</h3>
+              <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;">
+                <h3>Buku Inventaris</h3>
                 <button class="btn btn-full btn-gold" onclick="triggerExport('inventaris', 'excel')">Excel (.xlsx)</button>
                 <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('inventaris', 'pdf')">PDF</button>
               </div>
-              <div class="card" style="border: 1px solid var(--color-light-brown);">
-                <h3 style="margin-bottom: 15px;">Buku Kas</h3>
+              <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;">
+                <h3>Buku Kas</h3>
                 <button class="btn btn-full btn-gold" onclick="triggerExport('kas', 'excel')">Excel (.xlsx)</button>
                 <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('kas', 'pdf')">PDF</button>
               </div>
@@ -1096,7 +1116,7 @@
           </div>
         </section>
 
-        <!-- SECTION 9: LOG AKTIVITAS (Admin) -->
+        <!-- SECTION 10: LOG AKTIVITAS (Admin) -->
         <section id="section-logs" class="app-section">
           <div class="section-header">
             <h1>Log Audit Keamanan</h1>
@@ -1120,23 +1140,20 @@
           </div>
         </section>
 
-        <!-- SECTION 10: TENTANG DEVELOPER -->
+        <!-- SECTION 11: TENTANG DEVELOPER -->
         <section id="section-about" class="app-section">
           <div class="section-header">
             <h1>Tentang Developer</h1>
           </div>
           <div class="card">
             <div class="dev-profile">
-              <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" class="developer-photo" alt="Developer SIAP WANAMSKA">
+              <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" class="developer-photo" alt="Developer SIAP WANAMSKA" style="width: 150px; height: 150px;">
               <div>
-                <h2 style="font-family: var(--font-title); color: var(--color-primary-brown);">Senior Apps Script Developer &amp; UX Specialist</h2>
+                <h2>Senior Apps Script Developer &amp; UX Specialist</h2>
                 <p style="color: var(--color-accent-gold); font-weight: bold; margin-bottom: 15px;">Gerakan Pramuka Wanamska</p>
-                <p style="max-width: 600px; margin: 0 auto; color: var(--color-text-dark);">
-                  Aplikasi **SIAP WANAMSKA** di gunakan sebagai media Informasi dan Absensi Penggalang Gugus Depan 04.109-04.110 Pangkalan SMP Negeri 26 Kota Surakarta. 
-                </p>
+                <p>Aplikasi **SIAP WANAMSKA** di gunakan sebagai media Informasi dan Absensi Penggalang Gugus Depan 04.109-04.110 Pangkalan SMP Negeri 26 Kota Surakarta.</p>
                 <div style="margin-top: 25px; padding: 15px; border-radius: var(--rounded-box); background-color: #FAF2EB; display: inline-block;">
                   <p><strong>Nama Pengembang:</strong> ARIF NUUR ISWAHYUDI, S.Pd., Gr</p>
-                  <p><strong>Spesialisasi:</strong> Google Apps Script Core, Native HTML5/CSS3/JS Web App Design, Guru Matematika dan Pembina Pramuka</p>
                   <p><strong>Kontak Organisasi:</strong> support@wanamska.or.id</p>
                 </div>
               </div>
@@ -1144,7 +1161,7 @@
           </div>
         </section>
 
-        <!-- SECTION 11: INPUT KEHADIRAN ANGGOTA SECARA MASSAL -->
+        <!-- SECTION 12: INPUT ABSENSI MASSAL -->
         <section id="absen-page" class="app-section">
           <div class="section-header">
             <h1>Input Kehadiran Anggota</h1>
@@ -1182,14 +1199,12 @@
   </div>
 
   <div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
-    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi</button>
+    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px;">📲 Install Aplikasi</button>
   </div>
 
-  <!-- ==========================================
-       MODAL POPUPS (DISEMBUNYIKAN SECARA DEFAULT)
-       ========================================== -->
-
-  <!-- MODAL 1: KEGIATAN -->
+  <!-- MODAL POPUPS -->
+  
+  <!-- MODAL KEGIATAN DENGAN CAPTURE KAMERA LINGKUNGAN / GALERI -->
   <div id="modal-kegiatan" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1199,42 +1214,74 @@
       <div class="modal-body">
         <input type="hidden" id="keg-id">
         <div class="form-group">
-          <label for="keg-nama">Nama Kegiatan</label>
+          <label>Nama Kegiatan</label>
           <input type="text" id="keg-nama" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="keg-tanggal">Tanggal</label>
+          <label>Tanggal</label>
           <input type="date" id="keg-tanggal" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="keg-lokasi">Lokasi</label>
+          <label>Lokasi</label>
           <input type="text" id="keg-lokasi" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="keg-deskripsi">Deskripsi</label>
+          <label>Deskripsi</label>
           <textarea id="keg-deskripsi" class="form-control" rows="3" required></textarea>
         </div>
-        <div class="form-group">
-          <label>Foto 1 (Utama)</label>
-          <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(1, event)">
+        
+        <!-- OPSI FILE FOTO KREATIF -->
+        <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 1 (Utama)</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
+            <div>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
+              <input type="file" class="form-control" accept="image/*" capture="environment" onchange="processKegiatanPhoto(1, event)">
+            </div>
+            <div>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Unggah Galeri:</span>
+              <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(1, event)">
+            </div>
+          </div>
           <input type="hidden" id="keg-foto-1-base64">
         </div>
-        <div class="form-group">
-          <label>Foto 2</label>
-          <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(2, event)">
+
+        <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 2</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
+            <div>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
+              <input type="file" class="form-control" accept="image/*" capture="environment" onchange="processKegiatanPhoto(2, event)">
+            </div>
+            <div>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Unggah Galeri:</span>
+              <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(2, event)">
+            </div>
+          </div>
           <input type="hidden" id="keg-foto-2-base64">
         </div>
-        <div class="form-group">
-          <label>Foto 3 (Opsional)</label>
-          <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(3, event)">
+
+        <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 3 (Opsional)</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
+            <div>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
+              <input type="file" class="form-control" accept="image/*" capture="environment" onchange="processKegiatanPhoto(3, event)">
+            </div>
+            <div>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Unggah Galeri:</span>
+              <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(3, event)">
+            </div>
+          </div>
           <input type="hidden" id="keg-foto-3-base64">
         </div>
-        <button class="btn btn-gold btn-full" onclick="actionSaveKegiatan()">SIMPAN KEGIATAN</button>
+
+        <button class="btn btn-gold btn-full" onclick="actionSaveKegiatan()">SIMPAN DOKUMENTASI</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 2: INVENTARIS -->
+  <!-- MODAL INVENTARIS -->
   <div id="modal-inventaris" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1244,25 +1291,24 @@
       <div class="modal-body">
         <input type="hidden" id="inv-id">
         <div class="form-group">
-          <label for="inv-nama">Nama Barang</label>
+          <label>Nama Barang</label>
           <input type="text" id="inv-nama" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="inv-kategori">Kategori</label>
+          <label>Kategori</label>
           <select id="inv-kategori" class="form-control">
             <option value="Perlengkapan Kemah">Perlengkapan Kemah</option>
             <option value="Atribut Pramuka">Atribut Pramuka</option>
             <option value="Peralatan Dapur">Peralatan Dapur</option>
-            <option value="Elektronik & Dokumentasi">Elektronik & Dokumentasi</option>
             <option value="Lainnya">Lainnya</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="inv-jumlah">Jumlah</label>
+          <label>Jumlah</label>
           <input type="number" id="inv-jumlah" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="inv-kondisi">Kondisi</label>
+          <label>Kondisi</label>
           <select id="inv-kondisi" class="form-control">
             <option value="Baik">Baik</option>
             <option value="Rusak Ringan">Rusak Ringan</option>
@@ -1270,15 +1316,15 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="inv-lokasi">Lokasi Simpan</label>
+          <label>Lokasi Simpan</label>
           <input type="text" id="inv-lokasi" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="inv-tanggal">Tanggal Masuk</label>
+          <label>Tanggal Masuk</label>
           <input type="date" id="inv-tanggal" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="inv-keterangan">Keterangan</label>
+          <label>Keterangan</label>
           <textarea id="inv-keterangan" class="form-control" rows="2"></textarea>
         </div>
         <button class="btn btn-gold btn-full" onclick="actionSaveInventaris()">SIMPAN DATA BARANG</button>
@@ -1286,7 +1332,7 @@
     </div>
   </div>
 
-  <!-- MODAL 3: KAS -->
+  <!-- MODAL KAS -->
   <div id="modal-kas" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1295,26 +1341,26 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="kas-jenis">Jenis Transaksi</label>
+          <label>Jenis Transaksi</label>
           <select id="kas-jenis" class="form-control">
             <option value="Pemasukan">Pemasukan</option>
             <option value="Pengeluaran">Pengeluaran</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="kas-kategori">Kategori</label>
+          <label>Kategori</label>
           <input type="text" id="kas-kategori" class="form-control" placeholder="Contoh: Iuran Mingguan, Beli Tenda, dll" required>
         </div>
         <div class="form-group">
-          <label for="kas-jumlah">Jumlah (Rupiah)</label>
-          <input type="number" id="kas-jumlah" class="form-control" placeholder="Contoh: 50000" required>
+          <label>Jumlah (Rupiah)</label>
+          <input type="number" id="kas-jumlah" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="kas-tanggal-form">Tanggal</label>
+          <label>Tanggal</label>
           <input type="date" id="kas-tanggal-form" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="kas-keterangan-form">Keterangan</label>
+          <label>Keterangan</label>
           <textarea id="kas-keterangan-form" class="form-control" rows="2"></textarea>
         </div>
         <button class="btn btn-gold btn-full" onclick="actionSaveKas()">SIMPAN TRANSAKSI KAS</button>
@@ -1322,7 +1368,7 @@
     </div>
   </div>
 
-  <!-- MODAL 4: USER -->
+  <!-- MODAL USER -->
   <div id="modal-user" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1331,19 +1377,19 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="usr-id">User ID</label>
+          <label>User ID</label>
           <input type="text" id="usr-id" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="usr-nama">Nama Lengkap</label>
+          <label>Nama Lengkap</label>
           <input type="text" id="usr-nama" class="form-control" required>
         </div>
         <div class="form-group">
-          <label for="usr-password">Password (Kosongkan jika tidak ingin mengubah)</label>
+          <label>Password (Kosongkan jika tidak ingin mengubah)</label>
           <input type="password" id="usr-password" class="form-control">
         </div>
         <div class="form-group">
-          <label for="usr-role">Peran (Role)</label>
+          <label>Peran (Role)</label>
           <select id="usr-role" class="form-control">
             <option value="Admin">Admin</option>
             <option value="Pembina">Pembina</option>
@@ -1352,7 +1398,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label for="usr-status">Status Aktif</label>
+          <label>Status Aktif</label>
           <select id="usr-status" class="form-control">
             <option value="Aktif">Aktif</option>
             <option value="Nonaktif">Nonaktif</option>
@@ -1363,7 +1409,44 @@
     </div>
   </div>
 
-  <!-- FRONTEND LOGIC -->
+  <!-- MODAL AGENDA KEGIATAN -->
+  <div id="modal-agenda" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="agenda-modal-title">Form Tambah/Edit Agenda</h3>
+        <span class="modal-close" onclick="closeAgendaModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="agd-id">
+        <div class="form-group">
+          <label for="agd-kegiatan">Nama Agenda / Kegiatan</label>
+          <input type="text" id="agd-kegiatan" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="agd-jenis">Jenis Kegiatan</label>
+          <input type="text" id="agd-jenis" class="form-control" placeholder="Contoh: Latihan Rutin, Pelantikan, dll" required>
+        </div>
+        <div class="form-group">
+          <label for="agd-tanggal">Tanggal Pelaksanaan</label>
+          <input type="date" id="agd-tanggal" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="agd-waktu">Waktu Pelaksanaan</label>
+          <input type="text" id="agd-waktu" class="form-control" placeholder="Contoh: 08:00 - 12:00 WIB" required>
+        </div>
+        <div class="form-group">
+          <label for="agd-pj">Penanggung Jawab</label>
+          <input type="text" id="agd-pj" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="agd-keterangan">Keterangan</label>
+          <textarea id="agd-keterangan" class="form-control" rows="2" placeholder="Catatan tambahan agenda..."></textarea>
+        </div>
+        <button class="btn btn-gold btn-full" onclick="actionSaveAgenda()">SIMPAN AGENDA</button>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
