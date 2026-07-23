@@ -523,8 +523,6 @@ function processKegiatanPhoto(index, event) {
 }
 
 function actionSaveKegiatan() {
-  // FIX: sebelumnya payload berisi field Inventaris & memanggil saveInventaris.
-  // Sekarang payload sesuai parameter saveKegiatan(token, dataKegiatan) di code.gs.
   const nama = document.getElementById('keg-nama').value;
   const tanggal = document.getElementById('keg-tanggal').value;
   const lokasi = document.getElementById('keg-lokasi').value;
@@ -690,8 +688,6 @@ function drawKasChart(masuk, keluar) {
   ctx.fillRect(320, 240 - hK, 80, hK);
 }
 
-/* FIX: nama fungsi disamakan dengan onclick di HTML (openKasModal/closeKasModal),
-   sebelumnya tertulis openKasModal_v2/closeKasModal_v2 sehingga tombol mati. */
 function openKasModal() {
   document.getElementById('kas-tanggal-form').value = new Date().toISOString().substring(0, 10);
   document.getElementById('modal-kas').style.display = 'flex';
@@ -787,6 +783,11 @@ function actionSaveProfile() {
         currentUser.nama_lengkap = payload.nama_lengkap;
         sessionStorage.setItem('user', JSON.stringify(currentUser));
         document.getElementById('user-display-name').innerText = currentUser.nama_lengkap;
+        
+        // Auto redirect ke dashboard setelah 1.5 detik
+        setTimeout(() => {
+          kembaliKeDashboard();
+        }, 1500);
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
@@ -881,10 +882,6 @@ function actionDeleteUser(targetUserId) {
 }
 
 /* ============================== LOG AKTIVITAS ============================== */
-/* FIX: getSystemLogs tidak ada di code.gs. Tidak ada penggantinya di backend,
-   jadi bagian ini menampilkan pesan yang jelas alih-alih memanggil fungsi
-   yang pasti gagal. Tambahkan fungsi getSystemLogs(token, filterUserId) di
-   code.gs (membaca sheet SHEET_LOG) untuk mengaktifkan fitur ini. */
 function loadSystemLogs() {
   const tbody = document.getElementById('body-logs');
   if (!tbody) return;
@@ -894,8 +891,6 @@ function loadSystemLogs() {
 }
 
 /* ============================== EXPORT DATA ================================ */
-/* FIX: belum ada fungsi export apa pun di code.gs. Tombol export akan
-   menampilkan pemberitahuan yang jelas alih-alih diam-diam gagal. */
 function triggerExport(jenis, format) {
   showToast(`Export ${jenis} (${format}) belum didukung server. Tambahkan fungsi export di code.gs.`, true);
 }
