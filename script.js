@@ -1,5 +1,5 @@
 // GANTI dengan URL Web App Apps Script kamu (Deploy > Manage deployments)
-const API_URL = "https://script.google.com/macros/s/AKfycbzwrc9XSH9vNKqVsRqffhiEfzlXYS8WM1DaBkvbOzbzOu94yVA_T0JASxdJkUw0T_obnQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwoRhe_y_3MD4hTL1sDX480X8sh4rHbVV3pnA_KUAzLS21NkT6dT6UohIKebS48nYSDwQ/exec";
 
 let sessionToken = "";
 let userRole = "";
