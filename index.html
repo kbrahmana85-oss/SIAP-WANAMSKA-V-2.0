@@ -1144,6 +1144,39 @@
           </div>
         </section>
 
+        <!-- SECTION 11: INPUT KEHADIRAN ANGGOTA SECARA MASSAL -->
+        <section id="absen-page" class="app-section">
+          <div class="section-header">
+            <h1>Input Kehadiran Anggota</h1>
+            <button class="btn" onclick="kembaliKeDashboard()">Kembali</button>
+          </div>
+          <div class="card">
+            <div class="form-group" style="max-width: 300px;">
+              <label for="tanggalAbsen">Tanggal Kegiatan / Absen</label>
+              <input type="date" id="tanggalAbsen" class="form-control">
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>Nama Anggota</th>
+                    <th>Peran (Role)</th>
+                    <th>Status Kehadiran</th>
+                  </tr>
+                </thead>
+                <tbody id="daftarAnggotaAbsen">
+                  <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+              <button class="btn btn-gold" onclick="simpanKehadiran()">Simpan Kehadiran</button>
+              <button class="btn btn-danger" onclick="kembaliKeDashboard()">Batal</button>
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
   </div>
@@ -1152,7 +1185,185 @@
     <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi</button>
   </div>
 
-  <!-- FRONTEND LOGIC: sekarang seluruhnya ada di script.js (dipindah dari inline) -->
+  <!-- ==========================================
+       MODAL POPUPS (DISEMBUNYIKAN SECARA DEFAULT)
+       ========================================== -->
+
+  <!-- MODAL 1: KEGIATAN -->
+  <div id="modal-kegiatan" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="kegiatan-modal-title">Form Tambah/Edit Kegiatan</h3>
+        <span class="modal-close" onclick="closeKegiatanModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="keg-id">
+        <div class="form-group">
+          <label for="keg-nama">Nama Kegiatan</label>
+          <input type="text" id="keg-nama" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="keg-tanggal">Tanggal</label>
+          <input type="date" id="keg-tanggal" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="keg-lokasi">Lokasi</label>
+          <input type="text" id="keg-lokasi" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="keg-deskripsi">Deskripsi</label>
+          <textarea id="keg-deskripsi" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Foto 1 (Utama)</label>
+          <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(1, event)">
+          <input type="hidden" id="keg-foto-1-base64">
+        </div>
+        <div class="form-group">
+          <label>Foto 2</label>
+          <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(2, event)">
+          <input type="hidden" id="keg-foto-2-base64">
+        </div>
+        <div class="form-group">
+          <label>Foto 3 (Opsional)</label>
+          <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(3, event)">
+          <input type="hidden" id="keg-foto-3-base64">
+        </div>
+        <button class="btn btn-gold btn-full" onclick="actionSaveKegiatan()">SIMPAN KEGIATAN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: INVENTARIS -->
+  <div id="modal-inventaris" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="inv-modal-title">Form Tambah/Edit Barang</h3>
+        <span class="modal-close" onclick="closeInventarisModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="inv-id">
+        <div class="form-group">
+          <label for="inv-nama">Nama Barang</label>
+          <input type="text" id="inv-nama" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="inv-kategori">Kategori</label>
+          <select id="inv-kategori" class="form-control">
+            <option value="Perlengkapan Kemah">Perlengkapan Kemah</option>
+            <option value="Atribut Pramuka">Atribut Pramuka</option>
+            <option value="Peralatan Dapur">Peralatan Dapur</option>
+            <option value="Elektronik & Dokumentasi">Elektronik & Dokumentasi</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="inv-jumlah">Jumlah</label>
+          <input type="number" id="inv-jumlah" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="inv-kondisi">Kondisi</label>
+          <select id="inv-kondisi" class="form-control">
+            <option value="Baik">Baik</option>
+            <option value="Rusak Ringan">Rusak Ringan</option>
+            <option value="Rusak Berat">Rusak Berat</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="inv-lokasi">Lokasi Simpan</label>
+          <input type="text" id="inv-lokasi" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="inv-tanggal">Tanggal Masuk</label>
+          <input type="date" id="inv-tanggal" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="inv-keterangan">Keterangan</label>
+          <textarea id="inv-keterangan" class="form-control" rows="2"></textarea>
+        </div>
+        <button class="btn btn-gold btn-full" onclick="actionSaveInventaris()">SIMPAN DATA BARANG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: KAS -->
+  <div id="modal-kas" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Catat Transaksi Kas Baru</h3>
+        <span class="modal-close" onclick="closeKasModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="kas-jenis">Jenis Transaksi</label>
+          <select id="kas-jenis" class="form-control">
+            <option value="Pemasukan">Pemasukan</option>
+            <option value="Pengeluaran">Pengeluaran</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="kas-kategori">Kategori</label>
+          <input type="text" id="kas-kategori" class="form-control" placeholder="Contoh: Iuran Mingguan, Beli Tenda, dll" required>
+        </div>
+        <div class="form-group">
+          <label for="kas-jumlah">Jumlah (Rupiah)</label>
+          <input type="number" id="kas-jumlah" class="form-control" placeholder="Contoh: 50000" required>
+        </div>
+        <div class="form-group">
+          <label for="kas-tanggal-form">Tanggal</label>
+          <input type="date" id="kas-tanggal-form" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="kas-keterangan-form">Keterangan</label>
+          <textarea id="kas-keterangan-form" class="form-control" rows="2"></textarea>
+        </div>
+        <button class="btn btn-gold btn-full" onclick="actionSaveKas()">SIMPAN TRANSAKSI KAS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: USER -->
+  <div id="modal-user" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Registrasi / Edit Pengguna</h3>
+        <span class="modal-close" onclick="closeUserModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="usr-id">User ID</label>
+          <input type="text" id="usr-id" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="usr-nama">Nama Lengkap</label>
+          <input type="text" id="usr-nama" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="usr-password">Password (Kosongkan jika tidak ingin mengubah)</label>
+          <input type="password" id="usr-password" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="usr-role">Peran (Role)</label>
+          <select id="usr-role" class="form-control">
+            <option value="Admin">Admin</option>
+            <option value="Pembina">Pembina</option>
+            <option value="Dewan">Dewan</option>
+            <option value="Penggalang">Penggalang</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="usr-status">Status Aktif</label>
+          <select id="usr-status" class="form-control">
+            <option value="Aktif">Aktif</option>
+            <option value="Nonaktif">Nonaktif</option>
+          </select>
+        </div>
+        <button class="btn btn-gold btn-full" onclick="actionSaveUser()">SIMPAN PENGGUNA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRONTEND LOGIC -->
   <script src="script.js"></script>
 </body>
 </html>
