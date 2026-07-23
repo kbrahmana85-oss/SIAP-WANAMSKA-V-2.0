@@ -106,8 +106,15 @@ function setLoader(show, text = "Sedang memproses data...") {
 }
 
 function toggleSidebar() {
-  document.querySelector('.sidebar').classList.toggle('active');
-  document.querySelector('.overlay').classList.toggle('active');
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.overlay');
+  if (sidebar) {
+    sidebar.classList.toggle('active'); // mobile drawer
+    sidebar.classList.toggle('collapsed'); // desktop collapse
+  }
+  if (overlay && window.innerWidth <= 768) {
+    overlay.classList.toggle('active');
+  }
 }
 
 function switchSection(sectionId, elementMenu) {
@@ -126,7 +133,9 @@ function switchSection(sectionId, elementMenu) {
   const overlay = document.querySelector('.overlay');
   if (sidebar && overlay) {
     sidebar.classList.remove('active');
-    overlay.classList.remove('active');
+    if (window.innerWidth <= 768) {
+      overlay.classList.remove('active');
+    }
   }
 
   if (sectionId === 'section-dashboard') loadDashboard();
@@ -137,6 +146,7 @@ function switchSection(sectionId, elementMenu) {
   else if (sectionId === 'section-kas') loadKas();
   else if (sectionId === 'section-profile') loadProfileDiri();
   else if (sectionId === 'section-users') loadUsers();
+  else if (sectionId === 'section-exports') { /* tidak memerlukan inisialisasi */ }
   else if (sectionId === 'section-logs') loadSystemLogs();
 }
 
