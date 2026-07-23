@@ -13,12 +13,12 @@ function doGet(e) {
       "theme_color": "#5D4037",
       "icons": [
         {
-          "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_PWA.png",
+          "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_pwa.png",
           "sizes": "512x512",
           "type": "image/png"
         },
         {
-          "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_PWA.png",
+          "src": "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_pwa.png",
           "sizes": "192x192",
           "type": "image/png"
         }
