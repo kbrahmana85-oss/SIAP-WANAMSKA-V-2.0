@@ -6,7 +6,7 @@
    ========================================================================= */
 
 // GANTI dengan URL Web App Apps Script kamu (Deploy > Manage deployments)
-const API_URL = "https://script.google.com/macros/s/AKfycbwiv90b8y2tNpLrpxnA-Azh0FVuIotMm76hSLhOuXaMItZml21huOEQ7SawUxcKf1FdPw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzIR8DVVkDDXZKiHfE9rehTH04vKGPK2aj82HCbzd6SObShfRLvUNneVNw1TA3u8WKFZA/exec";
 
 let sessionToken = "";
 let userRole = "";
