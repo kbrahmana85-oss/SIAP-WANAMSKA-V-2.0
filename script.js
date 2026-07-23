@@ -89,16 +89,6 @@ function showPage(pageId) {
   if (target) { target.classList.add('active'); target.style.display = 'block'; }
 }
 
-function showSection(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (id === 'section-profil') {
-    document.getElementById('app-container').style.display = 'none';
-    el.style.display = 'block';
-    loadProfil();
-  }
-}
-
 function showToast(message, isDanger = false) {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
@@ -383,8 +373,6 @@ function kembaliKeDashboard() { showPage('dashboard-page'); }
 
 /* Halaman "Input Kehadiran Harian" (daftar per-anggota) */
 function loadDaftarAnggota() {
-  // FIX: getAnggotaUntukAbsen tidak ada di code.gs. Diganti pakai getUserList
-  // (Admin/Pembina/Dewan) yang datanya sudah tersedia di server.
   callAPI('getUserList', [sessionToken])
     .then(res => {
       if (res.success) {
@@ -415,8 +403,6 @@ function simpanKehadiran() {
   const tanggal = document.getElementById('tanggalAbsen').value;
   if (!tanggal) { showToast("Pilih tanggal kegiatan terlebih dahulu.", true); return; }
 
-  // FIX: saveKehadiran (massal) tidak ada di code.gs. Sebagai gantinya
-  // setiap baris dikirim satu per satu lewat submitAbsen yang memang ada.
   const rows = document.querySelectorAll('#daftarAnggotaAbsen tr');
   const requests = [];
   rows.forEach(tr => {
