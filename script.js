@@ -121,9 +121,13 @@ function switchSection(sectionId, elementMenu) {
   menuItems.forEach(item => item.classList.remove('active'));
   if (elementMenu) elementMenu.classList.add('active');
 
-  // AUTO-CLOSE Sidebar Responsif saat menu navigasi ditekan
-  document.querySelector('.sidebar').classList.remove('active');
-  document.querySelector('.overlay').classList.remove('active');
+  // Sidebar mobile auto-close saat menu navigasi ditekan
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.overlay');
+  if (sidebar && overlay) {
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+  }
 
   if (sectionId === 'section-dashboard') loadDashboard();
   else if (sectionId === 'section-absensi') loadAbsenHistory();
@@ -230,42 +234,88 @@ function actionLogout() {
 }
 
 function setupRBACUI(role) {
-  // Sembunyikan semua elemen sensitif terlebih dahulu
+  // Reset seluruh visibilitas menu sidebar
   document.getElementById('menu-inventaris').style.display = 'none';
   document.getElementById('menu-kas').style.display = 'none';
   document.getElementById('menu-users').style.display = 'none';
   document.getElementById('menu-exports').style.display = 'none';
   document.getElementById('menu-logs').style.display = 'none';
+  
+  // Reset tombol tambah data global
   document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'none';
   document.getElementById('btn-tambah-agenda-trigger').style.display = 'none';
-  document.getElementById('card-dash-kas').style.display = 'none';
   document.getElementById('btn-tambah-kas').style.display = 'none';
   
-  const inputKehadiranBtn = document.querySelector("#section-dashboard button[onclick='showAbsenPage()']");
-  if (inputKehadiranBtn) inputKehadiranBtn.parentElement.style.display = 'none';
+  const btnTambahInv = document.querySelector("#section-inventaris .btn-gold");
+  if (btnTambahInv) btnTambahInv.style.display = 'none';
+  
+  document.getElementById('card-dash-kas').style.display = 'none';
+  document.getElementById('dashboard-absen-massal-box').style.display = 'none';
+  
+  // Reset box ekspor individual
+  document.getElementById('export-absensi-box').style.display = 'none';
+  document.getElementById('export-inventaris-box').style.display = 'none';
+  document.getElementById('export-kas-box').style.display = 'none';
 
   if (role === "Admin") {
+    // ADMIN: Akses penuh
     document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     document.getElementById('menu-users').style.display = 'flex';
     document.getElementById('menu-exports').style.display = 'flex';
     document.getElementById('menu-logs').style.display = 'flex';
+    
     document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
     document.getElementById('btn-tambah-agenda-trigger').style.display = 'inline-block';
-    document.getElementById('card-dash-kas').style.display = 'flex';
     document.getElementById('btn-tambah-kas').style.display = 'inline-block';
-    if (inputKehadiranBtn) inputKehadiranBtn.parentElement.style.display = 'block';
-  } else if (role === "Pembina" || role === "Dewan Penggalang") {
+    if (btnTambahInv) btnTambahInv.style.display = 'inline-block';
+    
+    document.getElementById('card-dash-kas').style.display = 'flex';
+    document.getElementById('dashboard-absen-massal-box').style.display = 'block';
+    
+    // Semua sub-ekspor diizinkan
+    document.getElementById('export-absensi-box').style.display = 'block';
+    document.getElementById('export-inventaris-box').style.display = 'block';
+    document.getElementById('export-kas-box').style.display = 'block';
+    
+  } else if (role === "Pembina") {
+    // PEMBINA: Akses Dashboard, Absensi, Kegiatan, Inventaris, Kas, Agenda, Profil, Export (hanya Absensi)
     document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     document.getElementById('menu-exports').style.display = 'flex';
+    
     document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
     document.getElementById('btn-tambah-agenda-trigger').style.display = 'inline-block';
-    document.getElementById('card-dash-kas').style.display = 'flex';
     document.getElementById('btn-tambah-kas').style.display = 'inline-block';
-    if (inputKehadiranBtn) inputKehadiranBtn.parentElement.style.display = 'block';
+    if (btnTambahInv) btnTambahInv.style.display = 'inline-block';
+    
+    document.getElementById('card-dash-kas').style.display = 'flex';
+    document.getElementById('dashboard-absen-massal-box').style.display = 'block';
+    
+    // STRICT: Pembina hanya bisa mengekspor laporan absensi
+    document.getElementById('export-absensi-box').style.display = 'block';
+    document.getElementById('export-inventaris-box').style.display = 'none';
+    document.getElementById('export-kas-box').style.display = 'none';
+    
+  } else if (role === "Dewan Penggalang") {
+    // DEWAN PENGGALANG: Akses Dashboard, Absensi, Kegiatan, Kas, Agenda, Inventaris, Profil
+    document.getElementById('menu-inventaris').style.display = 'flex';
+    document.getElementById('menu-kas').style.display = 'flex';
+    
+    document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
+    document.getElementById('btn-tambah-agenda-trigger').style.display = 'inline-block';
+    document.getElementById('btn-tambah-kas').style.display = 'inline-block';
+    if (btnTambahInv) btnTambahInv.style.display = 'inline-block';
+    
+    document.getElementById('card-dash-kas').style.display = 'flex';
+    document.getElementById('dashboard-absen-massal-box').style.display = 'block';
+    
+    // STRICT: Dewan Penggalang tidak boleh mengakses menu eksport data sama sekali
+    document.getElementById('menu-exports').style.display = 'none';
+    
   } else if (role === "Penggalang") {
-    // Penggalang hanya dapat mengakses Agenda dan Absensi Mandiri. Modul sensitif lainnya tetap tersembunyi.
+    // PENGGALANG: Hanya Dashboard (simple), Absensi, Kegiatan (lihat), Agenda (lihat), Profil
+    // Seluruh menu admin, inventaris, kas, export, dan input massal tetap tersembunyi (none)
   }
 }
 
@@ -328,8 +378,9 @@ function toggleSelfieRule() {
 function startCamera() {
   const video = document.getElementById('camera-video');
   const preview = document.getElementById('selfie-canvas-preview');
+  if (!video) return;
   video.style.display = "block";
-  preview.style.display = "none";
+  if (preview) preview.style.display = "none";
   base64SelfieString = "";
 
   // Kontrol Mirroring visual agar tidak terbalik saat kamera depan aktif
@@ -378,11 +429,13 @@ function captureSnapshot() {
   }
   
   ctx.drawImage(video, 0, 0, 320, 240);
-  base64SelfieString = canvas.toDataURL('image/jpeg', 0.8);
+  base64SelfieString = canvas.toDataURL('image/jpeg', 0.85);
 
   video.style.display = "none";
-  preview.src = base64SelfieString;
-  preview.style.display = "block";
+  if (preview) {
+    preview.src = base64SelfieString;
+    preview.style.display = "block";
+  }
   showToast("Foto berhasil ditangkap.");
 }
 
@@ -447,11 +500,18 @@ function loadAbsenHistory() {
     .catch(err => showToast(err.message, true));
 }
 
+function viewFullImage(base64) {
+  const w = window.open();
+  w.document.write(`<img src="${base64}" style="max-width:100%; height:auto;" />`);
+}
+
 function showAbsenPage() {
   showPage('absen-page');
   document.getElementById('tanggalAbsen').value = new Date().toISOString().substring(0, 10);
   loadDaftarAnggota();
 }
+
+function kembaliKeDashboard() { showPage('dashboard-page'); }
 
 // =========================================================================
 // === MANAJEMEN MODUL AGENDA (KEGIATAN MASA DEPAN)                      ===
@@ -467,9 +527,19 @@ function loadAgenda() {
           tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada agenda terdaftar.</td></tr>`;
           return;
         }
-        const hasFullAccess = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
+        const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
+        const isAdmin = userRole === "Admin";
         
         res.list.forEach(agd => {
+          let actionButtons = "";
+          if (isPengurus) {
+            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openAgendaModal(${JSON.stringify(agd)})'>Edit</button>`;
+          }
+          // STRICT: Hanya Admin utama yang memiliki tombol/hak Hapus data master
+          if (isAdmin) {
+            actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteAgenda('${agd.id_agenda}')">Hapus</button>`;
+          }
+
           tbody.innerHTML += `
             <tr>
               <td><strong>${agd.kegiatan}</strong></td>
@@ -478,18 +548,13 @@ function loadAgenda() {
               <td>${agd.waktu}</td>
               <td>${agd.penanggung_jawab}</td>
               <td>${agd.keterangan || "-"}</td>
-              <td class="opsi-cell">
-                ${hasFullAccess ? `
-                  <button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openAgendaModal(${JSON.stringify(agd)})'>Edit</button>
-                  <button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteAgenda('${agd.id_agenda}')">Hapus</button>
-                ` : `-`}
-              </td>
+              <td class="opsi-cell">${actionButtons || "-"}</td>
             </tr>`;
         });
         
         const optionHeaders = document.querySelectorAll('.opsi-header');
         const optionCells = document.querySelectorAll('.opsi-cell');
-        if (!hasFullAccess) {
+        if (!isPengurus) {
           optionHeaders.forEach(el => el.style.display = 'none');
           optionCells.forEach(el => el.style.display = 'none');
         } else {
@@ -574,8 +639,18 @@ function loadKegiatan() {
         }
         res.list.forEach(keg => {
           const defaultImg = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png";
+          
           const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
           const isAdmin = userRole === "Admin";
+          
+          let actionButtons = "";
+          if (isPengurus) {
+            actionButtons += `<button class="btn" style="flex:1; padding:6px;" onclick='openKegiatanModal(${JSON.stringify(keg)})'>Edit</button>`;
+          }
+          // STRICT: Hanya Admin utama yang memiliki tombol/hak Hapus data master
+          if (isAdmin) {
+            actionButtons += `<button class="btn btn-danger" style="flex:1; padding:6px;" onclick="actionDeleteKegiatan('${keg.id_kegiatan}')">Hapus</button>`;
+          }
           
           grid.innerHTML += `
             <div class="kegiatan-card">
@@ -588,11 +663,7 @@ function loadKegiatan() {
                   </div>
                   <p style="font-size:0.85rem; margin-bottom:15px; color:var(--color-text-dark);">${keg.deskripsi}</p>
                 </div>
-                ${isPengurus ? `
-                <div style="display:flex; gap:8px;">
-                  <button class="btn" style="flex:1; padding:6px;" onclick='openKegiatanModal(${JSON.stringify(keg)})'>Edit</button>
-                  ${isAdmin ? `<button class="btn btn-danger" style="flex:1; padding:6px;" onclick="actionDeleteKegiatan('${keg.id_kegiatan}')">Hapus</button>` : ''}
-                </div>` : ``}
+                ${actionButtons ? `<div style="display:flex; gap:8px;">${actionButtons}</div>` : ''}
               </div>
             </div>`;
         });
@@ -674,6 +745,15 @@ function loadInventaris() {
           const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
           const isAdmin = userRole === "Admin";
           
+          let actionButtons = "";
+          if (isPengurus) {
+            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openInventarisModal(${JSON.stringify(row)})'>Edit</button>`;
+          }
+          // STRICT: Hanya Admin utama yang memiliki tombol/hak Hapus data master
+          if (isAdmin) {
+            actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteInventaris('${row.id_barang}')">Hapus</button>`;
+          }
+          
           tbody.innerHTML += `
             <tr>
               <td>${row.id_barang}</td>
@@ -682,10 +762,7 @@ function loadInventaris() {
               <td>${row.jumlah}</td>
               <td>${row.kondisi}</td>
               <td>${row.locations_simpan}</td>
-              <td>
-                ${isPengurus ? `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openInventarisModal(${JSON.stringify(row)})'>Edit</button>` : ''}
-                ${isAdmin ? `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteInventaris('${row.id_barang}')">Hapus</button>` : ''}
-              </td>
+              <td>${actionButtons || "-"}</td>
             </tr>`;
         });
       }
