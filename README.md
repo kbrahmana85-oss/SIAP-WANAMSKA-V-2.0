@@ -1,5 +1,4 @@
-# SIAP-WANAMSKA-V-2.0
-SISTEM INFORMASI &amp; ABSENSI PENGGALANG WANAMSKA
+
 # SIAP WANAMSKA V-2.0 🏕️
 
 **Sistem Informasi Administrasi Pangkalan Wanamaskha V-2.0**  
