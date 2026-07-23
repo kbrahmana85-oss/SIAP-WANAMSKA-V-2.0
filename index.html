@@ -269,6 +269,7 @@
       display: flex;
       align-items: center;
       gap: 15px;
+      margin-left: 50px; /* Ditambahkan agar tidak menabrak tombol menu-toggle */
     }
     .header-logo img {
       height: 45px;
@@ -304,13 +305,37 @@
       flex: 1;
     }
 
-    aside {
+    .sidebar {
       width: 260px;
       background-color: #3E2723;
       padding: 20px 0;
       color: var(--color-white);
-      transition: all 0.3s;
+      transition: all 0.3s ease; /* Transisi sidebar halus */
+      z-index: 1000;
+      overflow-x: hidden;
     }
+    @media screen and (min-width: 769px) {
+      .sidebar.collapsed {
+        width: 0;
+        padding: 20px 0;
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+    @media screen and (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        height: 100%;
+        width: 260px;
+        box-shadow: var(--shadow-bold);
+      }
+      .sidebar.active {
+        left: 0;
+      }
+    }
+
     .menu-item {
       display: flex;
       align-items: center;
@@ -553,17 +578,34 @@
       padding: 25px;
     }
 
-    .menu-toggle { display:none; position:fixed; top:15px; left:15px; z-index:1001; font-size:24px; background:#6F4E37; color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer; }
-    .sidebar { width:260px; background:#3E2723; padding:20px 0; transition:0.3s; z-index:1000; }
-    .main-content { flex:1; padding:30px; background-color: var(--color-bg-cream); overflow-y: auto; transition:0.3s; }
-    .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; }
-
-    @media screen and (max-width: 768px) {
-      .menu-toggle { display:block; }
-      .sidebar { position:fixed; left:-260px; top:0; height:100%; width:260px; box-shadow: var(--shadow-bold); }
-      .sidebar.active { left:0; }
-      .main-content { margin-left:0; padding:15px; }
-      .overlay.active { display:block; }
+    /* Tombol toggle menu hamburger responsif diletakkan permanen */
+    .menu-toggle {
+      display: block;
+      position: fixed;
+      top: 12px;
+      left: 15px;
+      z-index: 1001;
+      font-size: 22px;
+      background: #6F4E37;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      box-shadow: var(--shadow-soft);
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+    .overlay.active {
+      display: block;
     }
 
     .dashboard-widgets {
@@ -636,6 +678,7 @@
 </head>
 <body>
 
+  <!-- Menu toggle dipindahkan keluar agar selalu diproses di atas layer header -->
   <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
   <div class="overlay" onclick="toggleSidebar()"></div>
 
@@ -801,7 +844,7 @@
           
           <div class="card text-center" style="margin-top: 25px;">
             <h2 style="font-family: var(--font-title); margin-bottom: 10px;">Selamat Datang di SIAP WANAMSKA</h2>
-            <p>Sistem ini dirancang khusus untuk memonitor kedisiplinan absensi serta manajemen aktivitas Gerakan Pramuka Penggalang di lingkungan Wanamska. Silakan gunakan menu navigasi sebelah kiri untuk mengakses modul-modul sistem.</p>
+            <p>Sistem ini dirancang khusus untuk memonitor kedisiplinan absensi serta informasi aktivitas Pramuka Penggalang di lingkungan Wanamska. Silakan gunakan menu navigasi sebelah kiri untuk mengakses modul-modul sistem.</p>
           </div>
         </section>
 
@@ -1155,7 +1198,7 @@
                 <p>Aplikasi **SIAP WANAMSKA** di gunakan sebagai media Informasi dan Absensi Penggalang Gugus Depan 04.109-04.110 Pangkalan SMP Negeri 26 Kota Surakarta.</p>
                 <div style="margin-top: 25px; padding: 15px; border-radius: var(--rounded-box); background-color: #FAF2EB; display: inline-block;">
                   <p><strong>Nama Pengembang:</strong> ARIF NUUR ISWAHYUDI, S.Pd., Gr</p>
-                  <p><strong>Kontak Organisasi:</strong> support@wanamska.or.id</p>
+                  <p><strong>Kontak Organisasi:</strong> kbrahmana85@gmail.com/085229194470</p>
                 </div>
               </div>
             </div>
