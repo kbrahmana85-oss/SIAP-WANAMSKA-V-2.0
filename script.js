@@ -202,7 +202,7 @@ function setupRBACUI(role) {
     document.getElementById('menu-logs').style.display = 'flex';
     document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
     document.getElementById('card-dash-kas').style.display = 'flex';
-  } else if (role === "Pembina" || role === "Dewan" || role === "Dewan Penggalang") {
+  } else if (role === "Pembina" || role === "Dewan Penggalang") {
     document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     document.getElementById('menu-exports').style.display = 'flex';
@@ -453,7 +453,7 @@ function loadKegiatan() {
         }
         res.list.forEach(keg => {
           const defaultImg = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png";
-          const isPengurus = ["Admin", "Pembina", "Dewan", "Dewan Penggalang"].indexOf(userRole) !== -1;
+          const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
           grid.innerHTML += `
             <div class="kegiatan-card">
               <img class="kegiatan-img" src="${keg.foto1 || defaultImg}" alt="Foto">
@@ -522,7 +522,7 @@ function actionSaveKegiatan() {
   const foto2 = document.getElementById('keg-foto-2-base64').value;
 
   if (!nama || !tanggal || !lokasi || !deskripsi || !foto1 || !foto2) {
-    showToast("Nama, tanggal, lokasi, deskripsi, and Foto 1 & 2 wajib diisi.", true);
+    showToast("Nama, tanggal, lokasi, deskripsi, dan Foto 1 & 2 wajib diisi.", true);
     return;
   }
 
@@ -536,7 +536,7 @@ function actionSaveKegiatan() {
     foto2: foto2,
     foto3: document.getElementById('keg-foto-3-base64').value
   };
-  setLoader(true, "Menyimpan...");
+  setLoader(true, "Menyingkirkan...");
 
   callAPI('saveKegiatan', [sessionToken, payload])
     .then(res => {
