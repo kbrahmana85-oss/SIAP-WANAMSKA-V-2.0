@@ -1,920 +1,1369 @@
-/* =========================================================================
-   SIAP WANAMSKA - script.js
-   Seluruh logika ini dipindahkan dari <script> inline index.html (tanpa
-   mengubah HTML/CSS/code.gs). Bug yang ditemukan saat pemindahan sudah
-   diperbaiki (lihat komentar "FIX:").
-   ========================================================================= */
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>SIAP WANAMSKA</title>
 
-// GANTI dengan URL Web App Apps Script kamu (Deploy > Manage deployments)
-const API_URL = "https://script.google.com/macros/s/AKfycbzPkcuEXWh1slu2UuzGlA0QNfZAhBbt1EHykQlP1IaIktYvteZ8StVe1dWlN2vgMwCWfw/exec";
+  <!-- 1. PWA MANIFEST & THEME COLOR -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#c62828">
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_PWA.png">
 
-let sessionToken = "";
-let userRole = "";
-let userId = "";
-let currentUser = null;
+  <style>
+    /* ==========================================
+       TEMA VISUAL - MAJESTY THEME
+       ========================================== */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
-let streamRef = null;
-let base64SelfieString = "";
+    :root {
+      --color-primary: #6F4E37; /* Coklat Majesty */
+      --color-bg: #FDF8F4;      /* Krem */
+      --color-accent: #F59E0B;  /* Emas */
+      --color-danger: #B91C1C;  /* Merah Marun */
+      --color-text: #3D2B1F;
+      --radius: 12px;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+      
+      /* Variabel fallback pendukung modul */
+      --color-primary-brown: #6F4E37;
+      --color-bg-cream: #FDF8F4;
+      --color-accent-gold: #F59E0B;
+      --color-accent-gold-hover: #D97706;
+      --color-danger-red: #B91C1C;
+      --color-text-dark: #3E2723;
+      --color-text-muted: #795548;
+      --color-white: #FFFFFF;
+      --color-light-brown: #D7CCC8;
+      --font-title: 'Poppins', Georgia, serif;
+      --font-body: 'Poppins', sans-serif;
+      --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-bold: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --rounded-box: 12px;
+      --rounded-btn: 8px;
+    }
 
-/* FIX: sebelumnya fetch('/api', ...) mengasumsikan proxy Vercel yang tidak
-   ada di repo ini. Sekarang langsung memanggil Web App Apps Script. */
-async function callAPI(funcName, params = []) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari CORS preflight
-    body: JSON.stringify({ func: funcName, params: params })
-  });
-  const response = await res.json();
-  if (response.status === 'success') return response.data;
-  else throw new Error(response.message);
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-/* CEK SESSION SAAT LOAD */
-document.addEventListener('DOMContentLoaded', function () {
-  sessionToken = sessionStorage.getItem('sessionToken');
-  const userData = sessionStorage.getItem('user');
-  if (sessionToken && userData) {
-    currentUser = JSON.parse(userData);
-    userRole = currentUser.role;
-    userId = currentUser.user_id;
+    body {
+      font-family: 'Poppins', sans-serif !important;
+      background-color: var(--color-bg) !important;
+      color: var(--color-text) !important;
+      line-height: 1.5;
+    }
 
-    document.getElementById('user-display-name').innerText = currentUser.nama_lengkap;
-    document.getElementById('user-display-role').innerText = userRole;
+    /* Modifikasi Box Login */
+    .login-box {
+      background-color: #FFFFFF !important;
+      padding: 30px !important;
+      border-radius: 12px !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05) !important;
+      max-width: 400px !important;
+      width: 100% !important;
+      margin: 0 auto !important;
+      text-align: center !important;
+      border-top: 6px solid var(--color-accent) !important;
+    }
 
-    setupRBACUI(userRole);
-    showPage('dashboard-page');
-    loadDashboard();
-  } else {
-    showPage('login-page');
-  }
+    .login-box h1 {
+      font-family: 'Poppins', sans-serif !important;
+      color: var(--color-primary) !important;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
 
-  // Registrasi Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
-  }
-});
+    /* CSS Wajib Toggle Password */
+    .password-toggle {
+      position: absolute; 
+      right: 12px; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      font-size: 18px; 
+      cursor: pointer;
+      user-select: none;
+    }
 
-/* Prompt Install PWA */
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  const box = document.getElementById('installPWABox');
-  if (box) box.style.display = 'block';
-});
-document.getElementById('btnInstallPWA')?.addEventListener('click', async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt = null;
-    document.getElementById('installPWABox').style.display = 'none';
-  }
-});
+    /* CSS Foto Developer Login */
+    .developer {
+      margin-top: 25px;
+      border-top: 1px solid #E0E0E0;
+      padding-top: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .logo {
+      width: 80px;
+      height: auto;
+    }
+    .developer-photo {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--color-accent);
+    }
+    .developer p {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0;
+    }
 
-/* SPA Page Routing Controller */
-function showPage(pageId) {
-  if (pageId === 'login-page' || pageId === 'login-screen') {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('app-container').style.display = 'none';
-    return;
-  }
-  if (pageId === 'dashboard-page') {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-container').style.display = 'flex';
-    switchSection('section-dashboard');
-    return;
-  }
-  const sections = document.querySelectorAll('.app-section');
-  sections.forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
-  const target = document.getElementById(pageId);
-  if (target) { target.classList.add('active'); target.style.display = 'block'; }
-}
+    /* CSS Modul Developer di Dashboard */
+    .dev {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background-color: #ffffff;
+      padding: 15px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-top: 20px;
+      border-left: 5px solid var(--color-accent);
+    }
+    .dev img {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--color-accent);
+    }
+    .dev div {
+      font-size: 0.9rem;
+      color: var(--color-text);
+      text-align: left;
+    }
 
-function showToast(message, isDanger = false) {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  const toast = document.createElement('div');
-  toast.className = `toast ${isDanger ? 'danger' : ''}`;
-  toast.innerText = message;
-  container.appendChild(toast);
-  setTimeout(() => toast.classList.add('show'), 50);
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
-  }, 4500);
-}
+    /* TOAST NOTIFICATION */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+    .toast {
+      background-color: var(--color-primary-brown);
+      color: var(--color-white);
+      padding: 12px 24px;
+      border-radius: var(--rounded-btn);
+      margin-bottom: 10px;
+      box-shadow: var(--shadow-bold);
+      border-left: 5px solid var(--color-accent-gold);
+      transform: translateX(120%);
+      transition: transform 0.3s ease-in-out;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toast.show {
+      transform: translateX(0);
+    }
+    .toast.danger {
+      border-left: 5px solid var(--color-danger-red);
+    }
 
-function setLoader(show, text = "Sedang memproses data...") {
-  const loader = document.getElementById('global-loader');
-  const loaderText = document.getElementById('loader-text');
-  if (!loader) return;
-  if (show) { loaderText.innerText = text; loader.style.display = 'flex'; }
-  else { loader.style.display = 'none'; }
-}
+    /* LOADING SPINNER SCREEN */
+    #global-loader {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(62, 39, 35, 0.6);
+      z-index: 10000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: var(--color-white);
+      font-family: var(--font-title);
+      font-size: 1.2rem;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--color-accent-gold);
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 15px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
-function toggleSidebar() {
-  document.querySelector('.sidebar').classList.toggle('active');
-  document.querySelector('.overlay').classList.toggle('active');
-}
+    /* LOGIN SCREEN (Full Screen) */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(circle, var(--color-primary) 0%, #3E2723 100%);
+      padding: 20px;
+    }
 
-function switchSection(sectionId, elementMenu) {
-  const sections = document.querySelectorAll('.app-section');
-  sections.forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+    /* INPUT STYLES */
+    .form-group {
+      text-align: left;
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      color: var(--color-primary-brown);
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--color-light-brown);
+      border-radius: var(--rounded-btn);
+      background-color: var(--color-white);
+      color: var(--color-text-dark);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--color-accent-gold);
+    }
 
-  const target = document.getElementById(sectionId);
-  if (target) { target.classList.add('active'); target.style.display = 'block'; }
+    /* BUTTONS */
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: var(--color-primary-brown);
+      color: var(--color-white);
+      border: none;
+      border-radius: var(--rounded-btn);
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      transition: all 0.2s;
+      text-align: center;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background-color: #553C2A;
+      box-shadow: var(--shadow-soft);
+    }
+    .btn-primary {
+      background-color: var(--color-primary) !important;
+      color: white !important;
+    }
+    .btn-primary:hover {
+      background-color: #553C2A !important;
+    }
+    .btn-gold {
+      background-color: var(--color-accent-gold);
+      color: var(--color-text-dark);
+    }
+    .btn-gold:hover {
+      background-color: var(--color-accent-gold-hover);
+    }
+    .btn-danger {
+      background-color: var(--color-danger-red);
+    }
+    .btn-danger:hover {
+      background-color: #961212;
+    }
+    .btn-full {
+      width: 100%;
+    }
 
-  const menuItems = document.querySelectorAll('.menu-item');
-  menuItems.forEach(item => item.classList.remove('active'));
-  if (elementMenu) elementMenu.classList.add('active');
+    /* APPLICATION LAYOUT */
+    #app-container {
+      display: none;
+      min-height: 100vh;
+      flex-direction: column;
+    }
 
-  document.querySelector('.sidebar').classList.remove('active');
-  document.querySelector('.overlay').classList.remove('active');
+    /* HEADER */
+    header {
+      background-color: var(--color-primary-brown);
+      color: var(--color-white);
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 4px solid var(--color-accent-gold);
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .header-logo img {
+      height: 45px;
+      width: auto;
+    }
+    .header-title h2 {
+      font-family: var(--font-title);
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+    }
+    .header-title p {
+      font-size: 0.75rem;
+      color: var(--color-accent-gold);
+    }
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .header-user .info {
+      text-align: right;
+    }
+    .header-user .role {
+      font-size: 0.75rem;
+      background-color: var(--color-accent-gold);
+      color: var(--color-text-dark);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
 
-  if (sectionId === 'section-dashboard') loadDashboard();
-  else if (sectionId === 'section-absensi') loadAbsenHistory();
-  else if (sectionId === 'section-kegiatan') loadKegiatan();
-  else if (sectionId === 'section-inventaris') loadInventaris();
-  else if (sectionId === 'section-kas') loadKas();
-  else if (sectionId === 'section-profile') loadProfileDiri();
-  else if (sectionId === 'section-users') loadUsers();
-  else if (sectionId === 'section-logs') loadSystemLogs();
-}
+    /* MAIN CONTAINER (Sidebar + Content) */
+    .main-wrapper {
+      display: flex;
+      flex: 1;
+    }
 
-/* ============================ LOGIN / LOGOUT ============================ */
+    /* SIDEBAR */
+    aside {
+      width: 260px;
+      background-color: #3E2723;
+      padding: 20px 0;
+      color: var(--color-white);
+      transition: all 0.3s;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 25px;
+      color: var(--color-light-brown);
+      text-decoration: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s, color 0.2s;
+    }
+    .menu-item:hover, .menu-item.active {
+      background-color: var(--color-primary-brown);
+      color: var(--color-accent-gold);
+      border-left: 4px solid var(--color-accent-gold);
+    }
+    .menu-item .icon {
+      font-size: 1.2rem;
+    }
 
-function handleLogin() {
-  const userIdVal = document.getElementById('userId').value.trim();
-  const passwordVal = document.getElementById('password').value.trim();
+    /* MAIN CONTENT */
+    main {
+      flex: 1;
+      padding: 30px;
+      background-color: var(--color-bg-cream);
+      overflow-y: auto;
+    }
 
-  if (!userIdVal || !passwordVal) { showToast('User ID dan Password wajib diisi', true); return; }
-  showToast('Sedang login...');
+    .app-section {
+      display: none;
+    }
+    .app-section.active {
+      display: block;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-  callAPI('loginUser', [userIdVal, passwordVal])
-    .then(res => {
-      if (res.success) {
-        sessionStorage.setItem('sessionToken', res.sessionToken);
-        sessionStorage.setItem('user', JSON.stringify(res.user));
+    /* SECTION TITLE */
+    .section-header {
+      margin-bottom: 25px;
+      border-bottom: 2px solid var(--color-light-brown);
+      padding-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .section-header h1 {
+      font-family: var(--font-title);
+      color: var(--color-primary-brown);
+      font-size: 1.8rem;
+    }
 
-        sessionToken = res.sessionToken;
-        currentUser = res.user;
-        userRole = res.user.role;
-        userId = res.user.user_id;
+    /* CARDS */
+    .grid-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .card-stat {
+      background-color: var(--color-white);
+      padding: 20px;
+      border-radius: var(--rounded-box);
+      box-shadow: var(--shadow-soft);
+      border-left: 6px solid var(--color-primary-brown);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card-stat.gold { border-left-color: var(--color-accent-gold); }
+    .card-stat.danger { border-left-color: var(--color-danger-red); }
+    .card-stat h3 {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .card-stat .val {
+      font-family: var(--font-title);
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--color-text-dark);
+    }
 
-        document.getElementById('user-display-name').innerText = res.user.nama_lengkap;
-        document.getElementById('user-display-role').innerText = res.user.role;
+    /* GENERAL CARD CONTAINER */
+    .card {
+      background-color: var(--color-white);
+      border-radius: var(--rounded-box);
+      box-shadow: var(--shadow-soft);
+      padding: 25px;
+      margin-bottom: 25px;
+    }
 
-        setupRBACUI(res.user.role);
-        showPage('dashboard-page');
-        loadDashboard();
-      } else {
-        showToast(res.message || 'Login gagal', true);
-      }
-    })
-    .catch(err => showToast(err.message || 'Login gagal', true));
-}
+    /* TABLES */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1.5px solid var(--color-light-brown);
+      font-size: 0.9rem;
+    }
+    th {
+      background-color: var(--color-primary-brown);
+      color: var(--color-white);
+      font-family: var(--font-title);
+    }
+    tr:hover {
+      background-color: #FAF2EB;
+    }
 
-function actionLogout() {
-  if (!confirm("Apakah Anda yakin ingin keluar dari sistem?")) return;
+    /* BADGES */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .badge-hadir { background-color: #DEF7EC; color: #03543F; }
+    .badge-izin { background-color: #E1EFFE; color: #1E429F; }
+    .badge-sakit { background-color: #FEF08A; color: #713F12; }
+    .badge-alpa { background-color: #FDE8E8; color: #9B1C1C; }
 
-  callAPI('logoutUser', [sessionToken]).catch(() => {});
+    /* ABSEN CAMERA & CANVAS */
+    .absensi-layout {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+    }
+    .camera-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #000;
+      border-radius: var(--rounded-box);
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 4/3;
+    }
+    #camera-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #selfie-canvas-preview {
+      display: none;
+      width: 100%;
+      border-radius: var(--rounded-box);
+    }
+    .camera-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      justify-content: center;
+    }
 
-  sessionStorage.clear();
-  sessionToken = ""; userRole = ""; userId = ""; currentUser = null;
+    /* KEGIATAN CARDS */
+    .kegiatan-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .kegiatan-card {
+      background-color: var(--color-white);
+      border-radius: var(--rounded-box);
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+    }
+    .kegiatan-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      background-color: var(--color-light-brown);
+    }
+    .kegiatan-body {
+      padding: 15px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .kegiatan-body h3 {
+      font-family: var(--font-title);
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+    .kegiatan-body .meta {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      margin-bottom: 10px;
+    }
 
-  showPage('login-page');
-  showToast("Berhasil logout.");
-}
+    /* GRAPH CANVAS */
+    .chart-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      text-align: center;
+    }
+    #canvas-kas-chart {
+      background-color: #FAF4EE;
+      border: 1px solid var(--color-light-brown);
+      border-radius: var(--rounded-box);
+      max-width: 100%;
+    }
 
-function setupRBACUI(role) {
-  document.getElementById('menu-inventaris').style.display = 'none';
-  document.getElementById('menu-kas').style.display = 'none';
-  document.getElementById('menu-users').style.display = 'none';
-  document.getElementById('menu-exports').style.display = 'none';
-  document.getElementById('menu-logs').style.display = 'none';
-  document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'none';
-  document.getElementById('card-dash-kas').style.display = 'none';
+    /* DEVELOPER SECTION */
+    .dev-profile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 20px;
+    }
+    .dev-profile img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      border: 4px solid var(--color-accent-gold);
+      object-fit: cover;
+    }
 
-  if (role === "Admin") {
-    document.getElementById('menu-inventaris').style.display = 'flex';
-    document.getElementById('menu-kas').style.display = 'flex';
-    document.getElementById('menu-users').style.display = 'flex';
-    document.getElementById('menu-exports').style.display = 'flex';
-    document.getElementById('menu-logs').style.display = 'flex';
-    document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
-    document.getElementById('card-dash-kas').style.display = 'flex';
-  } else if (role === "Pembina" || role === "Dewan Penggalang") {
-    document.getElementById('menu-inventaris').style.display = 'flex';
-    document.getElementById('menu-kas').style.display = 'flex';
-    document.getElementById('menu-exports').style.display = 'flex';
-    document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
-    document.getElementById('card-dash-kas').style.display = 'flex';
-  }
-}
+    /* MODAL WINDOWS */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(62, 39, 35, 0.5);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-box {
+      background-color: var(--color-bg-cream);
+      border-radius: var(--rounded-box);
+      box-shadow: var(--shadow-bold);
+      width: 100%;
+      max-width: 600px;
+      overflow-y: auto;
+      max-height: 90vh;
+      border-top: 6px solid var(--color-primary-brown);
+    }
+    .modal-header {
+      padding: 15px 25px;
+      border-bottom: 1px solid var(--color-light-brown);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 {
+      font-family: var(--font-title);
+      color: var(--color-primary-brown);
+    }
+    .modal-close {
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: var(--color-text-muted);
+    }
+    .modal-body {
+      padding: 25px;
+    }
 
-/* ============================== DASHBOARD ================================ */
+    /* RESPONSIVE DESIGN (Hamburger Menu & Sidebar) */
+    .menu-toggle { display:none; position:fixed; top:15px; left:15px; z-index:1001; font-size:24px; background:#6F4E37; color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer; }
+    .sidebar { width:260px; background:#3E2723; padding:20px 0; transition:0.3s; z-index:1000; }
+    .main-content { flex:1; padding:30px; background-color: var(--color-bg-cream); overflow-y: auto; transition:0.3s; }
+    .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; }
 
-function loadDashboard() {
-  callAPI('getDashboardData', [sessionToken])
-    .then(res => {
-      if (res.success) {
-        document.getElementById('dash-total-anggota').innerText = res.total_anggota;
-        document.getElementById('dash-hadir-hari-ini').innerText = res.hadir_hari_ini;
-        document.getElementById('dash-kegiatan-terbaru').innerText = res.kegiatan_terbaru;
+    @media screen and (max-width: 768px) {
+      .menu-toggle { display:block; }
+      .sidebar { position:fixed; left:-260px; top:0; height:100%; width:260px; box-shadow: var(--shadow-bold); }
+      .sidebar.active { left:0; }
+      .main-content { margin-left:0; padding:15px; }
+      .overlay.active { display:block; }
+    }
+  </style>
+</head>
+<body>
 
-        const saldoEl = document.getElementById('dash-saldo-kas');
-        const cardKas = document.getElementById('card-dash-kas');
-        if (res.saldo_kas !== undefined && res.saldo_kas !== null) {
-          if (saldoEl) saldoEl.innerText = "Rp " + Number(res.saldo_kas).toLocaleString('id-ID');
-          if (cardKas) cardKas.style.display = 'flex';
-        }
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
+  <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+  <div class="overlay" onclick="toggleSidebar()"></div>
 
-function togglePassword() {
-  const passwordInput = document.getElementById('password');
-  const eyeIcon = document.getElementById('eyeIcon');
-  if (passwordInput && eyeIcon) {
-    if (passwordInput.type === 'password') { passwordInput.type = 'text'; eyeIcon.innerText = '🙈'; }
-    else { passwordInput.type = 'password'; eyeIcon.innerText = '👁️'; }
-  }
-}
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container"></div>
 
-/* ================================ ABSENSI ================================ */
+  <!-- GLOBAL LOADER -->
+  <div id="global-loader">
+    <div class="spinner"></div>
+    <p id="loader-text">Memproses data...</p>
+  </div>
 
-function toggleMetodeAbsen() {
-  const met = document.getElementById('absen-metode').value;
-  const camPanel = document.getElementById('absen-camera-panel');
-  const codePanel = document.getElementById('form-kegiatan-code');
-  if (met === "Selfie") {
-    camPanel.style.display = 'block';
-    codePanel.style.display = 'none';
-    startCamera();
-  } else {
-    camPanel.style.display = 'none';
-    codePanel.style.display = 'block';
-    stopCamera();
-  }
-}
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen">
+    <div class="login-box">
+      <!-- Logo SIAP WANAMSKA V-2.0 -->
+      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo SIAP WANAMSKA">
+      <h1>SIAP WANAMSKA</h1>
+      <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
+      
+      <!-- Input User ID -->
+      <div class="form-group">
+        <label for="userId">User ID</label>
+        <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required style="width: 100%;">
+      </div>
+      
+      <!-- Input Password dengan Ikon Interaktif -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div style="position: relative;">
+          <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required style="width: 100%;">
+          <span class="password-toggle" id="eyeIcon" onclick="togglePassword()">👁️</span>
+        </div>
+      </div>
+      
+      <!-- Tombol Masuk Tunggal -->
+      <button type="button" id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none; cursor: pointer;">Login</button>
 
-function toggleSelfieRule() {
-  const status = document.getElementById('absen-status').value;
-  const camPanel = document.getElementById('absen-camera-panel');
-  if (status !== "Hadir") { camPanel.style.display = 'none'; stopCamera(); }
-  else { toggleMetodeAbsen(); }
-}
+      <div style="text-align:center; margin-bottom: 20px; margin-top: 15px;">
+        <h2>SELAMAT DATANG</h2>
+        <p style="font-size:16px; color:#555;">MARI MENJADI PENGGALANG YANG SIAP BERDIGITALISASI</p>
+      </div>
+    </div>
+  </div>
 
-function startCamera() {
-  const video = document.getElementById('camera-video');
-  const preview = document.getElementById('selfie-canvas-preview');
-  video.style.display = "block";
-  preview.style.display = "none";
-  base64SelfieString = "";
+  <!-- APP LAYOUT CONTAINER -->
+  <div id="app-container">
+    
+    <!-- HEADER -->
+    <header>
+      <div class="header-logo">
+        <span class="header-menu-toggle-old" onclick="toggleSidebar()" style="display:none !important;">&#9776;</span>
+        <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo">
+        <div class="header-title">
+          <h2>SIAP WANAMSKA</h2>
+          <p>Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
+        </div>
+      </div>
+      <div class="header-user">
+        <div class="info">
+          <p style="font-weight: bold;" id="user-display-name">-</p>
+          <span class="role" id="user-display-role">-</span>
+        </div>
+      </div>
+    </header>
 
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-      .then(stream => { streamRef = stream; video.srcObject = stream; })
-      .catch(() => showToast("Gagal mengakses kamera, silakan periksa izin browser.", true));
-  } else {
-    showToast("Browser tidak mendukung kamera bawaan.", true);
-  }
-}
+    <div class="main-wrapper">
+      <!-- SIDEBAR MENU -->
+      <aside id="sidebar" class="sidebar">
+        <div class="menu-item active" onclick="switchSection('section-dashboard', this)">
+          <span class="icon">&#128202;</span> Dashboard
+        </div>
+        <div class="menu-item" onclick="switchSection('section-absensi', this)">
+          <span class="icon">&#128197;</span> Absensi Mandiri
+        </div>
+        <div class="menu-item" onclick="switchSection('section-kegiatan', this)">
+          <span class="icon">&#127941;</span> Kegiatan
+        </div>
+        <div class="menu-item role-restricted" id="menu-inventaris" onclick="switchSection('section-inventaris', this)">
+          <span class="icon">&#128230;</span> Inventaris
+        </div>
+        <div class="menu-item role-restricted" id="menu-kas" onclick="switchSection('section-kas', this)">
+          <span class="icon">&#128181;</span> Kas Pramuka
+        </div>
+        <div class="menu-item" onclick="switchSection('section-profile', this)">
+          <span class="icon">&#128100;</span> Profil Diri
+        </div>
+        
+        <div class="menu-item role-restricted" id="menu-users" onclick="switchSection('section-users', this)">
+          <span class="icon">&#128101;</span> Kelola User
+        </div>
+        <div class="menu-item role-restricted" id="menu-exports" onclick="switchSection('section-exports', this)">
+          <span class="icon">&#128190;</span> Export Data
+        </div>
+        <div class="menu-item role-restricted" id="menu-logs" onclick="switchSection('section-logs', this)">
+          <span class="icon">&#128196;</span> Log Aktivitas
+        </div>
+        <div class="menu-item" onclick="switchSection('section-about', this)">
+          <span class="icon">&#128227;</span> Tentang Dev
+        </div>
 
-function stopCamera() {
-  if (streamRef) { streamRef.getTracks().forEach(track => track.stop()); streamRef = null; }
-}
+        <div class="menu-item" onclick="actionLogout()" style="color: var(--color-danger-red); margin-top: 30px;">
+          <span class="icon">&#128682;</span> Keluar Sesi
+        </div>
+      </aside>
 
-function captureSnapshot() {
-  const video = document.getElementById('camera-video');
-  const preview = document.getElementById('selfie-canvas-preview');
-  if (!streamRef) { showToast("Kamera belum aktif.", true); return; }
+      <!-- MAIN CONTENT -->
+      <main id="main-content" class="main-content">
 
-  const canvas = document.createElement('canvas');
-  canvas.width = 320; canvas.height = 240;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, 320, 240);
-  base64SelfieString = canvas.toDataURL('image/jpeg', 0.7);
+        <!-- SECTION 1: DASHBOARD -->
+        <section id="section-dashboard" class="app-section active">
+          <div class="section-header">
+            <h1>Dashboard Ringkasan</h1>
+          </div>
+          <div class="grid-dashboard">
+            <div class="card-stat">
+              <h3>Total Anggota</h3>
+              <div class="val" id="dash-total-anggota">0</div>
+            </div>
+            <div class="card-stat gold">
+              <h3>Hadir Hari Ini</h3>
+              <div class="val" id="dash-hadir-hari-ini">0</div>
+            </div>
+            <div class="card-stat">
+              <h3>Kegiatan Terbaru</h3>
+              <div class="val" style="font-size: 1.1rem; padding-top: 10px;" id="dash-kegiatan-terbaru">-</div>
+            </div>
+            <div class="card-stat danger" id="card-dash-kas" style="display: none;">
+              <h3>Saldo Kas</h3>
+              <div class="val" style="font-size: 1.3rem;" id="dash-saldo-kas">Rp 0</div>
+            </div>
+          </div>
+          
+          <!-- Tombol Akses Fitur Kehadiran -->
+          <div style="margin-top: 15px; margin-bottom: 25px;">
+            <button class="btn btn-primary btn-gold" onclick="showAbsenPage()" style="padding: 12px 24px; font-weight: bold; border-radius: var(--radius); cursor: pointer;">
+              Input Kehadiran Anggota
+            </button>
+          </div>
+          
+          <!-- MODUL DEVELOPER DI DASHBOARD -->
+          <div class="dev">
+            <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" alt="Arif Nuur Iswahyudi">
+            <div>
+              <b>Arif Nuur Iswahyudi (Developer)</b><br>
+              Guru Matematika dan Pembina Pramuka
+            </div>
+          </div>
+          
+          <div class="card text-center" style="margin-top: 25px;">
+            <h2 style="font-family: var(--font-title); margin-bottom: 10px;">Selamat Datang di SIAP WANAMSKA</h2>
+            <p>Sistem ini dirancang khusus untuk memonitor kedisiplinan absensi serta manajemen aktivitas Gerakan Pramuka Penggalang di lingkungan Wanamska. Silakan gunakan menu navigasi sebelah kiri untuk mengakses modul-modul sistem.</p>
+          </div>
+        </section>
 
-  video.style.display = "none";
-  preview.src = base64SelfieString;
-  preview.style.display = "block";
-  showToast("Foto berhasil diambil.");
-}
-
-function actionSubmitAbsen() {
-  const status = document.getElementById('absen-status').value;
-  const metode = document.getElementById('absen-metode').value;
-  const kegiatanCode = document.getElementById('absen-kegiatan-id').value;
-  const keterangan = document.getElementById('absen-keterangan').value;
-
-  if (status === "Hadir" && metode === "Selfie" && !base64SelfieString) {
-    showToast("Wajib mengambil foto selfie terlebih dahulu jika berstatus Hadir!", true); return;
-  }
-  if (status === "Hadir" && metode === "Manual" && !kegiatanCode) {
-    showToast("Wajib memasukkan kode kegiatan!", true); return;
-  }
-
-  setLoader(true, "Mengirim Absensi...");
-
-  callAPI('submitAbsen', [sessionToken, status, base64SelfieString, metode, kegiatanCode, keterangan])
-    .then(res => {
-      setLoader(false);
-      if (res.success) {
-        showToast(res.message);
-        stopCamera();
-        document.getElementById('absen-kegiatan-id').value = "";
-        document.getElementById('absen-keterangan').value = "";
-        loadAbsenHistory();
-      } else {
-        showToast(res.message, true);
-      }
-    })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
-}
-
-function loadAbsenHistory() {
-  const filter = document.getElementById('filter-absen-date').value;
-
-  callAPI('getAbsenHistory', [sessionToken, filter])
-    .then(res => {
-      if (res.success) {
-        const tbody = document.getElementById('body-riwayat-absen');
-        tbody.innerHTML = "";
-        if (res.list.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Tidak ada riwayat absensi.</td></tr>`;
-          return;
-        }
-        res.list.forEach(row => {
-          let badgeClass = row.status === "Hadir" ? "badge-hadir" : row.status === "Izin" ? "badge-izin" : "badge-sakit";
-          let imgTag = row.foto_base64 ? `<img src="${row.foto_base64}" style="width: 60px; height: 45px; border-radius:4px; object-fit:cover; cursor:pointer;" onclick="viewFullImage('${row.foto_base64}')">` : "Tidak Ada";
-          tbody.innerHTML += `
-            <tr>
-              <td>${row.tanggal} <br> <span style="font-size:0.75rem; color:var(--color-text-muted);">${row.jam}</span></td>
-              <td><strong>${row.nama}</strong><br><span style="font-size:0.75rem;">${row.user_id}</span></td>
-              <td><span class="badge ${badgeClass}">${row.status}</span></td>
-              <td>${row.metode}</td>
-              <td>${row.kegiatan || "-"} <br> <span style="font-size:0.8rem; font-style:italic;">${row.keterangan || ""}</span></td>
-              <td>${imgTag}</td>
-            </tr>`;
-        });
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
-
-function viewFullImage(base64) {
-  const w = window.open();
-  w.document.write(`<img src="${base64}" style="max-width:100%; height:auto;" />`);
-}
-
-function showAbsenPage() {
-  showPage('absen-page');
-  document.getElementById('tanggalAbsen').value = new Date().toISOString().substring(0, 10);
-  loadDaftarAnggota();
-}
-
-function kembaliKeDashboard() { showPage('dashboard-page'); }
-
-/* Halaman "Input Kehadiran Harian" (daftar per-anggota) */
-function loadDaftarAnggota() {
-  callAPI('getUserList', [sessionToken])
-    .then(res => {
-      if (res.success) {
-        const tbody = document.getElementById('daftarAnggotaAbsen');
-        tbody.innerHTML = "";
-        res.list.forEach(member => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${member.user_id}</td>
-              <td>${member.nama_lengkap}</td>
-              <td>${member.role}</td>
-              <td>
-                <select class="form-control" id="status_${member.user_id}">
+        <!-- SECTION 2: ABSENSI -->
+        <section id="section-absensi" class="app-section">
+          <div class="absensi-layout">
+            <div class="card">
+              <h2 style="font-family: var(--font-title); margin-bottom: 20px;">Catat Kehadiran Anda</h2>
+              
+              <div class="form-group">
+                <label>Pilih Status</label>
+                <select id="absen-status" class="form-control" onchange="toggleSelfieRule()">
                   <option value="Hadir">Hadir</option>
                   <option value="Izin">Izin</option>
                   <option value="Sakit">Sakit</option>
-                  <option value="Alpa">Alpa</option>
                 </select>
-              </td>
-            </tr>`;
-        });
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
-
-function simpanKehadiran() {
-  const tanggal = document.getElementById('tanggalAbsen').value;
-  if (!tanggal) { showToast("Pilih tanggal kegiatan terlebih dahulu.", true); return; }
-
-  const rows = document.querySelectorAll('#daftarAnggotaAbsen tr');
-  const requests = [];
-  rows.forEach(tr => {
-    const select = tr.querySelector('select[id^="status_"]');
-    if (!select) return;
-    const targetUserId = select.id.replace('status_', '');
-    requests.push(
-      callAPI('submitAbsen', [sessionToken, select.value, "", "Manual", "", "Dicatat massal oleh " + userId + " untuk " + targetUserId])
-    );
-  });
-
-  setLoader(true, "Menyimpan kehadiran...");
-  Promise.allSettled(requests).then(() => {
-    setLoader(false);
-    showToast("Kehadiran berhasil disimpan.");
-    kembaliKeDashboard();
-  });
-}
-
-async function aktifkanKamera() {
-  const video = document.getElementById('video');
-  if (!video) return;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-    video.srcObject = stream;
-  } catch (err) {
-    showToast("Izin kamera ditolak. Silakan buka lewat Chrome dan izinkan akses kamera.", true);
-    console.error("Camera Error: ", err);
-  }
-}
-
-/* ================================ KEGIATAN =============================== */
-
-function loadKegiatan() {
-  callAPI('getKegiatanList', [sessionToken])
-    .then(res => {
-      if (res.success) {
-        const grid = document.getElementById('grid-list-kegiatan');
-        grid.innerHTML = "";
-        if (res.list.length === 0) {
-          grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--color-text-muted);">Belum ada agenda kegiatan.</p>`;
-          return;
-        }
-        res.list.forEach(keg => {
-          const defaultImg = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png";
-          const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
-          grid.innerHTML += `
-            <div class="kegiatan-card">
-              <img class="kegiatan-img" src="${keg.foto1 || defaultImg}" alt="Foto">
-              <div class="kegiatan-body">
-                <div>
-                  <h3>${keg.nama_kegiatan}</h3>
-                  <div class="meta">
-                    <span>&#128197; ${keg.tanggal}</span> | <span>&#128205; ${keg.lokasi}</span>
-                  </div>
-                  <p style="font-size:0.85rem; margin-bottom:15px; color:var(--color-text-dark);">${keg.deskripsi}</p>
-                </div>
-                ${isPengurus ? `
-                <div style="display:flex; gap:8px;">
-                  <button class="btn" style="flex:1; padding:6px;" onclick='openKegiatanModal(${JSON.stringify(keg)})'>Edit</button>
-                  <button class="btn btn-danger" style="flex:1; padding:6px;" onclick="actionDeleteKegiatan('${keg.id_kegiatan}')">Hapus</button>
-                </div>` : ``}
               </div>
-            </div>`;
-        });
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
 
-function openKegiatanModal(keg) {
-  document.getElementById('kegiatan-modal-title').innerText = keg ? "Form Edit Kegiatan" : "Form Tambah Kegiatan";
-  document.getElementById('keg-id').value = keg ? keg.id_kegiatan : "";
-  document.getElementById('keg-nama').value = keg ? keg.nama_kegiatan : "";
-  document.getElementById('keg-tanggal').value = keg ? keg.tanggal : "";
-  document.getElementById('keg-lokasi').value = keg ? keg.lokasi : "";
-  document.getElementById('keg-deskripsi').value = keg ? keg.deskripsi : "";
-  document.getElementById('keg-foto-1-base64').value = keg ? (keg.foto1 || "") : "";
-  document.getElementById('keg-foto-2-base64').value = keg ? (keg.foto2 || "") : "";
-  document.getElementById('keg-foto-3-base64').value = keg ? (keg.foto3 || "") : "";
-  document.getElementById('modal-kegiatan').style.display = 'flex';
-}
-function closeKegiatanModal() {
-  document.getElementById('modal-kegiatan').style.display = 'none';
-}
+              <div class="form-group">
+                <label>Metode Absen</label>
+                <select id="absen-metode" class="form-control" onchange="toggleMetodeAbsen()">
+                  <option value="Manual">Manual Input Kode Kegiatan</option>
+                  <option value="Selfie">Hanya Foto Selfie</option>
+                </select>
+              </div>
 
-function processKegiatanPhoto(index, event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const img = new Image();
-    img.onload = function () {
-      const canvas = document.createElement('canvas');
-      canvas.width = 300; canvas.height = 200;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 300, 200);
-      document.getElementById(`keg-foto-${index}-base64`).value = canvas.toDataURL('image/jpeg', 0.65);
-      showToast(`Foto ${index} berhasil diproses.`);
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
+              <div class="form-group" id="form-kegiatan-code">
+                <label for="absen-kegiatan-id">Kode ID / Nama Kegiatan</label>
+                <input type="text" id="absen-kegiatan-id" class="form-control" placeholder="Contoh: KEG-XXXXXX">
+                <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 5px;">
+                  * Catatan Teknis: Untuk menghindari pemuatan library eksternal (CDN), kami menyediakan kolom input manual kode ini as fallback scanner QR bawaan.
+                </p>
+              </div>
 
-function actionSaveKegiatan() {
-  const nama = document.getElementById('keg-nama').value;
-  const tanggal = document.getElementById('keg-tanggal').value;
-  const lokasi = document.getElementById('keg-lokasi').value;
-  const deskripsi = document.getElementById('keg-deskripsi').value;
-  const foto1 = document.getElementById('keg-foto-1-base64').value;
-  const foto2 = document.getElementById('keg-foto-2-base64').value;
+              <div class="form-group">
+                <label for="absen-keterangan">Keterangan Tambahan</label>
+                <textarea id="absen-keterangan" class="form-control" rows="2" placeholder="Tulis catatan jika izin/sakit..."></textarea>
+              </div>
 
-  if (!nama || !tanggal || !lokasi || !deskripsi || !foto1 || !foto2) {
-    showToast("Nama, tanggal, lokasi, deskripsi, dan Foto 1 & 2 wajib diisi.", true);
-    return;
-  }
+              <button class="btn btn-gold btn-full" onclick="actionSubmitAbsen()">KIRIM ABSENSI</button>
+            </div>
 
-  const payload = {
-    id_kegiatan: document.getElementById('keg-id').value,
-    nama_kegiatan: nama,
-    tanggal: tanggal,
-    lokasi: lokasi,
-    deskripsi: deskripsi,
-    foto1: foto1,
-    foto2: foto2,
-    foto3: document.getElementById('keg-foto-3-base64').value
-  };
-  setLoader(true, "Menyingkirkan...");
+            <div class="card" id="absen-camera-panel">
+              <h2 style="font-family: var(--font-title); margin-bottom: 20px;">Foto Selfie Pembuktian</h2>
+              
+              <div class="camera-box">
+                <video id="camera-video" autoplay playsinline></video>
+                <img id="selfie-canvas-preview" src="" alt="Preview Capture">
+              </div>
 
-  callAPI('saveKegiatan', [sessionToken, payload])
-    .then(res => {
-      setLoader(false);
-      showToast(res.message);
-      closeKegiatanModal();
-      loadKegiatan();
-    })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
-}
+              <div class="camera-controls">
+                <button class="btn" onclick="startCamera()">Aktifkan Kamera</button>
+                <button class="btn btn-gold" id="btn-capture" onclick="captureSnapshot()">Ambil Foto</button>
+              </div>
+            </div>
+          </div>
 
-function actionDeleteKegiatan(idKegiatan) {
-  if (!confirm("Hapus kegiatan ini?")) return;
-  callAPI('deleteKegiatan', [sessionToken, idKegiatan])
-    .then(res => { showToast(res.message); loadKegiatan(); })
-    .catch(err => showToast(err.message, true));
-}
+          <div class="card" style="margin-top: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <h2 style="font-family: var(--font-title);">Riwayat Absensi</h2>
+              <input type="date" id="filter-absen-date" class="form-control" style="width: 200px;" onchange="loadAbsenHistory()">
+            </div>
+            
+            <div class="table-responsive">
+              <table id="table-riwayat-absen">
+                <thead>
+                  <tr>
+                    <th>Waktu / Jam</th>
+                    <th>Nama Pengguna</th>
+                    <th>Status</th>
+                    <th>Metode</th>
+                    <th>Kegiatan / Keterangan</th>
+                    <th>Bukti Foto</th>
+                  </tr>
+                </thead>
+                <tbody id="body-riwayat-absen">
+                  <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        
+        <section id="section-profil-lama" class="app-section" style="display:none;">
+          <!-- Content Profile Lama -->
+        </section>
 
-/* ================================ INVENTARIS ============================== */
+        <!-- SECTION 3: KEGIATAN -->
+        <section id="section-kegiatan" class="app-section">
+          <div class="section-header">
+            <h1>Agenda Kegiatan</h1>
+            <button class="btn btn-gold" id="btn-tambah-kegiatan-trigger" onclick="openKegiatanModal()">+ Tambah Kegiatan</button>
+          </div>
 
-function loadInventaris() {
-  callAPI('getInventarisList', [sessionToken])
-    .then(res => {
-      if (res.success) {
-        const tbody = document.getElementById('body-inventaris');
-        tbody.innerHTML = "";
-        if (res.list.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada data inventaris.</td></tr>`;
-          return;
-        }
-        res.list.forEach(row => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${row.id_barang}</td>
-              <td>${row.nama_barang}</td>
-              <td>${row.kategori}</td>
-              <td>${row.jumlah}</td>
-              <td>${row.kondisi}</td>
-              <td>${row.locations_simpan}</td>
-              <td>
-                <button class="btn" style="padding:6px 10px;" onclick='openInventarisModal(${JSON.stringify(row)})'>Edit</button>
-                <button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteInventaris('${row.id_barang}')">Hapus</button>
-              </td>
-            </tr>`;
-        });
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
+          <div class="kegiatan-grid" id="grid-list-kegiatan"></div>
+        </section>
 
-function openInventarisModal(item) {
-  document.getElementById('inv-modal-title').innerText = item ? "Edit Barang Inventaris" : "Catat Barang Inventaris";
-  document.getElementById('inv-id').value = item ? item.id_barang : "";
-  document.getElementById('inv-nama').value = item ? item.nama_barang : "";
-  document.getElementById('inv-kategori').value = item ? item.kategori : "Perlengkapan Kemah";
-  document.getElementById('inv-jumlah').value = item ? item.jumlah : "";
-  document.getElementById('inv-kondisi').value = item ? item.kondisi : "Baik";
-  document.getElementById('inv-lokasi').value = item ? item.locations_simpan : "";
-  document.getElementById('inv-tanggal').value = item ? item.tanggal_masuk : "";
-  document.getElementById('inv-keterangan').value = item ? item.keterangan : "";
-  document.getElementById('modal-inventaris').style.display = 'flex';
-}
-function closeInventarisModal() {
-  document.getElementById('modal-inventaris').style.display = 'none';
-}
+        <!-- SECTION 4: INVENTARIS -->
+        <section id="section-inventaris" class="app-section">
+          <div class="section-header">
+            <h1>Inventaris Barang</h1>
+            <button class="btn btn-gold" onclick="openInventarisModal()">+ Tambah Barang</button>
+          </div>
 
-function actionSaveInventaris() {
-  const payload = {
-    id_barang: document.getElementById('inv-id').value,
-    nama_barang: document.getElementById('inv-nama').value,
-    kategori: document.getElementById('inv-kategori').value,
-    jumlah: document.getElementById('inv-jumlah').value,
-    kondisi: document.getElementById('inv-kondisi').value,
-    locations_simpan: document.getElementById('inv-lokasi').value,
-    tanggal_masuk: document.getElementById('inv-tanggal').value,
-    keterangan: document.getElementById('inv-keterangan').value
-  };
-  setLoader(true, "Menyimpan...");
+          <div class="card">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID Barang</th>
+                    <th>Nama Barang</th>
+                    <th>Kategori</th>
+                    <th>Jumlah</th>
+                    <th>Kondisi</th>
+                    <th>Lokasi Simpan</th>
+                    <th>Opsi</th>
+                  </tr>
+                </thead>
+                <tbody id="body-inventaris"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
-  callAPI('saveInventaris', [sessionToken, payload])
-    .then(res => {
-      setLoader(false);
-      showToast(res.message);
-      closeInventarisModal();
-      loadInventaris();
-    })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
-}
+        <!-- SECTION 5: KAS PRAMUKA -->
+        <section id="section-kas" class="app-section">
+          <div class="section-header">
+            <h1>Arus Kas Pramuka</h1>
+            <button class="btn btn-gold" id="btn-tambah-kas" onclick="openKasModal()">+ Catat Kas Baru</button>
+          </div>
 
-function actionDeleteInventaris(idBarang) {
-  if (!confirm("Hapus barang ini?")) return;
-  callAPI('deleteInventaris', [sessionToken, idBarang])
-    .then(res => { showToast(res.message); loadInventaris(); })
-    .catch(err => showToast(err.message, true));
-}
+          <div class="grid-dashboard">
+            <div class="card-stat">
+              <h3>Total Pemasukan</h3>
+              <div class="val" style="color: #03543F;" id="kas-total-pemasukan">Rp 0</div>
+            </div>
+            <div class="card-stat gold">
+              <h3>Total Pengeluaran</h3>
+              <div class="val" style="color: var(--color-danger-red);" id="kas-total-pengeluaran">Rp 0</div>
+            </div>
+            <div class="card-stat">
+              <h3>Saldo Akhir</h3>
+              <div class="val" id="kas-saldo-akhir">Rp 0</div>
+            </div>
+          </div>
 
-/* ================================== KAS =================================== */
+          <div class="card">
+            <h3 style="font-family: var(--font-title); margin-bottom: 15px; text-align: center;">Grafik Cash Flow Bulanan (Native Canvas API)</h3>
+            <div class="chart-container">
+              <canvas id="canvas-kas-chart" width="500" height="300"></canvas>
+            </div>
+          </div>
 
-function loadKas() {
-  callAPI('getKasData', [sessionToken])
-    .then(res => {
-      if (res.success) {
-        document.getElementById('kas-total-pemasukan').innerText = "Rp " + res.totalMasuk.toLocaleString('id-ID');
-        document.getElementById('kas-total-pengeluaran').innerText = "Rp " + res.totalKeluar.toLocaleString('id-ID');
-        document.getElementById('kas-saldo-akhir').innerText = "Rp " + res.saldoAkhir.toLocaleString('id-ID');
-        drawKasChart(res.totalMasuk, res.totalKeluar);
+          <div class="card">
+            <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Daftar Transaksi</h3>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Jenis</th>
+                    <th>Kategori</th>
+                    <th>Jumlah</th>
+                    <th>Keterangan</th>
+                    <th>Saldo Berjalan</th>
+                  </tr>
+                </thead>
+                <tbody id="body-kas"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
-        const tbody = document.getElementById('body-kas');
-        if (tbody) {
-          tbody.innerHTML = "";
-          res.list.forEach(row => {
-            tbody.innerHTML += `
-              <tr>
-                <td>${row.tanggal}</td>
-                <td>${row.jenis}</td>
-                <td>${row.kategori}</td>
-                <td>Rp ${Number(row.jumlah).toLocaleString('id-ID')}</td>
-                <td>${row.keterangan}</td>
-                <td>Rp ${Number(row.saldo_berjalan).toLocaleString('id-ID')}</td>
-              </tr>`;
-          });
-        }
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
+        <!-- SECTION 6: PROFIL DIRI -->
+        <section id="section-profile" class="app-section">
+          <div class="section-header">
+            <h1>Profil Anggota</h1>
+          </div>
 
-function drawKasChart(masuk, keluar) {
-  const canvas = document.getElementById('canvas-kas-chart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#FAF4EE";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const max = Math.max(masuk, keluar, 10000);
-  const hM = (masuk / max) * 180;
-  const hK = (keluar / max) * 180;
-  ctx.fillStyle = "#03543F";
-  ctx.fillRect(100, 240 - hM, 80, hM);
-  ctx.fillStyle = "#B91C1C";
-  ctx.fillRect(320, 240 - hK, 80, hK);
-}
+          <div class="absensi-layout">
+            <div class="card">
+              <h3 style="font-family: var(--font-title); margin-bottom: 20px;">Lengkapi Data Diri</h3>
+              <input type="hidden" id="prof-user-id">
+              
+              <div class="form-group">
+                <label>Nomor Tanda Anggota (NTA)</label>
+                <input type="text" id="prof-nta" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="prof-nama" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Tempat Lahir</label>
+                <input type="text" id="prof-tempat-lahir" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Tanggal Lahir</label>
+                <input type="date" id="prof-tanggal-lahir" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Jenis Kelamin</label>
+                <select id="prof-jk" class="form-control">
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Golongan / Tingkat</label>
+                <input type="text" id="prof-golongan" class="form-control" placeholder="Penggalang Ramu / Rakit / Terap">
+              </div>
+              <div class="form-group">
+                <label>Nama Regu / Sangga</label>
+                <input type="text" id="prof-regu" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Alamat Lengkap</label>
+                <input type="text" id="prof-alamat" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>No. HP (WhatsApp)</label>
+                <input type="text" id="prof-hp" class="form-control">
+              </div>
+              
+              <button class="btn btn-gold btn-full" onclick="actionSaveProfile()">SIMPAN PROFIL</button>
+            </div>
 
-function openKasModal() {
-  document.getElementById('kas-tanggal-form').value = new Date().toISOString().substring(0, 10);
-  document.getElementById('modal-kas').style.display = 'flex';
-}
-function closeKasModal() {
-  document.getElementById('modal-kas').style.display = 'none';
-}
+            <div>
+              <div class="card text-center">
+                <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Foto Profil</h3>
+                <img id="prof-preview-img" src="" alt="Foto Profil" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; background-color: var(--color-light-brown); margin-bottom: 15px;">
+                <input type="file" id="prof-file" class="form-control" accept="image/*" onchange="previewAndResizeProfilePhoto(event)">
+              </div>
 
-function actionSaveKas() {
-  const payload = {
-    jenis: document.getElementById('kas-jenis').value,
-    kategori: document.getElementById('kas-kategori').value,
-    jumlah: document.getElementById('kas-jumlah').value,
-    tanggal: document.getElementById('kas-tanggal-form').value,
-    keterangan: document.getElementById('kas-keterangan-form').value
-  };
-  setLoader(true, "Mencatat...");
+              <div class="card" style="margin-top: 20px;">
+                <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Keamanan (Ganti Password)</h3>
+                <div class="form-group">
+                  <label>Password Lama</label>
+                  <input type="password" id="pass-lama" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label>Password Baru</label>
+                  <input type="password" id="pass-baru" class="form-control">
+                </div>
+                <button class="btn btn-danger btn-full" onclick="actionGantiPassword()">UPDATE PASSWORD</button>
+              </div>
+            </div>
+          </div>
+        </section>
 
-  callAPI('addKasTransaction', [sessionToken, payload])
-    .then(res => {
-      setLoader(false);
-      showToast(res.message);
-      closeKasModal();
-      loadKas();
-    })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
-}
+        <!-- SECTION 7: KELOLA USER (Admin) -->
+        <section id="section-users" class="app-section">
+          <div class="section-header">
+            <h1>Manajemen Pengguna</h1>
+            <button class="btn btn-gold" onclick="openUserModal()">+ Pendaftaran Anggota Baru</button>
+          </div>
 
-/* ============================= PROFIL DIRI ================================ */
+          <div class="card">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>Nama Anggota</th>
+                    <th>Peran (Role)</th>
+                    <th>Status</th>
+                    <th>Opsi</th>
+                  </tr>
+                </thead>
+                <tbody id="body-users"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
-function loadProfileDiri() {
-  callAPI('getUserProfile', [sessionToken, userId])
-    .then(res => {
-      if (res.success) {
-        const p = res.profile;
-        document.getElementById('prof-user-id').value = p.user_id;
-        document.getElementById('prof-nama').value = p.nama_lengkap || "";
-        document.getElementById('prof-nta').value = p.nta || "";
-        document.getElementById('prof-tempat-lahir').value = p.tempat_lahir || "";
-        document.getElementById('prof-tanggal-lahir').value = p.tanggal_lahir || "";
-        if (p.jenis_kelamin) document.getElementById('prof-jk').value = p.jenis_kelamin;
-        document.getElementById('prof-golongan').value = p.golongan || "";
-        document.getElementById('prof-regu').value = p.regu_sangga || "";
-        document.getElementById('prof-alamat').value = p.alamat || "";
-        document.getElementById('prof-hp').value = p.no_hp || "";
-        if (p.foto_profil) document.getElementById('prof-preview-img').src = p.foto_profil;
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
+        <!-- SECTION 8: EXPORT DATA -->
+        <section id="section-exports" class="app-section">
+          <div class="section-header">
+            <h1>Export Database Administrasi</h1>
+          </div>
+          <div class="card">
+            <h2 style="font-family: var(--font-title); margin-bottom: 15px;">Ekspor Laporan Cepat</h2>
+            <p style="margin-bottom: 25px; color: var(--color-text-muted); margin-top: 10px;">Format yang dihasilkan disinkronisasi langsung dengan salinan Google Drive secara realtime tanpa risiko data korup.</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+              <div class="card" style="border: 1px solid var(--color-light-brown);">
+                <h3 style="margin-bottom: 15px;">Laporan Absensi</h3>
+                <button class="btn btn-full btn-gold" onclick="triggerExport('absensi', 'excel')">Excel (.xlsx)</button>
+                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('absensi', 'pdf')">PDF</button>
+              </div>
+              <div class="card" style="border: 1px solid var(--color-light-brown);">
+                <h3 style="margin-bottom: 15px;">Buku Inventaris</h3>
+                <button class="btn btn-full btn-gold" onclick="triggerExport('inventaris', 'excel')">Excel (.xlsx)</button>
+                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('inventaris', 'pdf')">PDF</button>
+              </div>
+              <div class="card" style="border: 1px solid var(--color-light-brown);">
+                <h3 style="margin-bottom: 15px;">Buku Kas</h3>
+                <button class="btn btn-full btn-gold" onclick="triggerExport('kas', 'excel')">Excel (.xlsx)</button>
+                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('kas', 'pdf')">PDF</button>
+              </div>
+            </div>
+          </div>
+        </section>
 
-function previewAndResizeProfilePhoto(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const img = new Image();
-    img.onload = function () {
-      const canvas = document.createElement('canvas');
-      canvas.width = 300; canvas.height = 300;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 300, 300);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-      document.getElementById('prof-preview-img').src = dataUrl;
-      document.getElementById('prof-preview-img').dataset.base64 = dataUrl;
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
+        <!-- SECTION 9: LOG AKTIVITAS (Admin) -->
+        <section id="section-logs" class="app-section">
+          <div class="section-header">
+            <h1>Log Audit Keamanan</h1>
+            <input type="text" id="filter-log-user" class="form-control" style="width: 250px;" placeholder="Cari berdasarkan User ID..." onkeyup="loadSystemLogs()">
+          </div>
+          <div class="card">
+            <div class="table-responsive" style="max-height: 500px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Waktu Kejadian</th>
+                    <th>Aktor (User)</th>
+                    <th>Aksi</th>
+                    <th>Detail Kejadian</th>
+                    <th>Sinyal IP</th>
+                  </tr>
+                </thead>
+                <tbody id="body-logs"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
-function actionSaveProfile() {
-  const payload = {
-    user_id: document.getElementById('prof-user-id').value,
-    nta: document.getElementById('prof-nta').value,
-    nama_lengkap: document.getElementById('prof-nama').value,
-    tempat_lahir: document.getElementById('prof-tempat-lahir').value,
-    tanggal_lahir: document.getElementById('prof-tanggal-lahir').value,
-    jenis_kelamin: document.getElementById('prof-jk').value,
-    golongan: document.getElementById('prof-golongan').value,
-    regu_sangga: document.getElementById('prof-regu').value,
-    alamat: document.getElementById('prof-alamat').value,
-    no_hp: document.getElementById('prof-hp').value,
-    foto_profil: document.getElementById('prof-preview-img').dataset.base64 || document.getElementById('prof-preview-img').src
-  };
-  setLoader(true, "Menyimpan profil...");
+        <!-- SECTION 10: TENTANG DEVELOPER -->
+        <section id="section-about" class="app-section">
+          <div class="section-header">
+            <h1>Tentang Developer</h1>
+          </div>
+          <div class="card">
+            <div class="dev-profile">
+              <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" class="developer-photo" alt="Developer SIAP WANAMSKA">
+              <div>
+                <h2 style="font-family: var(--font-title); color: var(--color-primary-brown);">Senior Apps Script Developer &amp; UX Specialist</h2>
+                <p style="color: var(--color-accent-gold); font-weight: bold; margin-bottom: 15px;">Gerakan Pramuka Wanamska</p>
+                <p style="max-width: 600px; margin: 0 auto; color: var(--color-text-dark);">
+                  Aplikasi **SIAP WANAMSKA** di gunakan sebagai media Informasi dan Absensi Penggalang Gugus Depan 04.109-04.110 Pangkalan SMP Negeri 26 Kota Surakarta. 
+                </p>
+                <div style="margin-top: 25px; padding: 15px; border-radius: var(--rounded-box); background-color: #FAF2EB; display: inline-block;">
+                  <p><strong>Nama Pengembang:</strong> ARIF NUUR ISWAHYUDI, S.Pd., Gr</p>
+                  <p><strong>Spesialisasi:</strong> Google Apps Script Core, Native HTML5/CSS3/JS Web App Design, Guru Matematika dan Pembina Pramuka</p>
+                  <p><strong>Kontak Organisasi:</strong> support@wanamska.or.id</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-  callAPI('saveUserProfile', [sessionToken, payload])
-    .then(res => {
-      setLoader(false);
-      showToast(res.message);
-      if (res.success && payload.user_id === userId) {
-        currentUser.nama_lengkap = payload.nama_lengkap;
-        sessionStorage.setItem('user', JSON.stringify(currentUser));
-        document.getElementById('user-display-name').innerText = currentUser.nama_lengkap;
-        setTimeout(() => { kembaliKeDashboard(); }, 1500);
-      }
-    })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
-}
+        <!-- SECTION 11: INPUT KEHADIRAN ANGGOTA SECARA MASSAL -->
+        <section id="absen-page" class="app-section">
+          <div class="section-header">
+            <h1>Input Kehadiran Anggota</h1>
+            <button class="btn" onclick="kembaliKeDashboard()">Kembali</button>
+          </div>
+          <div class="card">
+            <div class="form-group" style="max-width: 300px;">
+              <label for="tanggalAbsen">Tanggal Kegiatan / Absen</label>
+              <input type="date" id="tanggalAbsen" class="form-control">
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>Nama Anggota</th>
+                    <th>Peran (Role)</th>
+                    <th>Status Kehadiran</th>
+                  </tr>
+                </thead>
+                <tbody id="daftarAnggotaAbsen">
+                  <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+              <button class="btn btn-gold" onclick="simpanKehadiran()">Simpan Kehadiran</button>
+              <button class="btn btn-danger" onclick="kembaliKeDashboard()">Batal</button>
+            </div>
+          </div>
+        </section>
 
-function actionGantiPassword() {
-  const lama = document.getElementById('pass-lama').value;
-  const baru = document.getElementById('pass-baru').value;
-  if (!lama || !baru) { showToast("Password lama dan baru wajib diisi.", true); return; }
-  if (baru.length < 6) { showToast("Password baru minimal 6 karakter.", true); return; }
+      </main>
+    </div>
+  </div>
 
-  callAPI('changePassword', [sessionToken, lama, baru])
-    .then(res => {
-      showToast(res.message, !res.success);
-      if (res.success) {
-        document.getElementById('pass-lama').value = "";
-        document.getElementById('pass-baru').value = "";
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
+  <div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
+    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; font-size:16px; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">📲 Install Aplikasi</button>
+  </div>
 
-/* ============================ KELOLA USER (Admin) ========================== */
+  <!-- ==========================================
+       MODAL POPUPS (DISEMBUNYIKAN SECARA DEFAULT)
+       ========================================== -->
 
-function loadUsers() {
-  callAPI('getUserList', [sessionToken])
-    .then(res => {
-      if (res.success) {
-        const tbody = document.getElementById('body-users');
-        tbody.innerHTML = "";
-        res.list.forEach(row => {
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>${row.user_id}</strong></td>
-              <td>${row.nama_lengkap}</td>
-              <td><span class="role">${row.role}</span></td>
-              <td><span class="badge badge-hadir">${row.status_aktif}</span></td>
-              <td>
-                <button class="btn" style="padding:6px 10px;" onclick='openUserModal(${JSON.stringify(row)})'>Edit</button>
-                <button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteUser('${row.user_id}')">Hapus</button>
-              </td>
-            </tr>`;
-        });
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
+  <!-- MODAL 1: KEGIATAN -->
+  <div id="modal-kegiatan" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="kegiatan-modal-title">Form Tambah/Edit Kegiatan</h3>
+        <span class="modal-close" onclick="closeKegiatanModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="keg-id">
+        <div class="form-group">
+          <label for="keg-nama">Nama Kegiatan</label>
+          <input type="text" id="keg-nama" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="keg-tanggal">Tanggal</label>
+          <input type="date" id="keg-tanggal" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="keg-lokasi">Lokasi</label>
+          <input type="text" id="keg-lokasi" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="keg-deskripsi">Deskripsi</label>
+          <textarea id="keg-deskripsi" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Foto 1 (Utama)</label>
+          <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(1, event)">
+          <input type="hidden" id="keg-foto-1-base64">
+        </div>
+        <div class="form-group">
+          <label>Foto 2</label>
+          <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(2, event)">
+          <input type="hidden" id="keg-foto-2-base64">
+        </div>
+        <div class="form-group">
+          <label>Foto 3 (Opsional)</label>
+          <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(3, event)">
+          <input type="hidden" id="keg-foto-3-base64">
+        </div>
+        <button class="btn btn-gold btn-full" onclick="actionSaveKegiatan()">SIMPAN KEGIATAN</button>
+      </div>
+    </div>
+  </div>
 
-function openUserModal(user) {
-  const idField = document.getElementById('usr-id');
-  document.getElementById('usr-id').value = user ? user.user_id : "";
-  idField.disabled = !!user; 
-  document.getElementById('usr-nama').value = user ? user.nama_lengkap : "";
-  document.getElementById('usr-password').value = "";
-  document.getElementById('usr-role').value = user ? user.role : "Penggalang";
-  document.getElementById('usr-status').value = user ? user.status_aktif : "Aktif";
-  document.getElementById('modal-user').style.display = 'flex';
-}
-function closeUserModal() {
-  document.getElementById('modal-user').style.display = 'none';
-  document.getElementById('usr-id').disabled = false;
-}
+  <!-- MODAL 2: INVENTARIS -->
+  <div id="modal-inventaris" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="inv-modal-title">Form Tambah/Edit Barang</h3>
+        <span class="modal-close" onclick="closeInventarisModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="inv-id">
+        <div class="form-group">
+          <label for="inv-nama">Nama Barang</label>
+          <input type="text" id="inv-nama" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="inv-kategori">Kategori</label>
+          <select id="inv-kategori" class="form-control">
+            <option value="Perlengkapan Kemah">Perlengkapan Kemah</option>
+            <option value="Atribut Pramuka">Atribut Pramuka</option>
+            <option value="Peralatan Dapur">Peralatan Dapur</option>
+            <option value="Elektronik & Dokumentasi">Elektronik & Dokumentasi</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="inv-jumlah">Jumlah</label>
+          <input type="number" id="inv-jumlah" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="inv-kondisi">Kondisi</label>
+          <select id="inv-kondisi" class="form-control">
+            <option value="Baik">Baik</option>
+            <option value="Rusak Ringan">Rusak Ringan</option>
+            <option value="Rusak Berat">Rusak Berat</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="inv-lokasi">Lokasi Simpan</label>
+          <input type="text" id="inv-lokasi" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="inv-tanggal">Tanggal Masuk</label>
+          <input type="date" id="inv-tanggal" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="inv-keterangan">Keterangan</label>
+          <textarea id="inv-keterangan" class="form-control" rows="2"></textarea>
+        </div>
+        <button class="btn btn-gold btn-full" onclick="actionSaveInventaris()">SIMPAN DATA BARANG</button>
+      </div>
+    </div>
+  </div>
 
-function actionSaveUser() {
-  const payload = {
-    user_id: document.getElementById('usr-id').value,
-    nama_lengkap: document.getElementById('usr-nama').value,
-    password: document.getElementById('usr-password').value,
-    role: document.getElementById('usr-role').value,
-    status_aktif: document.getElementById('usr-status').value
-  };
-  if (!payload.user_id || !payload.nama_lengkap) {
-    showToast("User ID dan Nama Lengkap wajib diisi.", true); return;
-  }
-  setLoader(true, "Menyimpan user...");
+  <!-- MODAL 3: KAS -->
+  <div id="modal-kas" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Catat Transaksi Kas Baru</h3>
+        <span class="modal-close" onclick="closeKasModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="kas-jenis">Jenis Transaksi</label>
+          <select id="kas-jenis" class="form-control">
+            <option value="Pemasukan">Pemasukan</option>
+            <option value="Pengeluaran">Pengeluaran</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="kas-kategori">Kategori</label>
+          <input type="text" id="kas-kategori" class="form-control" placeholder="Contoh: Iuran Mingguan, Beli Tenda, dll" required>
+        </div>
+        <div class="form-group">
+          <label for="kas-jumlah">Jumlah (Rupiah)</label>
+          <input type="number" id="kas-jumlah" class="form-control" placeholder="Contoh: 50000" required>
+        </div>
+        <div class="form-group">
+          <label for="kas-tanggal-form">Tanggal</label>
+          <input type="date" id="kas-tanggal-form" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="kas-keterangan-form">Keterangan</label>
+          <textarea id="kas-keterangan-form" class="form-control" rows="2"></textarea>
+        </div>
+        <button class="btn btn-gold btn-full" onclick="actionSaveKas()">SIMPAN TRANSAKSI KAS</button>
+      </div>
+    </div>
+  </div>
 
-  callAPI('saveUserByAdmin', [sessionToken, payload])
-    .then(res => {
-      setLoader(false);
-      showToast(res.message);
-      closeUserModal();
-      loadUsers();
-    })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
-}
+  <!-- MODAL 4: USER -->
+  <div id="modal-user" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Registrasi / Edit Pengguna</h3>
+        <span class="modal-close" onclick="closeUserModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="usr-id">User ID</label>
+          <input type="text" id="usr-id" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="usr-nama">Nama Lengkap</label>
+          <input type="text" id="usr-nama" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="usr-password">Password (Kosongkan jika tidak ingin mengubah)</label>
+          <input type="password" id="usr-password" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="usr-role">Peran (Role)</label>
+          <select id="usr-role" class="form-control">
+            <option value="Admin">Admin</option>
+            <option value="Pembina">Pembina</option>
+            <option value="Dewan Penggalang">Dewan Penggalang</option>
+            <option value="Penggalang">Penggalang</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="usr-status">Status Aktif</label>
+          <select id="usr-status" class="form-control">
+            <option value="Aktif">Aktif</option>
+            <option value="Nonaktif">Nonaktif</option>
+          </select>
+        </div>
+        <button class="btn btn-gold btn-full" onclick="actionSaveUser()">SIMPAN PENGGUNA</button>
+      </div>
+    </div>
+  </div>
 
-function actionDeleteUser(targetUserId) {
-  if (!confirm("Hapus user " + targetUserId + "? Tindakan ini tidak bisa dibatalkan.")) return;
-  callAPI('deleteUser', [sessionToken, targetUserId])
-    .then(res => { showToast(res.message); loadUsers(); })
-    .catch(err => showToast(err.message, true));
-}
-
-/* ============================== LOG AKTIVITAS ============================== */
-function loadSystemLogs() {
-  const tbody = document.getElementById('body-logs');
-  if (!tbody) return;
-  const filter = document.getElementById('filter-log-user').value;
-
-  callAPI('getSystemLogs', [sessionToken, filter])
-    .then(res => {
-      if (res.success) {
-        tbody.innerHTML = "";
-        if (res.list.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Tidak ada log aktivitas ditemukan.</td></tr>`;
-          return;
-        }
-        res.list.forEach(row => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${row.timestamp}</td>
-              <td><strong>${row.user_id}</strong></td>
-              <td>${row.aksi}</td>
-              <td>${row.detail}</td>
-              <td>${row.ip}</td>
-            </tr>`;
-        });
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
-
-/* ============================== EXPORT DATA ================================ */
-function triggerExport(jenis, format) {
-  setLoader(true, `Mengekspor data ${jenis} ke format ${format.toUpperCase()}...`);
-  const functionName = format === 'pdf' ? 'exportToPDF' : 'exportToExcel';
-
-  callAPI(functionName, [sessionToken, jenis])
-    .then(res => {
-      setLoader(false);
-      if (res.success && res.url) {
-        showToast("Ekspor Berhasil! Membuka berkas unduhan...");
-        window.open(res.url, '_blank');
-      } else {
-        showToast(res.message || "Gagal melakukan ekspor data", true);
-      }
-    })
-    .catch(err => {
-      setLoader(false);
-      showToast(err.message, true);
-    });
-}
+  <!-- FRONTEND LOGIC -->
+  <script src="script.js"></script>
+</body>
+</html>
