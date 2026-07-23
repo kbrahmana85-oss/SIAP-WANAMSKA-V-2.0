@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://script.google.com/macros/s/AKfycbzMiPXvFMV5q0ykIzRWopEjUa9YyheMpTVd_CPSistXNxhWsIYSlsjG48_QosCUGrIfWQ/exec/:path*" }
+    { "source": "/api/:path*", "destination": "https://script.google.com/macros/s/AKfycbzDhuq17TKiaMEwbyArHI40vrNKkdn896UrLs1Or9CTI704NHOue0yLSYyS0nzoYIXJVA/exec/:path*" }
   ]
 }
