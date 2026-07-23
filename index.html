@@ -547,7 +547,7 @@
     .modal-close {
       cursor: pointer;
       font-size: 1.5rem;
-      color: var(--color-text-muted);
+      color: var(--text-muted);
     }
     .modal-body {
       padding: 25px;
@@ -763,7 +763,8 @@
             </div>
           </div>
           
-          <div style="margin-top: 15px; margin-bottom: 25px;">
+          <!-- HAK AKSES STRICT: Tombol Absensi Massal dibungkus ID khusus -->
+          <div style="margin-top: 15px; margin-bottom: 25px;" id="dashboard-absen-massal-box">
             <button class="btn btn-primary btn-gold" onclick="showAbsenPage()" style="padding: 12px 24px; font-weight: bold; border-radius: var(--radius);">
               Input Kehadiran Anggota
             </button>
@@ -812,16 +813,16 @@
           </div>
           <div class="card">
             <div class="table-responsive">
-              <table>
+              <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
                 <thead>
                   <tr>
-                    <th>Kegiatan / Acara</th>
-                    <th>Jenis</th>
-                    <th>Tanggal Pelaksanaan</th>
-                    <th>Waktu</th>
-                    <th>Penanggung Jawab</th>
-                    <th>Keterangan</th>
-                    <th class="opsi-header">Opsi</th>
+                    <th style="width: 25%;">Kegiatan / Acara</th>
+                    <th style="width: 15%;">Jenis</th>
+                    <th style="width: 15%;">Tanggal Pelaksanaan</th>
+                    <th style="width: 10%;">Waktu</th>
+                    <th style="width: 15%;">Penanggung Jawab</th>
+                    <th style="width: 12%;">Keterangan</th>
+                    <th class="opsi-header" style="width: 8%;">Opsi</th>
                   </tr>
                 </thead>
                 <tbody id="body-agenda">
@@ -1044,7 +1045,7 @@
             <div>
               <div class="card text-center">
                 <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Foto Profil</h3>
-                <!-- UKURAN FOTO DIPERBESAR (MINIMAL 150PX) DENGAN OBJECT-FIT COVER -->
+                <!-- UKURAN PREVIEW FOTO PROFIL MINIMAL 150PX + OBJECT-FIT COVER -->
                 <img id="prof-preview-img" src="" alt="Foto Profil" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-accent-gold); box-shadow: var(--shadow-soft); background-color: var(--color-light-brown); margin-bottom: 15px; display: inline-block;">
                 <input type="file" id="prof-file" class="form-control" accept="image/*" onchange="previewAndResizeProfilePhoto(event)">
               </div>
@@ -1097,17 +1098,17 @@
           <div class="card">
             <h2>Ekspor Laporan Cepat</h2>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 15px;">
-              <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;">
+              <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;" id="export-absensi-box">
                 <h3>Laporan Absensi</h3>
                 <button class="btn btn-full btn-gold" onclick="triggerExport('absensi', 'excel')">Excel (.xlsx)</button>
                 <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('absensi', 'pdf')">PDF</button>
               </div>
-              <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;">
+              <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;" id="export-inventaris-box">
                 <h3>Buku Inventaris</h3>
                 <button class="btn btn-full btn-gold" onclick="triggerExport('inventaris', 'excel')">Excel (.xlsx)</button>
                 <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('inventaris', 'pdf')">PDF</button>
               </div>
-              <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;">
+              <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;" id="export-kas-box">
                 <h3>Buku Kas</h3>
                 <button class="btn btn-full btn-gold" onclick="triggerExport('kas', 'excel')">Excel (.xlsx)</button>
                 <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('kas', 'pdf')">PDF</button>
