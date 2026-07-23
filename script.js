@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
     showPage('login-page');
   }
 
-  // Registrasi Service Worker (dipindah dari inline <script> paling bawah)
+  // Registrasi Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js');
   }
@@ -91,6 +91,7 @@ function showPage(pageId) {
 
 function showToast(message, isDanger = false) {
   const container = document.getElementById('toast-container');
+  if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast ${isDanger ? 'danger' : ''}`;
   toast.innerText = message;
@@ -105,6 +106,7 @@ function showToast(message, isDanger = false) {
 function setLoader(show, text = "Sedang memproses data...") {
   const loader = document.getElementById('global-loader');
   const loaderText = document.getElementById('loader-text');
+  if (!loader) return;
   if (show) { loaderText.innerText = text; loader.style.display = 'flex'; }
   else { loader.style.display = 'none'; }
 }
@@ -174,7 +176,6 @@ function handleLogin() {
 function actionLogout() {
   if (!confirm("Apakah Anda yakin ingin keluar dari sistem?")) return;
 
-  // FIX: panggil logoutUser di server juga supaya token dihapus dari cache
   callAPI('logoutUser', [sessionToken]).catch(() => {});
 
   sessionStorage.clear();
@@ -367,7 +368,11 @@ function viewFullImage(base64) {
   w.document.write(`<img src="${base64}" style="max-width:100%; height:auto;" />`);
 }
 
-function showAbsenPage() { showPage('absen-page'); }
+function showAbsenPage() {
+  showPage('absen-page');
+  document.getElementById('tanggalAbsen').value = new Date().toISOString().substring(0, 10);
+  loadDaftarAnggota();
+}
 
 function kembaliKeDashboard() { showPage('dashboard-page'); }
 
@@ -661,6 +666,7 @@ function loadKas() {
 
 function drawKasChart(masuk, keluar) {
   const canvas = document.getElementById('canvas-kas-chart');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#FAF4EE";
@@ -702,7 +708,7 @@ function actionSaveKas() {
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
-/* ============================= PROFIL DIRI (RBAC section) ================= */
+/* ============================= PROFIL DIRI ================================ */
 
 function loadProfileDiri() {
   callAPI('getUserProfile', [sessionToken, userId])
@@ -769,11 +775,7 @@ function actionSaveProfile() {
         currentUser.nama_lengkap = payload.nama_lengkap;
         sessionStorage.setItem('user', JSON.stringify(currentUser));
         document.getElementById('user-display-name').innerText = currentUser.nama_lengkap;
-        
-        // Auto redirect ke dashboard setelah 1.5 detik
-        setTimeout(() => {
-          kembaliKeDashboard();
-        }, 1500);
+        setTimeout(() => { kembaliKeDashboard(); }, 1500);
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
@@ -825,7 +827,7 @@ function loadUsers() {
 function openUserModal(user) {
   const idField = document.getElementById('usr-id');
   document.getElementById('usr-id').value = user ? user.user_id : "";
-  idField.disabled = !!user; // FIX: user_id tidak boleh diubah saat edit
+  idField.disabled = !!user; 
   document.getElementById('usr-nama').value = user ? user.nama_lengkap : "";
   document.getElementById('usr-password').value = "";
   document.getElementById('usr-role').value = user ? user.role : "Penggalang";
@@ -871,12 +873,48 @@ function actionDeleteUser(targetUserId) {
 function loadSystemLogs() {
   const tbody = document.getElementById('body-logs');
   if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">
-    Fitur ini butuh fungsi <code>getSystemLogs</code> di code.gs yang belum tersedia.
-  </td></tr>`;
+  const filter = document.getElementById('filter-log-user').value;
+
+  callAPI('getSystemLogs', [sessionToken, filter])
+    .then(res => {
+      if (res.success) {
+        tbody.innerHTML = "";
+        if (res.list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Tidak ada log aktivitas ditemukan.</td></tr>`;
+          return;
+        }
+        res.list.forEach(row => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${row.timestamp}</td>
+              <td><strong>${row.user_id}</strong></td>
+              <td>${row.aksi}</td>
+              <td>${row.detail}</td>
+              <td>${row.ip}</td>
+            </tr>`;
+        });
+      }
+    })
+    .catch(err => showToast(err.message, true));
 }
 
 /* ============================== EXPORT DATA ================================ */
 function triggerExport(jenis, format) {
-  showToast(`Export ${jenis} (${format}) belum didukung server. Tambahkan fungsi export di code.gs.`, true);
+  setLoader(true, `Mengekspor data ${jenis} ke format ${format.toUpperCase()}...`);
+  const functionName = format === 'pdf' ? 'exportToPDF' : 'exportToExcel';
+
+  callAPI(functionName, [sessionToken, jenis])
+    .then(res => {
+      setLoader(false);
+      if (res.success && res.url) {
+        showToast("Ekspor Berhasil! Membuka berkas unduhan...");
+        window.open(res.url, '_blank');
+      } else {
+        showToast(res.message || "Gagal melakukan ekspor data", true);
+      }
+    })
+    .catch(err => {
+      setLoader(false);
+      showToast(err.message, true);
+    });
 }
