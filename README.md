@@ -27,3 +27,18 @@ Aplikasi PWA untuk manajemen data anggota Pramuka Pangkalan.
 6.  Klik `Deploy`
 
 ### **AKUN LOGIN DEMO**
+ID: 001 | Password: 1234
+ID: 002 | Password: 1234
+
+### **TEKNOLOGI**
+- HTML5
+- CSS3
+- JavaScript Vanilla
+- Service Worker untuk PWA
+- Deploy di Vercel
+
+### **KREDIT**
+Dibuat oleh: Pembina Pramuka Pangkalan Wanamaskha
+Tahun: 2026
+
+Semoga bermanfaat untuk adik-adik Pramuka 🙏
