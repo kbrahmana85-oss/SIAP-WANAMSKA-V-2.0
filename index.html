@@ -483,7 +483,6 @@
       object-fit: cover;
     }
     
-    /* Frame foto selfie pratinjau diperbaiki agar rasio tetap 2:3 dan presisi (Temuan 2) */
     #selfie-canvas-preview {
       display: none;
       width: 100%;
@@ -680,7 +679,6 @@
       cursor: default;
     }
 
-    /* Desain Bingkai Lingkaran Foto Profil - Presisi, Bulat Sempurna, No Distortion (Temuan 1) */
     .profile-avatar-frame {
       width: 180px;
       height: 180px;
@@ -703,7 +701,6 @@
 </head>
 <body>
 
-  <!-- Menu toggle dipindahkan keluar agar selalu diproses di atas layer header -->
   <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
   <div class="overlay" onclick="toggleSidebar()"></div>
 
@@ -831,7 +828,6 @@
             </div>
           </div>
           
-          <!-- HAK AKSES STRICT: Tombol Absensi Massal dibungkus ID khusus -->
           <div style="margin-top: 15px; margin-bottom: 25px;" id="dashboard-absen-massal-box">
             <button class="btn btn-primary btn-gold" onclick="showAbsenPage()" style="padding: 12px 24px; font-weight: bold; border-radius: var(--radius);">
               Input Kehadiran Anggota
@@ -1113,7 +1109,6 @@
             <div>
               <div class="card text-center">
                 <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Foto Profil</h3>
-                <!-- Bingkai bulat yang kokoh dan bebas dari efek gambar lonjong (Temuan 1) -->
                 <div class="profile-avatar-frame">
                   <img id="prof-preview-img" src="" alt="Foto Profil">
                 </div>
@@ -1518,7 +1513,7 @@
     </div>
   </div>
 
-  <!-- Bypass cache versi 2.1.0 (Temuan 5) -->
-  <script src="script.js?v=2.1.0"></script>
+  <!-- Bypass cache versi 2.1.1 -->
+  <script src="script.js?v=2.1.1"></script>
 </body>
 </html>
