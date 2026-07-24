@@ -1,6 +1,9 @@
 // GANTI dengan URL Web App Apps Script kamu (Deploy > Manage deployments)
 const API_URL = "https://script.google.com/macros/s/AKfycbwoRhe_y_3MD4hTL1sDX480X8sh4rHbVV3pnA_KUAzLS21NkT6dT6UohIKebS48nYSDwQ/exec";
 
+// VERSI APLIKASI UNTUK RESET CORRUPT PWA CACHE (Temuan 5)
+const APP_VERSION = "2.1.0"; 
+
 let sessionToken = "";
 let userRole = "";
 let userId = "";
@@ -22,6 +25,26 @@ async function callAPI(funcName, params = []) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  // LOGIKA ANTISIPASI CORRUPT SERVICE WORKER (Temuan 5)
+  if (localStorage.getItem("app_version") !== APP_VERSION) {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function (names) {
+        for (let name of names) {
+          caches.delete(name);
+        }
+      });
+    }
+    localStorage.setItem("app_version", APP_VERSION);
+    console.log("Sistem mendeteksi pembaruan versi " + APP_VERSION + ". Cache usang telah dibersihkan.");
+  }
+
   sessionToken = sessionStorage.getItem('sessionToken');
   const userData = sessionStorage.getItem('user');
   if (sessionToken && userData) {
@@ -423,22 +446,41 @@ function stopCamera() {
   if (streamRef) { streamRef.getTracks().forEach(track => track.stop()); streamRef = null; }
 }
 
+// CAPTURE SELFIE SESUAI ATURAN RASIO 2:3 (Temuan 2)
 function captureSnapshot() {
   const video = document.getElementById('camera-video');
   const preview = document.getElementById('selfie-canvas-preview');
   if (!streamRef) { showToast("Kamera belum aktif.", true); return; }
 
   const canvas = document.createElement('canvas');
-  canvas.width = 320; canvas.height = 240;
+  // Menyetel rasio 2:3 Portrait secara konsisten (Lebar 240, Tinggi 360)
+  canvas.width = 240; 
+  canvas.height = 360; 
   const ctx = canvas.getContext('2d');
   
-  // Penyesuaian arah hasil tangkapan gambar
+  const vWidth = video.videoWidth || video.width || 640;
+  const vHeight = video.videoHeight || video.height || 480;
+
+  // Menghitung crop area agar pas di tengah-tengah feed kamera lanskap
+  let cropWidth = vHeight * (2 / 3);
+  let cropHeight = vHeight;
+  let sx = (vWidth - cropWidth) / 2;
+  let sy = 0;
+
+  if (cropWidth > vWidth) {
+    cropWidth = vWidth;
+    cropHeight = vWidth * (3 / 2);
+    sx = 0;
+    sy = (vHeight - cropHeight) / 2;
+  }
+
+  // Melakukan flip tangkapan gambar secara horizontal jika menggunakan kamera depan (User)
   if (currentFacingMode === "user") {
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
   }
   
-  ctx.drawImage(video, 0, 0, 320, 240);
+  ctx.drawImage(video, sx, sy, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
   base64SelfieString = canvas.toDataURL('image/jpeg', 0.85);
 
   video.style.display = "none";
@@ -446,7 +488,7 @@ function captureSnapshot() {
     preview.src = base64SelfieString;
     preview.style.display = "block";
   }
-  showToast("Foto berhasil ditangkap.");
+  showToast("Foto berhasil ditangkap (Rasio 2:3).");
 }
 
 function actionSubmitAbsen() {
@@ -494,7 +536,7 @@ function loadAbsenHistory() {
         }
         res.list.forEach(row => {
           let badgeClass = row.status === "Hadir" ? "badge-hadir" : row.status === "Izin" ? "badge-izin" : "badge-sakit";
-          let imgTag = row.foto_base64 ? `<img src="${row.foto_base64}" style="width: 60px; height: 45px; border-radius:4px; object-fit:cover; cursor:pointer;" onclick="viewFullImage('${row.foto_base64}')">` : "Tidak Ada";
+          let imgTag = row.foto_base64 ? `<img src="${row.foto_base64}" style="width: 60px; height: 90px; border-radius:4px; object-fit:cover; cursor:pointer;" onclick="viewFullImage('${row.foto_base64}')">` : "Tidak Ada";
           tbody.innerHTML += `
             <tr>
               <td>${row.tanggal} <br> <span style="font-size:0.75rem; color:var(--color-text-muted);">${row.jam}</span></td>
@@ -697,6 +739,41 @@ function openKegiatanModal(keg) {
 
 function closeKegiatanModal() {
   document.getElementById('modal-kegiatan').style.display = 'none';
+}
+
+// Handler pengolahan foto dokumentasi kegiatan agar dapat di-resize dan dikompres sebelum dikirim
+function processKegiatanPhoto(index, event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const img = new Image();
+    img.onload = function () {
+      const canvas = document.createElement('canvas');
+      const maxDim = 800; // Batas dimensi maksimal 800px demi optimasi transmisi Apps Script
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      document.getElementById('keg-foto-' + index + '-base64').value = dataUrl;
+      showToast("Foto " + index + " berhasil diproses.");
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function actionSaveKegiatan() {
@@ -917,7 +994,23 @@ function loadProfileDiri() {
         document.getElementById('prof-nama').value = p.nama_lengkap || "";
         document.getElementById('prof-nta').value = p.nta || "";
         document.getElementById('prof-tempat-lahir').value = p.tempat_lahir || "";
-        document.getElementById('prof-tanggal-lahir').value = p.tanggal_lahir || "";
+        
+        // Memastikan penyesuaian format tanggal lahir agar kompatibel di tag input date HTML
+        let birthDateFormatted = "";
+        if (p.tanggal_lahir) {
+          try {
+            const d = new Date(p.tanggal_lahir);
+            if (!isNaN(d.getTime())) {
+              birthDateFormatted = d.toISOString().substring(0, 10);
+            } else {
+              birthDateFormatted = p.tanggal_lahir;
+            }
+          } catch(e) {
+            birthDateFormatted = p.tanggal_lahir;
+          }
+        }
+        document.getElementById('prof-tanggal-lahir').value = birthDateFormatted;
+        
         if (p.jenis_kelamin) document.getElementById('prof-jk').value = p.jenis_kelamin;
         document.getElementById('prof-golongan').value = p.golongan || "";
         document.getElementById('prof-regu').value = p.regu_sangga || "";
@@ -926,12 +1019,16 @@ function loadProfileDiri() {
         if (p.foto_profil) {
           document.getElementById('prof-preview-img').src = p.foto_profil;
           document.getElementById('prof-preview-img').dataset.base64 = p.foto_profil;
+        } else {
+          document.getElementById('prof-preview-img').src = "";
+          document.getElementById('prof-preview-img').dataset.base64 = "";
         }
       }
     })
     .catch(err => showToast(err.message, true));
 }
 
+// PEMOTONGAN CITRA MANDIRI UNTUK MERUBAH FOTO MENJADI KOTAK SEMPURNA (Temuan 1)
 function previewAndResizeProfilePhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -940,10 +1037,17 @@ function previewAndResizeProfilePhoto(event) {
     const img = new Image();
     img.onload = function () {
       const canvas = document.createElement('canvas');
-      canvas.width = 300; canvas.height = 300;
+      canvas.width = 300; 
+      canvas.height = 300; // Standar dimensi profil kotak
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 300, 300);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // Resolusi tinggi dan aman tanpa risiko terpotong
+      
+      // Mengambil bagian terkecil agar terpotong simetris di tengah tanpa distorsi lonjong
+      const size = Math.min(img.width, img.height);
+      const sx = (img.width - size) / 2;
+      const sy = (img.height - size) / 2;
+      
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, 300, 300);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       document.getElementById('prof-preview-img').src = dataUrl;
       document.getElementById('prof-preview-img').dataset.base64 = dataUrl;
     };
@@ -952,6 +1056,7 @@ function previewAndResizeProfilePhoto(event) {
   reader.readAsDataURL(file);
 }
 
+// SIMPAN PROFIL DENGAN TETAP BERADA PADA FORM AGAR BISA DIUBAH KAPAN SAJA (Temuan 4)
 function actionSaveProfile() {
   const payload = {
     user_id: document.getElementById('prof-user-id').value,
@@ -973,10 +1078,13 @@ function actionSaveProfile() {
       setLoader(false);
       showToast(res.message);
       if (res.success && payload.user_id === userId) {
+        // Melakukan update sinkronisasi session storage
         currentUser.nama_lengkap = payload.nama_lengkap;
         sessionStorage.setItem('user', JSON.stringify(currentUser));
         document.getElementById('user-display-name').innerText = currentUser.nama_lengkap;
-        setTimeout(() => { kembaliKeDashboard(); }, 1500);
+        
+        // Memuat kembali data profil (TETAP DI HALAMAN PROFIL untuk dimodifikasi kapan saja)
+        loadProfileDiri();
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
