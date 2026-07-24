@@ -1,8 +1,8 @@
 // GANTI dengan URL Web App Apps Script kamu (Deploy > Manage deployments)
 const API_URL = "https://script.google.com/macros/s/AKfycbzQeBPKSRjlv_0p4EEhxyXz2PJi7PoAJT4zBwA0u7rB2qb1hm0CiKDLKR-KWWvFnQtb/exec";
 
-// VERSI APLIKASI UNTUK RESET CORRUPT PWA CACHE (Temuan 5)
-const APP_VERSION = "2.1.0"; 
+// VERSI APLIKASI UNTUK RESET CORRUPT PWA CACHE (Ditingkatkan ke 2.1.1)
+const APP_VERSION = "2.1.1"; 
 
 let sessionToken = "";
 let userRole = "";
@@ -25,7 +25,7 @@ async function callAPI(funcName, params = []) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // LOGIKA ANTISIPASI CORRUPT SERVICE WORKER (Temuan 5)
+  // LOGIKA ANTISIPASI CORRUPT SERVICE WORKER
   if (localStorage.getItem("app_version") !== APP_VERSION) {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function (registrations) {
@@ -416,7 +416,6 @@ function startCamera() {
   if (preview) preview.style.display = "none";
   base64SelfieString = "";
 
-  // Kontrol Mirroring visual agar tidak terbalik saat kamera depan aktif
   if (currentFacingMode === "user") {
     video.style.transform = "scaleX(-1)";
   } else {
@@ -446,14 +445,12 @@ function stopCamera() {
   if (streamRef) { streamRef.getTracks().forEach(track => track.stop()); streamRef = null; }
 }
 
-// CAPTURE SELFIE SESUAI ATURAN RASIO 2:3 (Temuan 2)
 function captureSnapshot() {
   const video = document.getElementById('camera-video');
   const preview = document.getElementById('selfie-canvas-preview');
   if (!streamRef) { showToast("Kamera belum aktif.", true); return; }
 
   const canvas = document.createElement('canvas');
-  // Menyetel rasio 2:3 Portrait secara konsisten (Lebar 240, Tinggi 360)
   canvas.width = 240; 
   canvas.height = 360; 
   const ctx = canvas.getContext('2d');
@@ -461,7 +458,6 @@ function captureSnapshot() {
   const vWidth = video.videoWidth || video.width || 640;
   const vHeight = video.videoHeight || video.height || 480;
 
-  // Menghitung crop area agar pas di tengah-tengah feed kamera lanskap
   let cropWidth = vHeight * (2 / 3);
   let cropHeight = vHeight;
   let sx = (vWidth - cropWidth) / 2;
@@ -474,7 +470,6 @@ function captureSnapshot() {
     sy = (vHeight - cropHeight) / 2;
   }
 
-  // Melakukan flip tangkapan gambar secara horizontal jika menggunakan kamera depan (User)
   if (currentFacingMode === "user") {
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
@@ -587,7 +582,6 @@ function loadAgenda() {
           if (isPengurus) {
             actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openAgendaModal(${JSON.stringify(agd)})'>Edit</button>`;
           }
-          // STRICT: Hanya Admin utama yang memiliki tombol/hak Hapus data master
           if (isAdmin) {
             actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteAgenda('${agd.id_agenda}')">Hapus</button>`;
           }
@@ -699,7 +693,6 @@ function loadKegiatan() {
           if (isPengurus) {
             actionButtons += `<button class="btn" style="flex:1; padding:6px;" onclick='openKegiatanModal(${JSON.stringify(keg)})'>Edit</button>`;
           }
-          // STRICT: Hanya Admin utama yang memiliki tombol/hak Hapus data master
           if (isAdmin) {
             actionButtons += `<button class="btn btn-danger" style="flex:1; padding:6px;" onclick="actionDeleteKegiatan('${keg.id_kegiatan}')">Hapus</button>`;
           }
@@ -741,7 +734,6 @@ function closeKegiatanModal() {
   document.getElementById('modal-kegiatan').style.display = 'none';
 }
 
-// Handler pengolahan foto dokumentasi kegiatan agar dapat di-resize dan dikompres sebelum dikirim
 function processKegiatanPhoto(index, event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -750,7 +742,7 @@ function processKegiatanPhoto(index, event) {
     const img = new Image();
     img.onload = function () {
       const canvas = document.createElement('canvas');
-      const maxDim = 800; // Batas dimensi maksimal 800px demi optimasi transmisi Apps Script
+      const maxDim = 800; 
       let width = img.width;
       let height = img.height;
       
@@ -836,7 +828,6 @@ function loadInventaris() {
           if (isPengurus) {
             actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openInventarisModal(${JSON.stringify(row)})'>Edit</button>`;
           }
-          // STRICT: Hanya Admin utama yang memiliki tombol/hak Hapus data master
           if (isAdmin) {
             actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteInventaris('${row.id_barang}')">Hapus</button>`;
           }
@@ -995,7 +986,6 @@ function loadProfileDiri() {
         document.getElementById('prof-nta').value = p.nta || "";
         document.getElementById('prof-tempat-lahir').value = p.tempat_lahir || "";
         
-        // Memastikan penyesuaian format tanggal lahir agar kompatibel di tag input date HTML
         let birthDateFormatted = "";
         if (p.tanggal_lahir) {
           try {
@@ -1028,7 +1018,6 @@ function loadProfileDiri() {
     .catch(err => showToast(err.message, true));
 }
 
-// PEMOTONGAN CITRA MANDIRI UNTUK MERUBAH FOTO MENJADI KOTAK SEMPURNA (Temuan 1)
 function previewAndResizeProfilePhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -1038,10 +1027,9 @@ function previewAndResizeProfilePhoto(event) {
     img.onload = function () {
       const canvas = document.createElement('canvas');
       canvas.width = 300; 
-      canvas.height = 300; // Standar dimensi profil kotak
+      canvas.height = 300; 
       const ctx = canvas.getContext('2d');
       
-      // Mengambil bagian terkecil agar terpotong simetris di tengah tanpa distorsi lonjong
       const size = Math.min(img.width, img.height);
       const sx = (img.width - size) / 2;
       const sy = (img.height - size) / 2;
@@ -1056,7 +1044,6 @@ function previewAndResizeProfilePhoto(event) {
   reader.readAsDataURL(file);
 }
 
-// SIMPAN PROFIL DENGAN TETAP BERADA PADA FORM AGAR BISA DIUBAH KAPAN SAJA (Temuan 4)
 function actionSaveProfile() {
   const payload = {
     user_id: document.getElementById('prof-user-id').value,
@@ -1077,13 +1064,10 @@ function actionSaveProfile() {
     .then(res => {
       setLoader(false);
       showToast(res.message);
-      if (res.success && payload.user_id === userId) {
-        // Melakukan update sinkronisasi session storage
+      if (res.success && payload.user_id.toLowerCase() === userId.toLowerCase()) {
         currentUser.nama_lengkap = payload.nama_lengkap;
         sessionStorage.setItem('user', JSON.stringify(currentUser));
         document.getElementById('user-display-name').innerText = currentUser.nama_lengkap;
-        
-        // Memuat kembali data profil (TETAP DI HALAMAN PROFIL untuk dimodifikasi kapan saja)
         loadProfileDiri();
       }
     })
