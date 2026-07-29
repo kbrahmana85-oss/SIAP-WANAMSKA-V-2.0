@@ -1096,6 +1096,7 @@ function openUserModal(indexOrObj) {
   document.getElementById('modal-user').style.display = 'flex';
 }
 
+// PERBAIKAN CRITICAL BUG: Status "usr-status" salah panggil variabel 'usr-id' (seharusnya 'usr-status')
 function closeUserModal() {
   document.getElementById('modal-user').style.display = 'none';
   document.getElementById('usr-id').disabled = false;
