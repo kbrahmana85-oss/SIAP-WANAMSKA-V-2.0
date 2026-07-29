@@ -1,5 +1,5 @@
 // GANTI dengan URL Web App Apps Script kamu (Deploy > Manage deployments)
-const API_URL = "https://script.google.com/macros/s/AKfycbzeenzGc5iTs41JZfCjxM7dKA_hA5_IInFGV61C4YEq_oGfdkUTBH7Ncq9jdotDcTNRNA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbylwY_-qqUn7KhwdCGV57mkGgY8xQIGNUqCkHZGwUaQYWRmfp4UMOVaXgv0fmiqSbZeAg/exec";
 
 // VERSI APLIKASI UNTUK RESET CORRUPT PWA CACHE (Ditingkatkan ke 2.1.1)
 const APP_VERSION = "2.1.1"; 
@@ -13,19 +13,18 @@ let streamRef = null;
 let base64SelfieString = "";
 let currentFacingMode = "user"; // Menyimpan status kamera ("user" untuk depan, "environment" untuk belakang)
 
-// PERBAIKAN: Penyimpanan memori array global untuk mencegah crash parsing data string di HTML inline
-let agendaList = [];
-let kegiatanList = [];
-let inventarisList = [];
-let userList = [];
-
-// KONFIGURASI GEOFENCING MANDIRI
-const OFFICE_LAT = -7.56354193439929;
-const OFFICE_LNG = 110.8307413078518;
-const MAX_RADIUS = 100.0; // Radius toleransi (Meter)
-let isLocationValid = false; // Status kesesuaian geolokasi
-let detectedLat = "";
-let detectedLng = "";
+// Perhitungan Jarak Koordinat GPS Pramuka Surakarta (Haversine Formula)
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Radius bumi dalam meter
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; // Jarak dalam meter
+}
 
 async function callAPI(funcName, params = []) {
   const res = await fetch(API_URL, {
@@ -39,11 +38,6 @@ async function callAPI(funcName, params = []) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // Pemicu izin awal secara pasif agar browser meminta persetujuan lokasi sesaat setelah membuka web
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function() {}, function() {}, { timeout: 1000 });
-  }
-
   // LOGIKA ANTISIPASI CORRUPT SERVICE WORKER
   if (localStorage.getItem("app_version") !== APP_VERSION) {
     if ('serviceWorker' in navigator) {
@@ -170,6 +164,7 @@ function switchSection(sectionId, elementMenu) {
   menuItems.forEach(item => item.classList.remove('active'));
   if (elementMenu) elementMenu.classList.add('active');
 
+  // Sidebar mobile auto-close saat menu navigasi ditekan
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.overlay');
   if (sidebar && overlay) {
@@ -180,19 +175,14 @@ function switchSection(sectionId, elementMenu) {
   }
 
   if (sectionId === 'section-dashboard') loadDashboard();
-  else if (sectionId === 'section-absensi') {
-    // NOTIFIKASI AKTIFKAN LOKASI SAAT MENGGUNAKAN MODUL ABSENSI
-    showToast("⚠️ PENTING: Harap aktifkan GPS/Lokasi perangkat Anda sebelum absensi!");
-    initGeofenceCheck(); // Jalankan proteksi koordinat fisik
-    loadAbsenHistory();
-  }
+  else if (sectionId === 'section-absensi') loadAbsenHistory();
   else if (sectionId === 'section-kegiatan') loadKegiatan();
   else if (sectionId === 'section-agenda') loadAgenda();
   else if (sectionId === 'section-inventaris') loadInventaris();
   else if (sectionId === 'section-kas') loadKas();
   else if (sectionId === 'section-profile') loadProfileDiri();
   else if (sectionId === 'section-users') loadUsers();
-  else if (sectionId === 'section-exports') { }
+  else if (sectionId === 'section-exports') { /* tidak memerlukan inisialisasi */ }
   else if (sectionId === 'section-logs') loadSystemLogs();
 }
 
@@ -246,166 +236,6 @@ function initCreativeCalendar() {
 }
 
 // =========================================================================
-// === MANAJEMEN GEOFENCING & DETEKSI FAKE GPS                           ===
-// =========================================================================
-
-function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371000; // Radius Bumi (Meter)
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-function runFakeGPSCheck(position) {
-  const coords = position.coords;
-
-  // Lapis 1: Periksa flag mocked internal browser
-  if (coords.mocked === true || coords.isFromMockProvider === true || coords.accuracy === 0) {
-    return { isFake: true, reason: "Terdeteksi driver lokasi buatan/emulator (Mocked)." };
-  }
-
-  // Lapis 3: Validasi perbedaan waktu GPS dan waktu lokal browser
-  const timeDiff = Math.abs(Date.now() - position.timestamp);
-  if (timeDiff > 10000) { // Toleransi maksimal 10 detik
-    return { isFake: true, reason: "Waktu respons sensor GPS tidak sinkron." };
-  }
-
-  // Lapis 2: Analisis kecepatan perpindahan tidak wajar (anti-teleportasi)
-  try {
-    const history = localStorage.getItem("wanamska_gps_history");
-    if (history) {
-      const lastPoint = JSON.parse(history);
-      const timeElapsed = (position.timestamp - lastPoint.timestamp) / 1000;
-
-      if (timeElapsed > 0 && timeElapsed <= 10) {
-        const distanceMoved = calculateHaversineDistance(
-          lastPoint.latitude,
-          lastPoint.longitude,
-          coords.latitude,
-          coords.longitude
-        );
-
-        // Jika berpindah lebih dari 500 meter dalam waktu kurang dari 5 detik
-        if (distanceMoved > 500 && timeElapsed <= 5) {
-          return { isFake: true, reason: "Perpindahan koordinat dinilai janggal (Teleportasi)." };
-        }
-      }
-    }
-  } catch (err) {
-    console.error(err);
-  }
-
-  // Simpan data koordinat aktual
-  localStorage.setItem(
-    "wanamska_gps_history",
-    JSON.stringify({
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      timestamp: position.timestamp,
-    })
-  );
-
-  return { isFake: false };
-}
-
-function initGeofenceCheck() {
-  const statusBox = document.getElementById('geofence-status-box');
-  const submitBtn = document.getElementById('btn-submit-absen');
-  if (!statusBox || !submitBtn) return;
-
-  // Lock tombol kirim absensi sebelum sensor lokasi selesai divalidasi
-  isLocationValid = false;
-  submitBtn.disabled = true;
-  submitBtn.style.opacity = "0.5";
-  submitBtn.style.cursor = "not-allowed";
-
-  statusBox.style.backgroundColor = "#FEF08A";
-  statusBox.style.color = "#713F12";
-  statusBox.style.border = "1px dashed #F59E0B";
-  statusBox.innerText = "⏳ Memeriksa jangkauan GPS... Harap aktifkan lokasi perangkat Anda.";
-
-  if (!navigator.geolocation) {
-    statusBox.style.backgroundColor = "#FDE8E8";
-    statusBox.style.color = "#9B1C1C";
-    statusBox.style.border = "none";
-    statusBox.innerText = "❌ Browser Anda tidak mendukung sensor geolokasi atau protokol tidak aman (Non-HTTPS).";
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    function (position) {
-      const { latitude, longitude } = position.coords;
-
-      // Jalankan proteksi manipulasi Fake GPS
-      const fakeCheck = runFakeGPSCheck(position);
-      if (fakeCheck.isFake) {
-        statusBox.style.backgroundColor = "#FDE8E8";
-        statusBox.style.color = "#9B1C1C";
-        statusBox.style.border = "2px dashed #B91C1C";
-        statusBox.innerText = "🚨 Terdeteksi Fake GPS! Modifikasi lokasi dilarang.";
-        showToast("Fake GPS Terdeteksi: " + fakeCheck.reason, true);
-        return;
-      }
-
-      // Hitung sisa jarak fisik ke titik koordinat kantor
-      const distance = calculateHaversineDistance(latitude, longitude, OFFICE_LAT, OFFICE_LNG);
-      const roundedDistance = Math.round(distance);
-
-      detectedLat = latitude;
-      detectedLng = longitude;
-
-      if (distance > MAX_RADIUS) {
-        statusBox.style.backgroundColor = "#FDE8E8";
-        statusBox.style.color = "#9B1C1C";
-        statusBox.style.border = "none";
-        statusBox.innerText = "❌ Anda berada di luar area kantor. Jarak: " + roundedDistance + "m (Maksimal: 100m)";
-      } else {
-        isLocationValid = true;
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = "1";
-        submitBtn.style.cursor = "pointer";
-        statusBox.style.backgroundColor = "#DEF7EC";
-        statusBox.style.color = "#03543F";
-        statusBox.style.border = "none";
-        statusBox.innerText = "✅ Jangkauan Valid! Jarak Anda: " + roundedDistance + " meter dari titik kantor.";
-      }
-    },
-    function (error) {
-      statusBox.style.backgroundColor = "#FDE8E8";
-      statusBox.style.color = "#9B1C1C";
-      statusBox.style.border = "none";
-      let errMsg = "❌ Gagal memindai sensor lokasi GPS.";
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          errMsg = "❌ Izin lokasi ditolak. Aktifkan izin lokasi browser/ponsel.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          errMsg = "❌ Koordinat fisik tidak terdeteksi. Aktifkan modul GPS Anda.";
-          break;
-        case error.TIMEOUT:
-          errMsg = "❌ Request GPS habis waktu (Timeout). Pastikan langit terbuka dan coba lagi.";
-          break;
-      }
-      statusBox.innerText = errMsg;
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
-    }
-  );
-}
-
-// =========================================================================
 // === MANAJEMEN LOGIN / LOGOUT & RBAC                                  ===
 // =========================================================================
 
@@ -450,12 +280,14 @@ function actionLogout() {
 }
 
 function setupRBACUI(role) {
+  // Reset seluruh visibilitas menu sidebar
   document.getElementById('menu-inventaris').style.display = 'none';
   document.getElementById('menu-kas').style.display = 'none';
   document.getElementById('menu-users').style.display = 'none';
   document.getElementById('menu-exports').style.display = 'none';
   document.getElementById('menu-logs').style.display = 'none';
   
+  // Reset tombol tambah data global
   document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'none';
   document.getElementById('btn-tambah-agenda-trigger').style.display = 'none';
   document.getElementById('btn-tambah-kas').style.display = 'none';
@@ -466,11 +298,13 @@ function setupRBACUI(role) {
   document.getElementById('card-dash-kas').style.display = 'none';
   document.getElementById('dashboard-absen-massal-box').style.display = 'none';
   
+  // Reset box ekspor individual
   document.getElementById('export-absensi-box').style.display = 'none';
   document.getElementById('export-inventaris-box').style.display = 'none';
   document.getElementById('export-kas-box').style.display = 'none';
 
   if (role === "Admin") {
+    // ADMIN: Akses penuh
     document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     document.getElementById('menu-users').style.display = 'flex';
@@ -485,11 +319,13 @@ function setupRBACUI(role) {
     document.getElementById('card-dash-kas').style.display = 'flex';
     document.getElementById('dashboard-absen-massal-box').style.display = 'block';
     
+    // Semua sub-ekspor diizinkan
     document.getElementById('export-absensi-box').style.display = 'block';
     document.getElementById('export-inventaris-box').style.display = 'block';
     document.getElementById('export-kas-box').style.display = 'block';
     
   } else if (role === "Pembina") {
+    // PEMBINA: Akses Dashboard, Absensi, Kegiatan, Inventaris, Kas, Agenda, Profil, Export (hanya Absensi)
     document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     document.getElementById('menu-exports').style.display = 'flex';
@@ -502,11 +338,13 @@ function setupRBACUI(role) {
     document.getElementById('card-dash-kas').style.display = 'flex';
     document.getElementById('dashboard-absen-massal-box').style.display = 'block';
     
+    // STRICT: Pembina hanya bisa mengekspor laporan absensi
     document.getElementById('export-absensi-box').style.display = 'block';
     document.getElementById('export-inventaris-box').style.display = 'none';
     document.getElementById('export-kas-box').style.display = 'none';
     
   } else if (role === "Dewan Penggalang") {
+    // DEWAN PENGGALANG: Akses Dashboard, Absensi, Kegiatan, Kas, Agenda, Inventaris, Profil
     document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     
@@ -517,7 +355,13 @@ function setupRBACUI(role) {
     
     document.getElementById('card-dash-kas').style.display = 'flex';
     document.getElementById('dashboard-absen-massal-box').style.display = 'block';
+    
+    // STRICT: Dewan Penggalang tidak boleh mengakses menu eksport data sama sekali
     document.getElementById('menu-exports').style.display = 'none';
+    
+  } else if (role === "Penggalang") {
+    // PENGGALANG: Hanya Dashboard (simple), Absensi, Kegiatan (lihat), Agenda (lihat), Profil
+    // Seluruh menu admin, inventaris, kas, export, dan input massal tetap tersembunyi (none)
   }
 }
 
@@ -552,20 +396,114 @@ function togglePassword() {
 }
 
 // =========================================================================
-// === PROSES SUBMIT ABSENSI TERINTEGRASI GEOFENCING                      ===
+// === MANAJEMEN ABSENSI & KAMERA FLIP                                   ===
 // =========================================================================
+
+function toggleMetodeAbsen() {
+  const met = document.getElementById('absen-metode').value;
+  const camPanel = document.getElementById('absen-camera-panel');
+  const codePanel = document.getElementById('form-kegiatan-code');
+  if (met === "Selfie") {
+    camPanel.style.display = 'block';
+    codePanel.style.display = 'none';
+    startCamera();
+  } else {
+    camPanel.style.display = 'none';
+    codePanel.style.display = 'block';
+    stopCamera();
+  }
+}
+
+function toggleSelfieRule() {
+  const status = document.getElementById('absen-status').value;
+  const camPanel = document.getElementById('absen-camera-panel');
+  if (status !== "Hadir") { camPanel.style.display = 'none'; stopCamera(); }
+  else { toggleMetodeAbsen(); }
+}
+
+function startCamera() {
+  const video = document.getElementById('camera-video');
+  const preview = document.getElementById('selfie-canvas-preview');
+  if (!video) return;
+  video.style.display = "block";
+  if (preview) preview.style.display = "none";
+  base64SelfieString = "";
+
+  if (currentFacingMode === "user") {
+    video.style.transform = "scaleX(-1)";
+  } else {
+    video.style.transform = "scaleX(1)";
+  }
+
+  if (streamRef) {
+    stopCamera();
+  }
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } })
+      .then(stream => { streamRef = stream; video.srcObject = stream; })
+      .catch(() => showToast("Gagal mengakses kamera. Silakan periksa kembali izin browser Anda.", true));
+  } else {
+    showToast("Browser Anda tidak mendukung fungsionalitas kamera.", true);
+  }
+}
+
+function flipCamera() {
+  currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+  showToast("Mengalihkan ke Kamera " + (currentFacingMode === "user" ? "Depan" : "Belakang"));
+  startCamera();
+}
+
+function stopCamera() {
+  if (streamRef) { streamRef.getTracks().forEach(track => track.stop()); streamRef = null; }
+}
+
+function captureSnapshot() {
+  const video = document.getElementById('camera-video');
+  const preview = document.getElementById('selfie-canvas-preview');
+  if (!streamRef) { showToast("Kamera belum aktif.", true); return; }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 240; 
+  canvas.height = 360; 
+  const ctx = canvas.getContext('2d');
+  
+  const vWidth = video.videoWidth || video.width || 640;
+  const vHeight = video.videoHeight || video.height || 480;
+
+  let cropWidth = vHeight * (2 / 3);
+  let cropHeight = vHeight;
+  let sx = (vWidth - cropWidth) / 2;
+  let sy = 0;
+
+  if (cropWidth > vWidth) {
+    cropWidth = vWidth;
+    cropHeight = vWidth * (3 / 2);
+    sx = 0;
+    sy = (vHeight - cropHeight) / 2;
+  }
+
+  if (currentFacingMode === "user") {
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+  }
+  
+  ctx.drawImage(video, sx, sy, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+  base64SelfieString = canvas.toDataURL('image/jpeg', 0.85);
+
+  video.style.display = "none";
+  if (preview) {
+    preview.src = base64SelfieString;
+    preview.style.display = "block";
+  }
+  showToast("Foto berhasil ditangkap (Rasio 2:3).");
+}
 
 function actionSubmitAbsen() {
   const status = document.getElementById('absen-status').value;
   const metode = document.getElementById('absen-metode').value;
   const kegiatanCode = document.getElementById('absen-kegiatan-id').value;
   const keterangan = document.getElementById('absen-keterangan').value;
-
-  // Proteksi mutlak: Jika status Hadir, lokasi wajib valid (berada di dalam geofence dan bebas Fake GPS)
-  if (status === "Hadir" && !isLocationValid) {
-    showToast("Pendaftaran absen ditolak! Anda berada di luar koordinat jangkauan atau terindikasi melakukan pemalsuan lokasi.", true);
-    return;
-  }
 
   if (status === "Hadir" && metode === "Selfie" && !base64SelfieString) {
     showToast("Harap lakukan foto selfie terlebih dahulu sebelum absensi!", true); return;
@@ -574,14 +512,59 @@ function actionSubmitAbsen() {
     showToast("Harap isi kode kegiatan pelaksanaan absensi!", true); return;
   }
 
-  setLoader(true, "Mengirim data absensi...");
+  // VALIDASI GEOLOCATION RADIUS 100M UNTUK DEWAN PENGGALANG & PENGGALANG
+  if ((userRole === "Dewan Penggalang" || userRole === "Penggalang") && status === "Hadir") {
+    if (!navigator.geolocation) {
+      showToast("ABSENSI DITOLAK: Fitur Geolocation tidak didukung oleh browser Anda.", true);
+      return;
+    }
+    
+    setLoader(true, "Memverifikasi lokasi GPS (Anti-FakeGPS)...");
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLon = position.coords.longitude;
+        
+        // Titik Koordinat yang Ditentukan
+        const targetLat = -7.563383309402712;
+        const targetLon = 110.83081309791396;
+        
+        const distance = getDistance(userLat, userLon, targetLat, targetLon);
+        
+        if (distance > 100) {
+          setLoader(false);
+          showToast("ABSENSI DITOLAK: Anda berada di luar radius area latihan yang diizinkan (" + Math.round(distance) + " meter dari pusat).", true);
+        } else {
+          proceedSubmitAbsen(status, base64SelfieString, metode, kegiatanCode, keterangan + " (GPS Valid: " + Math.round(distance) + "m)");
+        }
+      },
+      (error) => {
+        setLoader(false);
+        let errorMsg = "ABSENSI DITOLAK: Gagal mendapatkan sinyal GPS.";
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = "ABSENSI DITOLAK: Izin lokasi diblokir. Harap aktifkan izin lokasi GPS Anda.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMsg = "ABSENSI DITOLAK: Informasi posisi lokasi tidak tersedia.";
+        } else if (error.code === error.TIMEOUT) {
+          errorMsg = "ABSENSI DITOLAK: Waktu tunggu permintaan lokasi GPS habis.";
+        }
+        showToast(errorMsg, true);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  } else {
+    proceedSubmitAbsen(status, base64SelfieString, metode, kegiatanCode, keterangan);
+  }
+}
 
-  // Mengirimkan data koordinat geografis (detectedLat dan detectedLng) sebagai argumen ke-7 dan ke-8 untuk diverifikasi ulang di server Apps Script
-  callAPI('submitAbsen', [sessionToken, status, base64SelfieString, metode, kegiatanCode, keterangan, detectedLat, detectedLng])
+function proceedSubmitAbsen(status, selfieStr, metode, kegiatanCode, keterangan) {
+  setLoader(true, "Mengirim data absensi...");
+  callAPI('submitAbsen', [sessionToken, status, selfieStr, metode, kegiatanCode, keterangan])
     .then(res => {
       setLoader(false);
       if (res.success) {
-        showToast(res.message);
+        showToast("ABSENSI BERHASIL SIMPAN");
         stopCamera();
         document.getElementById('absen-kegiatan-id').value = "";
         document.getElementById('absen-keterangan').value = "";
@@ -637,14 +620,13 @@ function showAbsenPage() {
 function kembaliKeDashboard() { showPage('dashboard-page'); }
 
 // =========================================================================
-// === FITUR AGENDA KEGIATAN                                             ===
+// === MANAJEMEN MODUL AGENDA (KEGIATAN MASA DEPAN)                      ===
 // =========================================================================
 
 function loadAgenda() {
   callAPI('getAgendaList', [sessionToken])
     .then(res => {
       if (res.success) {
-        agendaList = res.list; // PERBAIKAN: Simpan data ke array global
         const tbody = document.getElementById('body-agenda');
         tbody.innerHTML = "";
         if (res.list.length === 0) {
@@ -654,11 +636,10 @@ function loadAgenda() {
         const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
         const isAdmin = userRole === "Admin";
         
-        res.list.forEach((agd, index) => {
+        res.list.forEach(agd => {
           let actionButtons = "";
           if (isPengurus) {
-            // PERBAIKAN: Oper indeks array, bukan JSON stringify
-            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick="openAgendaModal(${index})">Edit</button>`;
+            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openAgendaModal(${JSON.stringify(agd)})'>Edit</button>`;
           }
           if (isAdmin) {
             actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteAgenda('${agd.id_agenda}')">Hapus</button>`;
@@ -690,22 +671,15 @@ function loadAgenda() {
     .catch(err => showToast(err.message, true));
 }
 
-function openAgendaModal(indexOrObj) {
-  let selectedAgd = null;
-  if (typeof indexOrObj === 'number') {
-    selectedAgd = agendaList[indexOrObj];
-  } else {
-    selectedAgd = indexOrObj;
-  }
-  
-  document.getElementById('agenda-modal-title').innerText = selectedAgd ? "Form Edit Agenda" : "Form Tambah Agenda";
-  document.getElementById('agd-id').value = selectedAgd ? selectedAgd.id_agenda : "";
-  document.getElementById('agd-kegiatan').value = selectedAgd ? selectedAgd.kegiatan : "";
-  document.getElementById('agd-jenis').value = selectedAgd ? selectedAgd.jenis_kegiatan : "";
-  document.getElementById('agd-tanggal').value = selectedAgd ? selectedAgd.tanggal_pelaksanaan : "";
-  document.getElementById('agd-waktu').value = selectedAgd ? selectedAgd.waktu : "";
-  document.getElementById('agd-pj').value = selectedAgd ? selectedAgd.penanggung_jawab : "";
-  document.getElementById('agd-keterangan').value = selectedAgd ? selectedAgd.keterangan : "";
+function openAgendaModal(agd) {
+  document.getElementById('agenda-modal-title').innerText = agd ? "Form Edit Agenda" : "Form Tambah Agenda";
+  document.getElementById('agd-id').value = agd ? agd.id_agenda : "";
+  document.getElementById('agd-kegiatan').value = agd ? agd.kegiatan : "";
+  document.getElementById('agd-jenis').value = agd ? agd.jenis_kegiatan : "";
+  document.getElementById('agd-tanggal').value = agd ? agd.tanggal_pelaksanaan : "";
+  document.getElementById('agd-waktu').value = agd ? agd.waktu : "";
+  document.getElementById('agd-pj').value = agd ? agd.penanggung_jawab : "";
+  document.getElementById('agd-keterangan').value = agd ? agd.keterangan : "";
   document.getElementById('modal-agenda').style.display = 'flex';
 }
 
@@ -762,14 +736,13 @@ function loadKegiatan() {
   callAPI('getKegiatanList', [sessionToken])
     .then(res => {
       if (res.success) {
-        kegiatanList = res.list; // PERBAIKAN: Simpan data ke array global
         const grid = document.getElementById('grid-list-kegiatan');
         grid.innerHTML = "";
         if (res.list.length === 0) {
           grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--color-text-muted);">Belum ada dokumentasi kegiatan.</p>`;
           return;
         }
-        res.list.forEach((keg, index) => {
+        res.list.forEach(keg => {
           const defaultImg = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png";
           
           const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
@@ -777,8 +750,7 @@ function loadKegiatan() {
           
           let actionButtons = "";
           if (isPengurus) {
-            // PERBAIKAN: Oper indeks array, bukan JSON stringify
-            actionButtons += `<button class="btn" style="flex:1; padding:6px;" onclick="openKegiatanModal(${index})">Edit</button>`;
+            actionButtons += `<button class="btn" style="flex:1; padding:6px;" onclick='openKegiatanModal(${JSON.stringify(keg)})'>Edit</button>`;
           }
           if (isAdmin) {
             actionButtons += `<button class="btn btn-danger" style="flex:1; padding:6px;" onclick="actionDeleteKegiatan('${keg.id_kegiatan}')">Hapus</button>`;
@@ -804,23 +776,21 @@ function loadKegiatan() {
     .catch(err => showToast(err.message, true));
 }
 
-function openKegiatanModal(indexOrObj) {
-  let selectedKeg = null;
-  if (typeof indexOrObj === 'number') {
-    selectedKeg = kegiatanList[indexOrObj];
-  } else {
-    selectedKeg = indexOrObj;
-  }
+function openKegiatanModal(keg) {
+  document.getElementById('kegiatan-modal-title').innerText = keg ? "Form Edit Dokumentasi" : "Form Tambah Dokumentasi";
+  document.getElementById('keg-id').value = keg ? keg.id_kegiatan : "";
+  document.getElementById('keg-nama').value = keg ? keg.nama_kegiatan : "";
+  document.getElementById('keg-tanggal').value = keg ? keg.tanggal : "";
+  document.getElementById('keg-lokasi').value = keg ? keg.lokasi : "";
+  document.getElementById('keg-deskripsi').value = keg ? keg.deskripsi : "";
+  document.getElementById('keg-foto-1-base64').value = keg ? (keg.foto1 || "") : "";
+  document.getElementById('keg-foto-2-base64').value = keg ? (keg.foto2 || "") : "";
+  document.getElementById('keg-foto-3-base64').value = keg ? (keg.foto3 || "") : "";
+  
+  // RESET NATIVE FILE INPUTS (Mencegah desinkronisasi tampilan "pilih file" saat modal dibuka ulang)
+  const fileInputs = document.querySelectorAll('#modal-kegiatan input[type="file"]');
+  fileInputs.forEach(input => input.value = "");
 
-  document.getElementById('kegiatan-modal-title').innerText = selectedKeg ? "Form Edit Dokumentasi" : "Form Tambah Dokumentasi";
-  document.getElementById('keg-id').value = selectedKeg ? selectedKeg.id_kegiatan : "";
-  document.getElementById('keg-nama').value = selectedKeg ? selectedKeg.nama_kegiatan : "";
-  document.getElementById('keg-tanggal').value = selectedKeg ? selectedKeg.tanggal : "";
-  document.getElementById('keg-lokasi').value = selectedKeg ? selectedKeg.lokasi : "";
-  document.getElementById('keg-deskripsi').value = selectedKeg ? selectedKeg.deskripsi : "";
-  document.getElementById('keg-foto-1-base64').value = selectedKeg ? (selectedKeg.foto1 || "") : "";
-  document.getElementById('keg-foto-2-base64').value = selectedKeg ? (selectedKeg.foto2 || "") : "";
-  document.getElementById('keg-foto-3-base64').value = selectedKeg ? (selectedKeg.foto3 || "") : "";
   document.getElementById('modal-kegiatan').style.display = 'flex';
 }
 
@@ -828,69 +798,50 @@ function closeKegiatanModal() {
   document.getElementById('modal-kegiatan').style.display = 'none';
 }
 
-// PERBAIKAN UTAMA: Penanganan Resilien dengan Failsafe Fallback & Visual Loader saat merender gambar mentah resolusi besar ke Canvas
 function processKegiatanPhoto(index, event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  setLoader(true, "Memproses dan mengompresi Foto " + index + "...");
+  setLoader(true, "Memproses Gambar " + index + "...");
 
   const reader = new FileReader();
   reader.onload = function (e) {
-    const rawBase64 = e.target.result;
-    
     const img = new Image();
     img.onload = function () {
-      try {
-        const canvas = document.createElement('canvas');
-        const maxDim = 800; 
-        let width = img.width;
-        let height = img.height;
-        
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
+      const canvas = document.createElement('canvas');
+      const maxDim = 800; 
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
         }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        
-        document.getElementById('keg-foto-' + index + '-base64').value = dataUrl;
-        showToast("Foto " + index + " berhasil diproses.");
-      } catch (err) {
-        console.error("Gagal melakukan canvas resizing: " + err.toString());
-        // FALLBACK 1: Jika RAM browser mobile kehabisan memori untuk merender Canvas, simpan Base64 mentah
-        document.getElementById('keg-foto-' + index + '-base64').value = rawBase64;
-        showToast("Foto " + index + " berhasil dimuat.");
-      } finally {
-        setLoader(false);
       }
-    };
-
-    img.onerror = function (err) {
-      console.error("Gagal memuat objek gambar: ", err);
-      // FALLBACK 2: Jika objek Image gagal termuat karena file terlalu ekstrem, langsung bypass Base64 asli dari FileReader
-      document.getElementById('keg-foto-' + index + '-base64').value = rawBase64;
-      showToast("Foto " + index + " dimuat langsung (tanpa kompresi).");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      
+      document.getElementById('keg-foto-' + index + '-base64').value = dataUrl;
       setLoader(false);
+      showToast("Foto " + index + " berhasil diproses.");
     };
-
-    img.src = rawBase64;
+    img.onerror = function () {
+      setLoader(false);
+      showToast("Gagal memuat file gambar " + index, true);
+    }
+    img.src = e.target.result;
   };
-
-  reader.onerror = function (err) {
-    console.error("FileReader error: ", err);
-    showToast("Gagal membaca file gambar " + index, true);
+  reader.onerror = function () {
     setLoader(false);
-  };
-
+    showToast("Gagal membaca berkas file gambar " + index, true);
+  }
   reader.readAsDataURL(file);
 }
 
@@ -900,10 +851,12 @@ function actionSaveKegiatan() {
   const lokasi = document.getElementById('keg-lokasi').value;
   const deskripsi = document.getElementById('keg-deskripsi').value;
   const foto1 = document.getElementById('keg-foto-1-base64').value;
-  const foto2 = document.getElementById('keg-foto-2-base64').value;
+  const foto2 = document.getElementById('keg-foto-2-base64').value || ""; // Foto 2 dibuat opsional di JS
+  const foto3 = document.getElementById('keg-foto-3-base64').value || "";
 
-  if (!nama || !tanggal || !lokasi || !deskripsi || !foto1 || !foto2) {
-    showToast("Field nama, tanggal, lokasi, deskripsi, serta Foto 1 & 2 wajib dilampirkan.", true);
+  // Sesuai temuan 1: Validasi diperketat hanya untuk Foto 1 (Utama) agar bisa disimpan lancar
+  if (!nama || !tanggal || !lokasi || !deskripsi || !foto1) {
+    showToast("Field nama, tanggal, lokasi, deskripsi, serta Foto 1 (Utama) wajib dilampirkan.", true);
     return;
   }
 
@@ -915,7 +868,7 @@ function actionSaveKegiatan() {
     deskripsi: deskripsi,
     foto1: foto1,
     foto2: foto2,
-    foto3: document.getElementById('keg-foto-3-base64').value
+    foto3: foto3
   };
   setLoader(true, "Menyimpan dokumentasi...");
 
@@ -926,7 +879,7 @@ function actionSaveKegiatan() {
       closeKegiatanModal();
       loadKegiatan();
     })
-    .catch(err => { setLoader(false); showToast(err.toString(), true); });
+    .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
 function actionDeleteKegiatan(idKegiatan) {
@@ -940,21 +893,19 @@ function loadInventaris() {
   callAPI('getInventarisList', [sessionToken])
     .then(res => {
       if (res.success) {
-        inventarisList = res.list; // PERBAIKAN: Simpan data ke array global
         const tbody = document.getElementById('body-inventaris');
         tbody.innerHTML = "";
         if (res.list.length === 0) {
           tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada inventaris tercatat.</td></tr>`;
           return;
         }
-        res.list.forEach((row, index) => {
+        res.list.forEach(row => {
           const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
           const isAdmin = userRole === "Admin";
           
           let actionButtons = "";
           if (isPengurus) {
-            // PERBAIKAN: Oper indeks array, bukan JSON stringify
-            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick="openInventarisModal(${index})">Edit</button>`;
+            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openInventarisModal(${JSON.stringify(row)})'>Edit</button>`;
           }
           if (isAdmin) {
             actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteInventaris('${row.id_barang}')">Hapus</button>`;
@@ -976,23 +927,16 @@ function loadInventaris() {
     .catch(err => showToast(err.message, true));
 }
 
-function openInventarisModal(indexOrObj) {
-  let selectedItem = null;
-  if (typeof indexOrObj === 'number') {
-    selectedItem = inventarisList[indexOrObj];
-  } else {
-    selectedItem = indexOrObj;
-  }
-
-  document.getElementById('inv-modal-title').innerText = selectedItem ? "Edit Barang Inventaris" : "Catat Barang Inventaris";
-  document.getElementById('inv-id').value = selectedItem ? selectedItem.id_barang : "";
-  document.getElementById('inv-nama').value = selectedItem ? selectedItem.nama_barang : "";
-  document.getElementById('inv-kategori').value = selectedItem ? selectedItem.kategori : "Perlengkapan Kemah";
-  document.getElementById('inv-jumlah').value = selectedItem ? selectedItem.jumlah : "";
-  document.getElementById('inv-kondisi').value = selectedItem ? selectedItem.kondisi : "Baik";
-  document.getElementById('inv-lokasi').value = selectedItem ? selectedItem.locations_simpan : "";
-  document.getElementById('inv-tanggal').value = selectedItem ? selectedItem.tanggal_masuk : "";
-  document.getElementById('inv-keterangan').value = selectedItem ? selectedItem.keterangan : "";
+function openInventarisModal(item) {
+  document.getElementById('inv-modal-title').innerText = item ? "Edit Barang Inventaris" : "Catat Barang Inventaris";
+  document.getElementById('inv-id').value = item ? item.id_barang : "";
+  document.getElementById('inv-nama').value = item ? item.nama_barang : "";
+  document.getElementById('inv-kategori').value = item ? item.kategori : "Perlengkapan Kemah";
+  document.getElementById('inv-jumlah').value = item ? item.jumlah : "";
+  document.getElementById('inv-kondisi').value = item ? item.kondisi : "Baik";
+  document.getElementById('inv-lokasi').value = item ? item.locations_simpan : "";
+  document.getElementById('inv-tanggal').value = item ? item.tanggal_masuk : "";
+  document.getElementById('inv-keterangan').value = item ? item.keterangan : "";
   document.getElementById('modal-inventaris').style.display = 'flex';
 }
 
@@ -1180,18 +1124,36 @@ function previewAndResizeProfilePhoto(event) {
 }
 
 function actionSaveProfile() {
+  const uId = document.getElementById('prof-user-id').value;
+  const namaVal = document.getElementById('prof-nama').value.trim();
+
+  // VALIDASI SINKRONISASI NAMA (Sesuai temuan 1: Mencegah nama terhapus di Users sheet)
+  if (!namaVal) {
+    showToast("Field Nama Lengkap wajib diisi.", true);
+    return;
+  }
+
+  // Pengambilan nilai foto_profil secara aman (agar tidak merusak data jika belum ada foto)
+  let fotoProfilVal = document.getElementById('prof-preview-img').dataset.base64 || "";
+  if (!fotoProfilVal) {
+    const currentSrc = document.getElementById('prof-preview-img').getAttribute('src') || "";
+    if (currentSrc.indexOf("http") === 0) {
+      fotoProfilVal = currentSrc;
+    }
+  }
+
   const payload = {
-    user_id: document.getElementById('prof-user-id').value,
-    nta: document.getElementById('prof-nta').value,
-    nama_lengkap: document.getElementById('prof-nama').value,
-    tempat_lahir: document.getElementById('prof-tempat-lahir').value,
+    user_id: uId,
+    nta: document.getElementById('prof-nta').value.trim(),
+    nama_lengkap: namaVal,
+    tempat_lahir: document.getElementById('prof-tempat-lahir').value.trim(),
     tanggal_lahir: document.getElementById('prof-tanggal-lahir').value,
     jenis_kelamin: document.getElementById('prof-jk').value,
-    golongan: document.getElementById('prof-golongan').value,
-    regu_sangga: document.getElementById('prof-regu').value,
-    alamat: document.getElementById('prof-alamat').value,
-    no_hp: document.getElementById('prof-hp').value,
-    foto_profil: document.getElementById('prof-preview-img').dataset.base64 || document.getElementById('prof-preview-img').src
+    golongan: document.getElementById('prof-golongan').value.trim(),
+    regu_sangga: document.getElementById('prof-regu').value.trim(),
+    alamat: document.getElementById('prof-alamat').value.trim(),
+    no_hp: document.getElementById('prof-hp').value.trim(),
+    foto_profil: fotoProfilVal
   };
   setLoader(true, "Menyimpan profil...");
 
@@ -1234,10 +1196,9 @@ function loadUsers() {
   callAPI('getUserList', [sessionToken])
     .then(res => {
       if (res.success) {
-        userList = res.list; // PERBAIKAN: Simpan data ke array global
         const tbody = document.getElementById('body-users');
         tbody.innerHTML = "";
-        res.list.forEach((row, index) => {
+        res.list.forEach(row => {
           tbody.innerHTML += `
             <tr>
               <td><strong>${row.user_id}</strong></td>
@@ -1245,7 +1206,7 @@ function loadUsers() {
               <td><span class="role">${row.role}</span></td>
               <td><span class="badge badge-hadir">${row.status_aktif}</span></td>
               <td>
-                <button class="btn" style="padding:6px 10px; margin-right:5px;" onclick="openUserModal(${index})">Edit</button>
+                <button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openUserModal(${JSON.stringify(row)})'>Edit</button>
                 <button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteUser('${row.user_id}')">Hapus</button>
               </td>
             </tr>`;
@@ -1255,24 +1216,16 @@ function loadUsers() {
     .catch(err => showToast(err.message, true));
 }
 
-function openUserModal(indexOrObj) {
-  let selectedUser = null;
-  if (typeof indexOrObj === 'number') {
-    selectedUser = userList[indexOrObj];
-  } else {
-    selectedUser = indexOrObj;
-  }
-
+function openUserModal(user) {
   const idField = document.getElementById('usr-id');
-  document.getElementById('usr-id').value = selectedUser ? selectedUser.user_id : "";
-  idField.disabled = !!selectedUser; 
-  document.getElementById('usr-nama').value = selectedUser ? selectedUser.nama_lengkap : "";
+  document.getElementById('usr-id').value = user ? user.user_id : "";
+  idField.disabled = !!user; 
+  document.getElementById('usr-nama').value = user ? user.nama_lengkap : "";
   document.getElementById('usr-password').value = "";
-  document.getElementById('usr-role').value = selectedUser ? selectedUser.role : "Penggalang";
-  document.getElementById('usr-status').value = selectedUser ? selectedUser.status_aktif : "Aktif";
+  document.getElementById('usr-role').value = user ? user.role : "Penggalang";
+  document.getElementById('usr-status').value = user ? user.status_aktif : "Aktif";
   document.getElementById('modal-user').style.display = 'flex';
 }
-
 function closeUserModal() {
   document.getElementById('modal-user').style.display = 'none';
   document.getElementById('usr-id').disabled = false;
