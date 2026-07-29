@@ -269,7 +269,7 @@
       display: flex;
       align-items: center;
       gap: 15px;
-      margin-left: 50px;
+      margin-left: 50px; /* Ditambahkan agar tidak menabrak tombol menu-toggle */
     }
     .header-logo img {
       height: 45px;
@@ -310,7 +310,7 @@
       background-color: #3E2723;
       padding: 20px 0;
       color: var(--color-white);
-      transition: all 0.3s ease;
+      transition: all 0.3s ease; /* Transisi sidebar halus */
       z-index: 1000;
       overflow-x: hidden;
     }
@@ -368,11 +368,6 @@
     .app-section.active {
       display: block;
       animation: fadeIn 0.4s ease-in-out;
-    }
-    @media screen and (max-width: 768px) {
-      .app-section.active {
-        padding-top: 30px;
-      }
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -587,6 +582,7 @@
       padding: 25px;
     }
 
+    /* Tombol toggle menu hamburger responsif diletakkan permanen */
     .menu-toggle {
       display: block;
       position: fixed;
@@ -907,11 +903,6 @@
             <div class="card">
               <h2 style="font-family: var(--font-title); margin-bottom: 20px;">Catat Kehadiran Anda</h2>
               
-              <!-- PERBAIKAN: Box Status Geofencing bawaan yang dikonversi dari React TS ke Vanilla JS -->
-              <div id="geofence-status-box" style="margin-bottom: 15px; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; background-color: #FEF08A; color: #713F12; border: 1px dashed #F59E0B;">
-                ⏳ Memeriksa jangkauan GPS... Harap aktifkan lokasi perangkat Anda.
-              </div>
-
               <div class="form-group">
                 <label>Pilih Status</label>
                 <select id="absen-status" class="form-control" onchange="toggleSelfieRule()">
@@ -939,8 +930,7 @@
                 <textarea id="absen-keterangan" class="form-control" rows="2" placeholder="Tulis catatan jika izin/sakit..."></textarea>
               </div>
 
-              <!-- PERBAIKAN: Penambahan ID untuk kontrol disabled programmatik -->
-              <button class="btn btn-gold btn-full" id="btn-submit-absen" onclick="actionSubmitAbsen()">KIRIM ABSENSI</button>
+              <button class="btn btn-gold btn-full" onclick="actionSubmitAbsen()">KIRIM ABSENSI</button>
             </div>
 
             <div class="card" id="absen-camera-panel">
@@ -1280,7 +1270,7 @@
 
   <!-- MODAL POPUPS -->
   
-  <!-- MODAL KEGIATAN -->
+  <!-- MODAL KEGIATAN DENGAN CAPTURE KAMERA LINGKUNGAN / GALERI -->
   <div id="modal-kegiatan" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1306,6 +1296,7 @@
           <textarea id="keg-deskripsi" class="form-control" rows="3" required></textarea>
         </div>
         
+        <!-- OPSI FILE FOTO KREATIF -->
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
           <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 1 (Utama)</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
@@ -1322,7 +1313,7 @@
         </div>
 
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
-          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 2</label>
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 2 (Opsional)</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
               <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
@@ -1484,7 +1475,7 @@
     </div>
   </div>
 
-  <!-- MODAL AGENDA -->
+  <!-- MODAL AGENDA KEGIATAN -->
   <div id="modal-agenda" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1522,6 +1513,7 @@
     </div>
   </div>
 
+  <!-- Bypass cache versi 2.1.1 -->
   <script src="script.js?v=2.1.1"></script>
 </body>
 </html>
