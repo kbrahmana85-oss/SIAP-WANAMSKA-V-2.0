@@ -13,6 +13,12 @@ let streamRef = null;
 let base64SelfieString = "";
 let currentFacingMode = "user"; // Menyimpan status kamera ("user" untuk depan, "environment" untuk belakang)
 
+// PERBAIKAN: Penyimpanan memori array global untuk mencegah crash parsing data string di HTML inline
+let agendaList = [];
+let kegiatanList = [];
+let inventarisList = [];
+let userList = [];
+
 async function callAPI(funcName, params = []) {
   const res = await fetch(API_URL, {
     method: 'POST',
@@ -151,7 +157,6 @@ function switchSection(sectionId, elementMenu) {
   menuItems.forEach(item => item.classList.remove('active'));
   if (elementMenu) elementMenu.classList.add('active');
 
-  // Sidebar mobile auto-close saat menu navigasi ditekan
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.overlay');
   if (sidebar && overlay) {
@@ -162,14 +167,18 @@ function switchSection(sectionId, elementMenu) {
   }
 
   if (sectionId === 'section-dashboard') loadDashboard();
-  else if (sectionId === 'section-absensi') loadAbsenHistory();
+  else if (sectionId === 'section-absensi') {
+    // NOTIFIKASI AKTIFKAN LOKASI SAAT MENGGUNAKAN MODUL ABSENSI
+    showToast("⚠️ PENTING: Harap aktifkan GPS/Lokasi perangkat Anda sebelum absensi!");
+    loadAbsenHistory();
+  }
   else if (sectionId === 'section-kegiatan') loadKegiatan();
   else if (sectionId === 'section-agenda') loadAgenda();
   else if (sectionId === 'section-inventaris') loadInventaris();
   else if (sectionId === 'section-kas') loadKas();
   else if (sectionId === 'section-profile') loadProfileDiri();
   else if (sectionId === 'section-users') loadUsers();
-  else if (sectionId === 'section-exports') { /* tidak memerlukan inisialisasi */ }
+  else if (sectionId === 'section-exports') { }
   else if (sectionId === 'section-logs') loadSystemLogs();
 }
 
@@ -267,14 +276,12 @@ function actionLogout() {
 }
 
 function setupRBACUI(role) {
-  // Reset seluruh visibilitas menu sidebar
   document.getElementById('menu-inventaris').style.display = 'none';
   document.getElementById('menu-kas').style.display = 'none';
   document.getElementById('menu-users').style.display = 'none';
   document.getElementById('menu-exports').style.display = 'none';
   document.getElementById('menu-logs').style.display = 'none';
   
-  // Reset tombol tambah data global
   document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'none';
   document.getElementById('btn-tambah-agenda-trigger').style.display = 'none';
   document.getElementById('btn-tambah-kas').style.display = 'none';
@@ -285,13 +292,11 @@ function setupRBACUI(role) {
   document.getElementById('card-dash-kas').style.display = 'none';
   document.getElementById('dashboard-absen-massal-box').style.display = 'none';
   
-  // Reset box ekspor individual
   document.getElementById('export-absensi-box').style.display = 'none';
   document.getElementById('export-inventaris-box').style.display = 'none';
   document.getElementById('export-kas-box').style.display = 'none';
 
   if (role === "Admin") {
-    // ADMIN: Akses penuh
     document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     document.getElementById('menu-users').style.display = 'flex';
@@ -306,13 +311,11 @@ function setupRBACUI(role) {
     document.getElementById('card-dash-kas').style.display = 'flex';
     document.getElementById('dashboard-absen-massal-box').style.display = 'block';
     
-    // Semua sub-ekspor diizinkan
     document.getElementById('export-absensi-box').style.display = 'block';
     document.getElementById('export-inventaris-box').style.display = 'block';
     document.getElementById('export-kas-box').style.display = 'block';
     
   } else if (role === "Pembina") {
-    // PEMBINA: Akses Dashboard, Absensi, Kegiatan, Inventaris, Kas, Agenda, Profil, Export (hanya Absensi)
     document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     document.getElementById('menu-exports').style.display = 'flex';
@@ -325,13 +328,11 @@ function setupRBACUI(role) {
     document.getElementById('card-dash-kas').style.display = 'flex';
     document.getElementById('dashboard-absen-massal-box').style.display = 'block';
     
-    // STRICT: Pembina hanya bisa mengekspor laporan absensi
     document.getElementById('export-absensi-box').style.display = 'block';
     document.getElementById('export-inventaris-box').style.display = 'none';
     document.getElementById('export-kas-box').style.display = 'none';
     
   } else if (role === "Dewan Penggalang") {
-    // DEWAN PENGGALANG: Akses Dashboard, Absensi, Kegiatan, Kas, Agenda, Inventaris, Profil
     document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     
@@ -342,13 +343,7 @@ function setupRBACUI(role) {
     
     document.getElementById('card-dash-kas').style.display = 'flex';
     document.getElementById('dashboard-absen-massal-box').style.display = 'block';
-    
-    // STRICT: Dewan Penggalang tidak boleh mengakses menu eksport data sama sekali
     document.getElementById('menu-exports').style.display = 'none';
-    
-  } else if (role === "Penggalang") {
-    // PENGGALANG: Hanya Dashboard (simple), Absensi, Kegiatan (lihat), Agenda (lihat), Profil
-    // Seluruh menu admin, inventaris, kas, export, dan input massal tetap tersembunyi (none)
   }
 }
 
@@ -561,13 +556,14 @@ function showAbsenPage() {
 function kembaliKeDashboard() { showPage('dashboard-page'); }
 
 // =========================================================================
-// === MANAJEMEN MODUL AGENDA (KEGIATAN MASA DEPAN)                      ===
+// === FITUR AGENDA KEGIATAN                                             ===
 // =========================================================================
 
 function loadAgenda() {
   callAPI('getAgendaList', [sessionToken])
     .then(res => {
       if (res.success) {
+        agendaList = res.list; // PERBAIKAN: Simpan data ke array global
         const tbody = document.getElementById('body-agenda');
         tbody.innerHTML = "";
         if (res.list.length === 0) {
@@ -577,10 +573,11 @@ function loadAgenda() {
         const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
         const isAdmin = userRole === "Admin";
         
-        res.list.forEach(agd => {
+        res.list.forEach((agd, index) => {
           let actionButtons = "";
           if (isPengurus) {
-            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openAgendaModal(${JSON.stringify(agd)})'>Edit</button>`;
+            // PERBAIKAN: Oper indeks array, bukan JSON stringify
+            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick="openAgendaModal(${index})">Edit</button>`;
           }
           if (isAdmin) {
             actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteAgenda('${agd.id_agenda}')">Hapus</button>`;
@@ -612,15 +609,22 @@ function loadAgenda() {
     .catch(err => showToast(err.message, true));
 }
 
-function openAgendaModal(agd) {
-  document.getElementById('agenda-modal-title').innerText = agd ? "Form Edit Agenda" : "Form Tambah Agenda";
-  document.getElementById('agd-id').value = agd ? agd.id_agenda : "";
-  document.getElementById('agd-kegiatan').value = agd ? agd.kegiatan : "";
-  document.getElementById('agd-jenis').value = agd ? agd.jenis_kegiatan : "";
-  document.getElementById('agd-tanggal').value = agd ? agd.tanggal_pelaksanaan : "";
-  document.getElementById('agd-waktu').value = agd ? agd.waktu : "";
-  document.getElementById('agd-pj').value = agd ? agd.penanggung_jawab : "";
-  document.getElementById('agd-keterangan').value = agd ? agd.keterangan : "";
+function openAgendaModal(indexOrObj) {
+  let selectedAgd = null;
+  if (typeof indexOrObj === 'number') {
+    selectedAgd = agendaList[indexOrObj];
+  } else {
+    selectedAgd = indexOrObj;
+  }
+  
+  document.getElementById('agenda-modal-title').innerText = selectedAgd ? "Form Edit Agenda" : "Form Tambah Agenda";
+  document.getElementById('agd-id').value = selectedAgd ? selectedAgd.id_agenda : "";
+  document.getElementById('agd-kegiatan').value = selectedAgd ? selectedAgd.kegiatan : "";
+  document.getElementById('agd-jenis').value = selectedAgd ? selectedAgd.jenis_kegiatan : "";
+  document.getElementById('agd-tanggal').value = selectedAgd ? selectedAgd.tanggal_pelaksanaan : "";
+  document.getElementById('agd-waktu').value = selectedAgd ? selectedAgd.waktu : "";
+  document.getElementById('agd-pj').value = selectedAgd ? selectedAgd.penanggung_jawab : "";
+  document.getElementById('agd-keterangan').value = selectedAgd ? selectedAgd.keterangan : "";
   document.getElementById('modal-agenda').style.display = 'flex';
 }
 
@@ -677,13 +681,14 @@ function loadKegiatan() {
   callAPI('getKegiatanList', [sessionToken])
     .then(res => {
       if (res.success) {
+        kegiatanList = res.list; // PERBAIKAN: Simpan data ke array global
         const grid = document.getElementById('grid-list-kegiatan');
         grid.innerHTML = "";
         if (res.list.length === 0) {
           grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--color-text-muted);">Belum ada dokumentasi kegiatan.</p>`;
           return;
         }
-        res.list.forEach(keg => {
+        res.list.forEach((keg, index) => {
           const defaultImg = "https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png";
           
           const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
@@ -691,7 +696,8 @@ function loadKegiatan() {
           
           let actionButtons = "";
           if (isPengurus) {
-            actionButtons += `<button class="btn" style="flex:1; padding:6px;" onclick='openKegiatanModal(${JSON.stringify(keg)})'>Edit</button>`;
+            // PERBAIKAN: Oper indeks array, bukan JSON stringify
+            actionButtons += `<button class="btn" style="flex:1; padding:6px;" onclick="openKegiatanModal(${index})">Edit</button>`;
           }
           if (isAdmin) {
             actionButtons += `<button class="btn btn-danger" style="flex:1; padding:6px;" onclick="actionDeleteKegiatan('${keg.id_kegiatan}')">Hapus</button>`;
@@ -717,16 +723,23 @@ function loadKegiatan() {
     .catch(err => showToast(err.message, true));
 }
 
-function openKegiatanModal(keg) {
-  document.getElementById('kegiatan-modal-title').innerText = keg ? "Form Edit Dokumentasi" : "Form Tambah Dokumentasi";
-  document.getElementById('keg-id').value = keg ? keg.id_kegiatan : "";
-  document.getElementById('keg-nama').value = keg ? keg.nama_kegiatan : "";
-  document.getElementById('keg-tanggal').value = keg ? keg.tanggal : "";
-  document.getElementById('keg-lokasi').value = keg ? keg.lokasi : "";
-  document.getElementById('keg-deskripsi').value = keg ? keg.deskripsi : "";
-  document.getElementById('keg-foto-1-base64').value = keg ? (keg.foto1 || "") : "";
-  document.getElementById('keg-foto-2-base64').value = keg ? (keg.foto2 || "") : "";
-  document.getElementById('keg-foto-3-base64').value = keg ? (keg.foto3 || "") : "";
+function openKegiatanModal(indexOrObj) {
+  let selectedKeg = null;
+  if (typeof indexOrObj === 'number') {
+    selectedKeg = kegiatanList[indexOrObj];
+  } else {
+    selectedKeg = indexOrObj;
+  }
+
+  document.getElementById('kegiatan-modal-title').innerText = selectedKeg ? "Form Edit Dokumentasi" : "Form Tambah Dokumentasi";
+  document.getElementById('keg-id').value = selectedKeg ? selectedKeg.id_kegiatan : "";
+  document.getElementById('keg-nama').value = selectedKeg ? selectedKeg.nama_kegiatan : "";
+  document.getElementById('keg-tanggal').value = selectedKeg ? selectedKeg.tanggal : "";
+  document.getElementById('keg-lokasi').value = selectedKeg ? selectedKeg.lokasi : "";
+  document.getElementById('keg-deskripsi').value = selectedKeg ? selectedKeg.deskripsi : "";
+  document.getElementById('keg-foto-1-base64').value = selectedKeg ? (selectedKeg.foto1 || "") : "";
+  document.getElementById('keg-foto-2-base64').value = selectedKeg ? (selectedKeg.foto2 || "") : "";
+  document.getElementById('keg-foto-3-base64').value = selectedKeg ? (selectedKeg.foto3 || "") : "";
   document.getElementById('modal-kegiatan').style.display = 'flex';
 }
 
@@ -800,7 +813,7 @@ function actionSaveKegiatan() {
       closeKegiatanModal();
       loadKegiatan();
     })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
+    .catch(err => { setLoader(false); showToast(err.toString(), true); });
 }
 
 function actionDeleteKegiatan(idKegiatan) {
@@ -814,19 +827,21 @@ function loadInventaris() {
   callAPI('getInventarisList', [sessionToken])
     .then(res => {
       if (res.success) {
+        inventarisList = res.list; // PERBAIKAN: Simpan data ke array global
         const tbody = document.getElementById('body-inventaris');
         tbody.innerHTML = "";
         if (res.list.length === 0) {
           tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada inventaris tercatat.</td></tr>`;
           return;
         }
-        res.list.forEach(row => {
+        res.list.forEach((row, index) => {
           const isPengurus = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
           const isAdmin = userRole === "Admin";
           
           let actionButtons = "";
           if (isPengurus) {
-            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openInventarisModal(${JSON.stringify(row)})'>Edit</button>`;
+            // PERBAIKAN: Oper indeks array, bukan JSON stringify
+            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick="openInventarisModal(${index})">Edit</button>`;
           }
           if (isAdmin) {
             actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteInventaris('${row.id_barang}')">Hapus</button>`;
@@ -848,16 +863,23 @@ function loadInventaris() {
     .catch(err => showToast(err.message, true));
 }
 
-function openInventarisModal(item) {
-  document.getElementById('inv-modal-title').innerText = item ? "Edit Barang Inventaris" : "Catat Barang Inventaris";
-  document.getElementById('inv-id').value = item ? item.id_barang : "";
-  document.getElementById('inv-nama').value = item ? item.nama_barang : "";
-  document.getElementById('inv-kategori').value = item ? item.kategori : "Perlengkapan Kemah";
-  document.getElementById('inv-jumlah').value = item ? item.jumlah : "";
-  document.getElementById('inv-kondisi').value = item ? item.kondisi : "Baik";
-  document.getElementById('inv-lokasi').value = item ? item.locations_simpan : "";
-  document.getElementById('inv-tanggal').value = item ? item.tanggal_masuk : "";
-  document.getElementById('inv-keterangan').value = item ? item.keterangan : "";
+function openInventarisModal(indexOrObj) {
+  let selectedItem = null;
+  if (typeof indexOrObj === 'number') {
+    selectedItem = inventarisList[indexOrObj];
+  } else {
+    selectedItem = indexOrObj;
+  }
+
+  document.getElementById('inv-modal-title').innerText = selectedItem ? "Edit Barang Inventaris" : "Catat Barang Inventaris";
+  document.getElementById('inv-id').value = selectedItem ? selectedItem.id_barang : "";
+  document.getElementById('inv-nama').value = selectedItem ? selectedItem.nama_barang : "";
+  document.getElementById('inv-kategori').value = selectedItem ? selectedItem.kategori : "Perlengkapan Kemah";
+  document.getElementById('inv-jumlah').value = selectedItem ? selectedItem.jumlah : "";
+  document.getElementById('inv-kondisi').value = selectedItem ? selectedItem.kondisi : "Baik";
+  document.getElementById('inv-lokasi').value = selectedItem ? selectedItem.locations_simpan : "";
+  document.getElementById('inv-tanggal').value = selectedItem ? selectedItem.tanggal_masuk : "";
+  document.getElementById('inv-keterangan').value = selectedItem ? selectedItem.keterangan : "";
   document.getElementById('modal-inventaris').style.display = 'flex';
 }
 
@@ -1099,9 +1121,10 @@ function loadUsers() {
   callAPI('getUserList', [sessionToken])
     .then(res => {
       if (res.success) {
+        userList = res.list; // PERBAIKAN: Simpan data ke array global
         const tbody = document.getElementById('body-users');
         tbody.innerHTML = "";
-        res.list.forEach(row => {
+        res.list.forEach((row, index) => {
           tbody.innerHTML += `
             <tr>
               <td><strong>${row.user_id}</strong></td>
@@ -1109,7 +1132,7 @@ function loadUsers() {
               <td><span class="role">${row.role}</span></td>
               <td><span class="badge badge-hadir">${row.status_aktif}</span></td>
               <td>
-                <button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openUserModal(${JSON.stringify(row)})'>Edit</button>
+                <button class="btn" style="padding:6px 10px; margin-right:5px;" onclick="openUserModal(${index})">Edit</button>
                 <button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteUser('${row.user_id}')">Hapus</button>
               </td>
             </tr>`;
@@ -1119,16 +1142,24 @@ function loadUsers() {
     .catch(err => showToast(err.message, true));
 }
 
-function openUserModal(user) {
+function openUserModal(indexOrObj) {
+  let selectedUser = null;
+  if (typeof indexOrObj === 'number') {
+    selectedUser = userList[indexOrObj];
+  } else {
+    selectedUser = indexOrObj;
+  }
+
   const idField = document.getElementById('usr-id');
-  document.getElementById('usr-id').value = user ? user.user_id : "";
-  idField.disabled = !!user; 
-  document.getElementById('usr-nama').value = user ? user.nama_lengkap : "";
+  document.getElementById('usr-id').value = selectedUser ? selectedUser.user_id : "";
+  idField.disabled = !!selectedUser; 
+  document.getElementById('usr-nama').value = selectedUser ? selectedUser.nama_lengkap : "";
   document.getElementById('usr-password').value = "";
-  document.getElementById('usr-role').value = user ? user.role : "Penggalang";
-  document.getElementById('usr-status').value = user ? user.status_aktif : "Aktif";
+  document.getElementById('usr-role').value = selectedUser ? selectedUser.role : "Penggalang";
+  document.getElementById('usr-status').value = selectedUser ? selectedUser.status_aktif : "Aktif";
   document.getElementById('modal-user').style.display = 'flex';
 }
+
 function closeUserModal() {
   document.getElementById('modal-user').style.display = 'none';
   document.getElementById('usr-id').disabled = false;
