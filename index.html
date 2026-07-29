@@ -369,6 +369,11 @@
       display: block;
       animation: fadeIn 0.4s ease-in-out;
     }
+    @media screen and (max-width: 768px) {
+      .app-section.active {
+        padding-top: 30px;
+      }
+    }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
