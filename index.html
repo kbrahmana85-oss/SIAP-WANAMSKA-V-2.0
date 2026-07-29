@@ -269,7 +269,7 @@
       display: flex;
       align-items: center;
       gap: 15px;
-      margin-left: 50px; /* Ditambahkan agar tidak menabrak tombol menu-toggle */
+      margin-left: 50px;
     }
     .header-logo img {
       height: 45px;
@@ -310,7 +310,7 @@
       background-color: #3E2723;
       padding: 20px 0;
       color: var(--color-white);
-      transition: all 0.3s ease; /* Transisi sidebar halus */
+      transition: all 0.3s ease;
       z-index: 1000;
       overflow-x: hidden;
     }
@@ -582,7 +582,6 @@
       padding: 25px;
     }
 
-    /* Tombol toggle menu hamburger responsif diletakkan permanen */
     .menu-toggle {
       display: block;
       position: fixed;
@@ -1270,7 +1269,7 @@
 
   <!-- MODAL POPUPS -->
   
-  <!-- MODAL KEGIATAN DENGAN CAPTURE KAMERA LINGKUNGAN / GALERI -->
+  <!-- MODAL KEGIATAN -->
   <div id="modal-kegiatan" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1296,7 +1295,6 @@
           <textarea id="keg-deskripsi" class="form-control" rows="3" required></textarea>
         </div>
         
-        <!-- OPSI FILE FOTO KREATIF -->
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
           <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 1 (Utama)</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
@@ -1475,7 +1473,7 @@
     </div>
   </div>
 
-  <!-- MODAL AGENDA KEGIATAN -->
+  <!-- MODAL AGENDA -->
   <div id="modal-agenda" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1513,7 +1511,6 @@
     </div>
   </div>
 
-  <!-- Bypass cache versi 2.1.1 -->
   <script src="script.js?v=2.1.1"></script>
 </body>
 </html>
