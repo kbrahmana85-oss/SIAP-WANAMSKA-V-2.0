@@ -1,5 +1,5 @@
 // GANTI dengan URL Web App Apps Script Anda
-const API_URL = "https://script.google.com/macros/s/AKfycbzRXelEqb1hPAJ33dm5QOfHCR6HUAJdu0n8-HgvmuFG-Ow30FJQnoADLsJ8x4-8JN1WjQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbygHrGIdmLBhPLpJbQBfVdDxsyD2bFIpEUVpFVC1w_UXrxCpkh8nmoZiE2gNFFCr8QkRQ/exec";
 
 // VERSI APLIKASI UNTUK RESET CORRUPT PWA CACHE (Diperbarui ke 2.3.0)
 const APP_VERSION = "2.3.0"; 
