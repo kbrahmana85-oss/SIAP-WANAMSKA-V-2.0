@@ -1,5 +1,5 @@
 // GANTI dengan URL Web App Apps Script Anda
-const API_URL = "https://script.google.com/macros/s/AKfycbygHrGIdmLBhPLpJbQBfVdDxsyD2bFIpEUVpFVC1w_UXrxCpkh8nmoZiE2gNFFCr8QkRQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxfXAEmq2b4E0UzJDMNmRCnxeqSCAIB7imJtdwjw7DBiG3Om2bWFj6hKd78HGYRLEqTcw/exec";
 
 // VERSI APLIKASI UNTUK RESET CORRUPT PWA CACHE (Diperbarui ke 2.3.0)
 const APP_VERSION = "2.3.0"; 
@@ -79,6 +79,23 @@ document.addEventListener('DOMContentLoaded', function () {
   initLiveTimer();
   initCreativeCalendar();
 });
+
+// =========================================================================
+// === FITUR TAMPILKAN PASSWORD (TOGGLE PASSWORD)                        ===
+// =========================================================================
+function togglePassword() {
+  const passwordInput = document.getElementById('password');
+  const eyeIcon = document.getElementById('eyeIcon');
+  if (passwordInput && eyeIcon) {
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      eyeIcon.innerText = '🙈';
+    } else {
+      passwordInput.type = 'password';
+      eyeIcon.innerText = '👁️';
+    }
+  }
+}
 
 // =========================================================================
 // === MANAJEMEN GEOFENCING & GPS LOCK SEBELUM LOGIN                     ===
