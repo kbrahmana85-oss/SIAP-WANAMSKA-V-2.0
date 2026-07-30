@@ -129,7 +129,7 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      z-index: 9999;
+      z-index: 10005;
     }
     .toast {
       background-color: var(--color-primary-brown);
@@ -297,24 +297,6 @@
       color: var(--color-text-dark);
       padding: 2px 8px;
       border-radius: 20px;
-      font-weight: bold;
-    }
-
-    /* Notif Bell */
-    .notif-bell-container {
-      position: relative;
-      cursor: pointer;
-      margin-right: 10px;
-    }
-    .notif-bell-container .badge-count {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      background-color: var(--color-danger-red);
-      color: white;
-      border-radius: 50%;
-      padding: 2px 6px;
-      font-size: 0.65rem;
       font-weight: bold;
     }
 
@@ -600,7 +582,6 @@
       padding: 25px;
     }
 
-    /* Tombol toggle menu hamburger responsif diletakkan permanen */
     .menu-toggle {
       display: block;
       position: fixed;
@@ -716,65 +697,107 @@
       object-fit: cover;
     }
 
-    /* Location Force Overlay */
-    #location-lock-overlay {
+    /* GEOFENCING GPS BLOCKING SCREEN */
+    #gps-blocking-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(43, 24, 16, 0.96);
-      z-index: 10001;
+      background: radial-gradient(circle, #3E2723 0%, #1A0C00 100%);
+      z-index: 20000;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
       align-items: center;
-      color: #FFF;
+      justify-content: center;
+      padding: 25px;
       text-align: center;
-      padding: 24px;
+      color: white;
+      flex-direction: column;
+      font-family: 'Poppins', sans-serif;
     }
-    .lock-box {
-      background-color: #3E2723;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      border: 3px solid var(--color-accent-gold);
-      max-width: 420px;
+    .gps-lock-card {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border-radius: var(--rounded-box);
+      padding: 35px 25px;
+      max-width: 450px;
       width: 100%;
+      box-shadow: var(--shadow-bold);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-top: 6px solid var(--color-accent-gold);
     }
 
-    /* Notif Item */
+    /* CSS NOTIFIKASI LONCENG */
+    #btn-lonceng {
+      position: relative;
+      cursor: pointer;
+      margin-right: 25px;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+    #btn-lonceng:hover {
+      transform: scale(1.15);
+    }
+    #lonceng-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background-color: var(--color-danger-red);
+      color: white;
+      border-radius: 50%;
+      width: 10px;
+      height: 10px;
+      display: none;
+    }
     .notif-item {
       padding: 12px;
-      border-bottom: 1.5px solid var(--color-light-brown);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      border-radius: var(--rounded-btn);
+      background-color: var(--color-white);
+      border-left: 5px solid var(--color-accent-gold);
+      box-shadow: var(--shadow-soft);
+      transition: transform 0.2s;
     }
-    .notif-item:last-child {
-      border-bottom: none;
+    .notif-item:hover {
+      transform: translateY(-2px);
     }
-    .notif-item .notif-text {
-      font-size: 0.9rem;
-      color: var(--color-text-dark);
+    .notif-item.absensi {
+      border-left-color: #03543F;
     }
-    .notif-item .notif-meta {
+    .notif-item .notif-time {
       font-size: 0.75rem;
       color: var(--color-text-muted);
-      text-align: right;
+      margin-bottom: 4px;
+    }
+    .notif-item .notif-title {
+      font-weight: bold;
+      color: var(--color-text-dark);
+      font-size: 0.9rem;
+    }
+    .notif-item .notif-detail {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+
+    /* CARD TIMELINE PRIBADI */
+    .timeline-pribadi-item {
+      padding: 15px;
+      background: #FFFFFF;
+      border-radius: var(--rounded-btn);
+      border-left: 5px solid var(--color-primary-brown);
+      box-shadow: var(--shadow-soft);
     }
   </style>
 </head>
 <body>
 
-  <!-- GEOLOCATION REQUIREMENT LOCK OVERLAY -->
-  <div id="location-lock-overlay">
-    <div class="lock-box">
-      <span style="font-size: 4rem;">📍</span>
-      <h2 style="font-family: var(--font-title); color: var(--color-accent-gold); margin-top: 15px; font-weight: 700;">IZIN LOKASI WAJIB</h2>
-      <p style="margin-top: 12px; font-size: 0.95rem; line-height: 1.6; color: #FFF8F0;">
-        Aplikasi <strong>SIAP WANAMSKA</strong> memerlukan akses lokasi (GPS) yang aktif untuk melakukan verifikasi wilayah presensi dan memblokir penggunaan Fake GPS sebelum Anda dapat masuk ke dalam portal.
-      </p>
-      <button class="btn btn-gold btn-full" onclick="requestForceLocation()" style="margin-top: 25px; padding: 12px; font-weight: bold; font-size: 1rem;">
-        AKTIFKAN LOKASI SEKARANG
-      </button>
+  <!-- GPS LOCK OVERLAY (GEOFENCING ENFORCEMENT) -->
+  <div id="gps-blocking-overlay">
+    <div class="gps-lock-card">
+      <span style="font-size: 4rem; display: block; margin-bottom: 20px; animation: pulse 2s infinite;">📡</span>
+      <h2 style="font-family: var(--font-title); margin-bottom: 12px; color: var(--color-accent-gold); letter-spacing: 1px;">SISTEM LOKASI WAJIB</h2>
+      <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; color: #E0D4C5;">SIAP WANAMSKA memerlukan verifikasi GPS aktif demi keamanan integrasi data absensi Anda dari manipulasi lokasi (Fake GPS). Silakan izinkan akses lokasi GPS browser Anda.</p>
+      <button class="btn btn-gold btn-full" onclick="requestGPSPermission()" style="padding: 14px; font-size: 1rem; border-radius: var(--rounded-btn); font-weight: bold; border: none; letter-spacing: 0.5px;">AKTIFKAN AKSES LOKASI</button>
     </div>
   </div>
 
@@ -829,10 +852,10 @@
         </div>
       </div>
       <div class="header-user">
-        <!-- ICON LONCENG NOTIFIKASI PORTAL -->
-        <div class="notif-bell-container" onclick="openNotificationsModal()">
-          <span style="font-size: 1.8rem;">🔔</span>
-          <span class="badge-count" id="notif-badge" style="display: none;">0</span>
+        <!-- ICON LONCENG NOTIFIKASI -->
+        <div id="btn-lonceng" onclick="openNotifikasiModal()">
+          🔔
+          <span id="lonceng-badge"></span>
         </div>
         <div class="info">
           <p style="font-weight: bold;" id="user-display-name">-</p>
@@ -1031,13 +1054,12 @@
             </div>
           </div>
 
-          <!-- RIWAYAT ABSENSI GLOBAL (HANYA UNTUK USER ADMIN) -->
-          <div class="card" id="card-riwayat-global" style="display: none; margin-top: 30px;">
+          <!-- RIWAYAT GLOBAL: KHUSUS TAMPIL PADA ADMIN -->
+          <div class="card" style="margin-top: 30px; display: none;" id="card-riwayat-absen-global">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-              <h2 style="font-family: var(--font-title);">Riwayat Absensi Global</h2>
+              <h2 style="font-family: var(--font-title);">Riwayat Absensi Global (Admin Only)</h2>
               <input type="date" id="filter-absen-date" class="form-control" style="width: 200px;" onchange="loadAbsenHistory()">
             </div>
-            
             <div class="table-responsive">
               <table id="table-riwayat-absen">
                 <thead>
@@ -1057,23 +1079,11 @@
             </div>
           </div>
 
-          <!-- NOTIFIKASI RIWAYAT PRIBADI (UNTUK PEMBINA, DEWAN PENGGALANG & PENGGALANG) -->
-          <div class="card" id="card-riwayat-pribadi" style="display: none; margin-top: 30px;">
-            <h2 style="font-family: var(--font-title); margin-bottom: 15px;">Riwayat Kehadiran Pribadi</h2>
-            <div class="table-responsive">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Waktu / Jam</th>
-                    <th>Status</th>
-                    <th>Metode Absen</th>
-                    <th>Kode Kegiatan / Catatan</th>
-                  </tr>
-                </thead>
-                <tbody id="body-riwayat-pribadi">
-                  <tr><td colspan="4" style="text-align:center;">Belum ada riwayat kehadiran pribadi.</td></tr>
-                </tbody>
-              </table>
+          <!-- RIWAYAT PRIBADI: UNTUK PEMBINA, DEWAN PENGGALANG, DAN PENGGALANG -->
+          <div class="card" style="margin-top: 30px; display: none;" id="card-riwayat-absen-pribadi">
+            <h2 style="font-family: var(--font-title); margin-bottom: 15px;">Riwayat Absensi Pribadi Saya</h2>
+            <div id="body-riwayat-absen-pribadi" style="display: flex; flex-direction: column; gap: 15px;">
+              <p style="text-align: center; color: var(--color-text-muted);">Memuat riwayat pribadi...</p>
             </div>
           </div>
         </section>
@@ -1081,7 +1091,7 @@
         <!-- SECTION 4: DOKUMENTASI KEGIATAN -->
         <section id="section-kegiatan" class="app-section">
           <div class="section-header">
-            <h1>Agenda Kegiatan</h1>
+            <h1>Dokumentasi Kegiatan</h1>
             <button class="btn btn-gold" id="btn-tambah-kegiatan-trigger" onclick="openKegiatanModal()">+ Tambah Kegiatan</button>
           </div>
           <div class="kegiatan-grid" id="grid-list-kegiatan"></div>
@@ -1399,9 +1409,9 @@
           <textarea id="keg-deskripsi" class="form-control" rows="3" required></textarea>
         </div>
         
-        <!-- OPSI FILE FOTO KREATIF (UKURAN HINGGA 10 MB) -->
+        <!-- OPSI FILE FOTO KREATIF -->
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
-          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 1 (Utama) - Maksimal 10 MB</label>
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 1 (Utama)</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
               <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
@@ -1416,7 +1426,7 @@
         </div>
 
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
-          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 2 (Opsional) - Maksimal 10 MB</label>
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 2</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
               <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
@@ -1431,7 +1441,7 @@
         </div>
 
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
-          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 3 (Opsional) - Maksimal 10 MB</label>
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 3 (Opsional)</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
               <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
@@ -1616,20 +1626,20 @@
     </div>
   </div>
 
-  <!-- MODAL POPUP NOTIFIKASI LONCENG PORTAL -->
-  <div id="modal-notifications" class="modal-overlay" style="z-index: 10002;">
-    <div class="modal-box" style="max-width: 450px;">
+  <!-- MODAL NOTIFIKASI LONCENG -->
+  <div id="modal-notifikasi" class="modal-overlay">
+    <div class="modal-box" style="max-width: 500px;">
       <div class="modal-header">
-        <h3 style="display: flex; align-items: center; gap: 8px;">🔔 Notifikasi Portal Terbaru</h3>
-        <span class="modal-close" onclick="closeNotificationsModal()">&times;</span>
+        <h3 style="font-family: var(--font-title);"><span class="icon">&#128276;</span> Live Update Pembaruan</h3>
+        <span class="modal-close" onclick="closeNotifikasiModal()">&times;</span>
       </div>
-      <div class="modal-body" id="notifications-list" style="max-height: 400px; overflow-y: auto; padding: 5px;">
-        <p style="text-align: center; color: var(--color-text-muted); padding: 15px;">Memuat notifikasi...</p>
+      <div class="modal-body" id="body-notifikasi" style="max-height: 450px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+        <p style="text-align: center; color: var(--color-text-muted);">Memuat informasi baru...</p>
       </div>
     </div>
   </div>
 
-  <!-- Bypass cache versi 2.1.1 -->
-  <script src="script.js?v=2.1.1"></script>
+  <!-- Bypass cache versi 2.2.0 -->
+  <script src="script.js?v=2.2.0"></script>
 </body>
 </html>
