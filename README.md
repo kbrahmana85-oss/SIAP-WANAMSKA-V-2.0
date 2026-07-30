@@ -1,7 +1,7 @@
 
-# SIAP WANAMSKA V-2.0 🏕️
+# SIAP WANAMSKA V-2.3 🏕️
 
-**Sistem Informasi Administrasi Pangkalan Wanamaskha V-2.0**  
+**Sistem Informasi Administrasi Pangkalan Wanamaskha V-2.3**  
 Aplikasi PWA untuk manajemen data anggota Pramuka Pangkalan.
 
 ### **FITUR**
