@@ -1,6 +1,6 @@
 {
-  "name": "SIAP WANAMSKA V-2.0",
-  "short_name": "WANAMSKA",
+  "name": "SIAP WANAMSKA V-2.3",
+  "short_name": "SIAP WANAMSKA",
   "description": "Sistem Informasi & Absensi Penggalang Wanamska",
   "start_url": "/",
   "display": "standalone",
