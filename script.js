@@ -530,6 +530,61 @@ function loadDashboard() {
 }
 
 // =========================================================================
+// === KAMERA (SELFIE ABSENSI)                                           ===
+// =========================================================================
+function startCamera() {
+  const video = document.getElementById('camera-video');
+  if (!video) return;
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: currentFacingMode }
+  })
+  .then(stream => {
+    streamRef = stream;
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('selfie-canvas-preview').style.display = 'none';
+    showToast("Kamera diaktifkan.");
+  })
+  .catch(err => {
+    showToast("Gagal mengakses kamera: " + err.message, true);
+  });
+}
+
+function stopCamera() {
+  if (streamRef) {
+    streamRef.getTracks().forEach(track => track.stop());
+    streamRef = null;
+  }
+}
+
+function flipCamera() {
+  currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+  stopCamera();
+  startCamera();
+}
+
+function captureSnapshot() {
+  const video = document.getElementById('camera-video');
+  const preview = document.getElementById('selfie-canvas-preview');
+  if (!video || !video.srcObject) {
+    showToast("Kamera belum aktif!", true);
+    return;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  base64SelfieString = canvas.toDataURL('image/jpeg', 0.85);
+  
+  preview.src = base64SelfieString;
+  preview.style.display = 'block';
+  video.style.display = 'none';
+  stopCamera();
+  showToast("Foto selfie berhasil diambil.");
+}
+
+// =========================================================================
 // === ABSENSI & GEOFENCING VALIDASI                                    ===
 // =========================================================================
 function actionSubmitAbsen() {
@@ -579,14 +634,14 @@ function sendAbsenRequest(status, fotoSelfie, metode, kegiatanTerkait, keteranga
     .then(res => {
       setLoader(false);
       if (res.success) {
-        showToast(res.message); // Menampilkan "Absensi Berhasil"
+        showToast(res.message);
         stopCamera();
         document.getElementById('absen-kegiatan-id').value = "";
         document.getElementById('absen-keterangan').value = "";
         loadAbsenHistory();
         loadNotifications(false);
       } else {
-        showToast(res.message, true); // Menampilkan "Absensi Ditolak: ..."
+        showToast(res.message, true);
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
@@ -652,7 +707,7 @@ function loadAbsenHistory() {
 }
 
 // =========================================================================
-// === AGENDA KEGIATAN                                                   ===
+// === AGENDA KEGIATAN & RESPONSIVE EDIT AGENDA                            ===
 // =========================================================================
 function loadAgenda() {
   callAPI('getAgendaList', [sessionToken])
@@ -690,6 +745,73 @@ function loadAgenda() {
       }
     })
     .catch(err => showToast(err.message, true));
+}
+
+function openAgendaModal(agd) {
+  if (agd && agd.id_agenda) {
+    document.getElementById('agenda-modal-title').innerText = "Edit Agenda Kegiatan";
+    document.getElementById('agd-id').value = agd.id_agenda;
+    document.getElementById('agd-kegiatan').value = agd.kegiatan || "";
+    document.getElementById('agd-jenis').value = agd.jenis_kegiatan || "";
+    document.getElementById('agd-tanggal').value = agd.tanggal_pelaksanaan || "";
+    document.getElementById('agd-waktu').value = agd.waktu || "";
+    document.getElementById('agd-pj').value = agd.penanggung_jawab || "";
+    document.getElementById('agd-keterangan').value = agd.keterangan || "";
+  } else {
+    document.getElementById('agenda-modal-title').innerText = "Form Tambah Agenda";
+    document.getElementById('agd-id').value = "";
+    document.getElementById('agd-kegiatan').value = "";
+    document.getElementById('agd-jenis').value = "";
+    document.getElementById('agd-tanggal').value = new Date().toISOString().substring(0, 10);
+    document.getElementById('agd-waktu').value = "";
+    document.getElementById('agd-pj').value = "";
+    document.getElementById('agd-keterangan').value = "";
+  }
+  document.getElementById('modal-agenda').style.display = 'flex';
+}
+
+function closeAgendaModal() {
+  document.getElementById('modal-agenda').style.display = 'none';
+}
+
+function actionSaveAgenda() {
+  const payload = {
+    id_agenda: document.getElementById('agd-id').value,
+    kegiatan: document.getElementById('agd-kegiatan').value,
+    jenis_kegiatan: document.getElementById('agd-jenis').value,
+    tanggal_pelaksanaan: document.getElementById('agd-tanggal').value,
+    waktu: document.getElementById('agd-waktu').value,
+    penanggung_jawab: document.getElementById('agd-pj').value,
+    keterangan: document.getElementById('agd-keterangan').value
+  };
+
+  if (!payload.kegiatan || !payload.jenis_kegiatan || !payload.tanggal_pelaksanaan || !payload.waktu || !payload.penanggung_jawab) {
+    showToast("Semua field agenda wajib diisi!", true);
+    return;
+  }
+
+  setLoader(true, "Menyimpan agenda...");
+  callAPI('saveAgenda', [sessionToken, payload])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message);
+      closeAgendaModal();
+      loadAgenda();
+      loadNotifications(false);
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function actionDeleteAgenda(idAgenda) {
+  if (!confirm("Apakah Anda yakin ingin menghapus agenda ini?")) return;
+  setLoader(true, "Menghapus agenda...");
+  callAPI('deleteAgenda', [sessionToken, idAgenda])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message);
+      loadAgenda();
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
 // =========================================================================
@@ -767,7 +889,7 @@ function loadKegiatan() {
 }
 
 function openKegiatanModal() {
-  document.getElementById('keg-modal-title').innerText = "Form Tambah Dokumentasi Kegiatan";
+  document.getElementById('kegiatan-modal-title').innerText = "Form Tambah Dokumentasi Kegiatan";
   document.getElementById('keg-id').value = "";
   document.getElementById('keg-nama').value = "";
   document.getElementById('keg-tanggal').value = new Date().toISOString().substring(0, 10);
@@ -1045,7 +1167,3 @@ function triggerExport(jenis, format) {
       showToast(err.message, true);
     });
 }
-
-function openAgendaModal() { document.getElementById('modal-agenda').style.display = 'flex'; }
-function closeAgendaModal() { document.getElementById('modal-agenda').style.display = 'none'; }
-function actionSaveAgenda() { closeAgendaModal(); showToast("Agenda disimpan."); }
