@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght=400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
     :root {
       --color-primary: #6F4E37;
@@ -83,27 +83,6 @@
       font-size: 18px; 
       cursor: pointer;
       user-select: none;
-    }
-
-    .developer {
-      margin-top: 25px;
-      border-top: 1px solid #E0E0E0;
-      padding-top: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .logo {
-      width: 80px;
-      height: auto;
-    }
-    .developer-photo {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--color-accent);
     }
 
     .dev {
@@ -482,7 +461,6 @@
       height: 100%;
       object-fit: cover;
     }
-    
     #selfie-canvas-preview {
       display: none;
       width: 100%;
@@ -490,7 +468,6 @@
       object-fit: contain;
       border-radius: var(--rounded-box);
     }
-    
     .camera-controls {
       display: flex;
       gap: 10px;
@@ -697,7 +674,7 @@
       object-fit: cover;
     }
 
-    /* GEOFENCING GPS BLOCKING SCREEN */
+    /* GPS BLOCKING OVERLAY */
     #gps-blocking-overlay {
       position: fixed;
       inset: 0;
@@ -779,7 +756,6 @@
       margin-top: 2px;
     }
 
-    /* CARD TIMELINE PRIBADI */
     .timeline-pribadi-item {
       padding: 15px;
       background: #FFFFFF;
@@ -791,12 +767,12 @@
 </head>
 <body>
 
-  <!-- GPS LOCK OVERLAY (GEOFENCING ENFORCEMENT) -->
+  <!-- GPS LOCK OVERLAY (GEOFENCING & LOCATION MANDATORY BEFORE LOGIN) -->
   <div id="gps-blocking-overlay">
     <div class="gps-lock-card">
       <span style="font-size: 4rem; display: block; margin-bottom: 20px; animation: pulse 2s infinite;">📡</span>
       <h2 style="font-family: var(--font-title); margin-bottom: 12px; color: var(--color-accent-gold); letter-spacing: 1px;">SISTEM LOKASI WAJIB</h2>
-      <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; color: #E0D4C5;">SIAP WANAMSKA memerlukan verifikasi GPS aktif demi keamanan integrasi data absensi Anda dari manipulasi lokasi (Fake GPS). Silakan izinkan akses lokasi GPS browser Anda.</p>
+      <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; color: #E0D4C5;">SIAP WANAMSKA memerlukan verifikasi GPS aktif demi keamanan integrasi data absensi dari manipulasi lokasi (Fake GPS). Silakan izinkan akses lokasi GPS Anda.</p>
       <button class="btn btn-gold btn-full" onclick="requestGPSPermission()" style="padding: 14px; font-size: 1rem; border-radius: var(--rounded-btn); font-weight: bold; border: none; letter-spacing: 0.5px;">AKTIFKAN AKSES LOKASI</button>
     </div>
   </div>
@@ -814,7 +790,7 @@
   <!-- LOGIN SCREEN -->
   <div id="login-screen">
     <div class="login-box">
-      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo SIAP WANAMSKA">
+      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto;">
       <h1>SIAP WANAMSKA</h1>
       <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
       
@@ -833,9 +809,9 @@
       
       <button type="button" id="loginBtn" class="btn btn-full btn-primary btn-gold" onclick="handleLogin()" style="width: 100%; padding: 12px; font-weight: 700; border-radius: var(--rounded-btn); border: none;">Login</button>
 
-      <div style="text-align:center; margin-bottom: 20px; margin-top: 15px;">
-        <h2>SELAMAT DATANG</h2>
-        <p style="font-size:16px; color:#555;">MARI MENJADI PENGGALANG YANG SIAP BERDIGITALISASI</p>
+      <div style="text-align:center; margin-bottom: 10px; margin-top: 15px;">
+        <h3 style="font-size: 1rem; color: var(--color-primary);">SELAMAT DATANG</h3>
+        <p style="font-size: 0.85rem; color:#555;">MARI MENJADI PENGGALANG YANG SIAP BERDIGITALISASI</p>
       </div>
     </div>
   </div>
@@ -939,7 +915,6 @@
             </button>
           </div>
 
-          <!-- WIDGET LIVE TIMER DAN KALENDER KREATIF -->
           <div class="dashboard-widgets">
             <div class="widget-box">
               <h3 style="font-family: var(--font-title); color: var(--color-primary-brown); border-bottom: 2px solid var(--color-light-brown); padding-bottom: 5px;">Waktu Saat Ini</h3>
@@ -966,11 +941,6 @@
               <b>Arif Nuur Iswahyudi (Developer)</b><br>
               Guru Matematika dan Pembina Pramuka
             </div>
-          </div>
-          
-          <div class="card text-center" style="margin-top: 25px;">
-            <h2 style="font-family: var(--font-title); margin-bottom: 10px;">Selamat Datang di SIAP WANAMSKA</h2>
-            <p>Sistem ini dirancang khusus untuk memonitor kedisiplinan absensi serta informasi aktivitas Pramuka Penggalang di lingkungan Wanamska. Silakan gunakan menu navigasi sebelah kiri untuk mengakses modul-modul sistem.</p>
           </div>
         </section>
 
@@ -1054,7 +1024,7 @@
             </div>
           </div>
 
-          <!-- RIWAYAT GLOBAL: KHUSUS TAMPIL PADA ADMIN -->
+          <!-- RIWAYAT GLOBAL: KHUSUS ADMIN -->
           <div class="card" style="margin-top: 30px; display: none;" id="card-riwayat-absen-global">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <h2 style="font-family: var(--font-title);">Riwayat Absensi Global (Admin Only)</h2>
@@ -1079,7 +1049,7 @@
             </div>
           </div>
 
-          <!-- RIWAYAT PRIBADI: UNTUK PEMBINA, DEWAN PENGGALANG, DAN PENGGALANG -->
+          <!-- RIWAYAT PRIBADI: PEMBINA, DEWAN PENGGALANG, PENGGALANG -->
           <div class="card" style="margin-top: 30px; display: none;" id="card-riwayat-absen-pribadi">
             <h2 style="font-family: var(--font-title); margin-bottom: 15px;">Riwayat Absensi Pribadi Saya</h2>
             <div id="body-riwayat-absen-pribadi" style="display: flex; flex-direction: column; gap: 15px;">
@@ -1221,7 +1191,7 @@
 
             <div>
               <div class="card text-center">
-                <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Foto Profil</h3>
+                <h3 style="font-family: var(--font-title); margin-bottom: 15px;">Foto Profil (Simpan ke Drive)</h3>
                 <div class="profile-avatar-frame">
                   <img id="prof-preview-img" src="" alt="Foto Profil">
                 </div>
@@ -1268,7 +1238,7 @@
           </div>
         </section>
 
-        <!-- SECTION 9: EXPORT DATA -->
+        <!-- SECTION 9: EXPORT DATA (DENGAN DUKUNGAN EXCEL, PDF, & DOC) -->
         <section id="section-exports" class="app-section">
           <div class="section-header">
             <h1>Export Database Administrasi</h1>
@@ -1280,6 +1250,7 @@
                 <h3>Laporan Absensi</h3>
                 <button class="btn btn-full btn-gold" onclick="triggerExport('absensi', 'excel')">Excel (.xlsx)</button>
                 <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('absensi', 'pdf')">PDF</button>
+                <button class="btn btn-full" style="margin-top: 10px; background-color: #1E429F; color:#fff;" onclick="triggerExport('absensi', 'doc')" id="btn-export-doc-absensi" style="display:none;">Word (.doc)</button>
               </div>
               <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;" id="export-inventaris-box">
                 <h3>Buku Inventaris</h3>
@@ -1330,10 +1301,10 @@
               <div>
                 <h2>Senior Apps Script Developer &amp; UX Specialist</h2>
                 <p style="color: var(--color-accent-gold); font-weight: bold; margin-bottom: 15px;">Gerakan Pramuka Wanamska</p>
-                <p>Aplikasi **SIAP WANAMSKA** di gunakan sebagai media Informasi dan Absensi Penggalang Gugus Depan 04.109-04.110 Pangkalan SMP Negeri 26 Kota Surakarta.</p>
+                <p>Aplikasi **SIAP WANAMSKA** digunakan sebagai media Informasi dan Absensi Penggalang Gugus Depan 04.109-04.110 Pangkalan SMP Negeri 26 Kota Surakarta.</p>
                 <div style="margin-top: 25px; padding: 15px; border-radius: var(--rounded-box); background-color: #FAF2EB; display: inline-block;">
                   <p><strong>Nama Pengembang:</strong> ARIF NUUR ISWAHYUDI, S.Pd., Gr</p>
-                  <p><strong>Kontak Organisasi:</strong> kbrahmana85@gmail.com/085229194470</p>
+                  <p><strong>Kontak Organisasi:</strong> kbrahmana85@gmail.com / 085229194470</p>
                 </div>
               </div>
             </div>
@@ -1378,16 +1349,14 @@
   </div>
 
   <div id="installPWABox" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999;">
-    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px;">📲 Install Aplikasi</button>
+    <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.2);">📲 Install Aplikasi</button>
   </div>
 
-  <!-- MODAL POPUPS -->
-  
-  <!-- MODAL KEGIATAN DENGAN CAPTURE KAMERA LINGKUNGAN / GALERI -->
+  <!-- MODAL KEGIATAN DENGAN PEMBATASAN MAKSIMAL 10 MB -->
   <div id="modal-kegiatan" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
-        <h3 id="kegiatan-modal-title">Form Tambah/Edit Kegiatan</h3>
+        <h3 id="kegiatan-modal-title">Form Tambah/Edit Dokumentasi Kegiatan</h3>
         <span class="modal-close" onclick="closeKegiatanModal()">&times;</span>
       </div>
       <div class="modal-body">
@@ -1409,16 +1378,15 @@
           <textarea id="keg-deskripsi" class="form-control" rows="3" required></textarea>
         </div>
         
-        <!-- OPSI FILE FOTO KREATIF -->
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
-          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 1 (Utama)</label>
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 1 (Maks. 10 MB)</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
-              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera HP:</span>
               <input type="file" class="form-control" accept="image/*" capture="environment" onchange="processKegiatanPhoto(1, event)">
             </div>
             <div>
-              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Unggah Galeri:</span>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Galeri:</span>
               <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(1, event)">
             </div>
           </div>
@@ -1426,14 +1394,14 @@
         </div>
 
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
-          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 2</label>
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 2 (Maks. 10 MB)</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
-              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera HP:</span>
               <input type="file" class="form-control" accept="image/*" capture="environment" onchange="processKegiatanPhoto(2, event)">
             </div>
             <div>
-              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Unggah Galeri:</span>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Galeri:</span>
               <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(2, event)">
             </div>
           </div>
@@ -1444,11 +1412,11 @@
           <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 3 (Opsional)</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
-              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera HP:</span>
               <input type="file" class="form-control" accept="image/*" capture="environment" onchange="processKegiatanPhoto(3, event)">
             </div>
             <div>
-              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Unggah Galeri:</span>
+              <span style="font-size: 0.8rem; color: var(--color-text-muted);">Galeri:</span>
               <input type="file" class="form-control" accept="image/*" onchange="processKegiatanPhoto(3, event)">
             </div>
           </div>
@@ -1639,7 +1607,7 @@
     </div>
   </div>
 
-  <!-- Bypass cache versi 2.2.0 -->
-  <script src="script.js?v=2.2.0"></script>
+  <!-- Cache version 2.3.0 -->
+  <script src="script.js?v=2.3.0"></script>
 </body>
 </html>
