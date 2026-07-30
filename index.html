@@ -269,7 +269,7 @@
       display: flex;
       align-items: center;
       gap: 15px;
-      margin-left: 50px; /* Ditambahkan agar tidak menabrak tombol menu-toggle */
+      margin-left: 50px;
     }
     .header-logo img {
       height: 45px;
@@ -300,6 +300,24 @@
       font-weight: bold;
     }
 
+    /* Notif Bell */
+    .notif-bell-container {
+      position: relative;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .notif-bell-container .badge-count {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background-color: var(--color-danger-red);
+      color: white;
+      border-radius: 50%;
+      padding: 2px 6px;
+      font-size: 0.65rem;
+      font-weight: bold;
+    }
+
     .main-wrapper {
       display: flex;
       flex: 1;
@@ -310,7 +328,7 @@
       background-color: #3E2723;
       padding: 20px 0;
       color: var(--color-white);
-      transition: all 0.3s ease; /* Transisi sidebar halus */
+      transition: all 0.3s ease;
       z-index: 1000;
       overflow-x: hidden;
     }
@@ -697,9 +715,68 @@
       height: 100%;
       object-fit: cover;
     }
+
+    /* Location Force Overlay */
+    #location-lock-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(43, 24, 16, 0.96);
+      z-index: 10001;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #FFF;
+      text-align: center;
+      padding: 24px;
+    }
+    .lock-box {
+      background-color: #3E2723;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 3px solid var(--color-accent-gold);
+      max-width: 420px;
+      width: 100%;
+    }
+
+    /* Notif Item */
+    .notif-item {
+      padding: 12px;
+      border-bottom: 1.5px solid var(--color-light-brown);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .notif-item:last-child {
+      border-bottom: none;
+    }
+    .notif-item .notif-text {
+      font-size: 0.9rem;
+      color: var(--color-text-dark);
+    }
+    .notif-item .notif-meta {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      text-align: right;
+    }
   </style>
 </head>
 <body>
+
+  <!-- GEOLOCATION REQUIREMENT LOCK OVERLAY -->
+  <div id="location-lock-overlay">
+    <div class="lock-box">
+      <span style="font-size: 4rem;">📍</span>
+      <h2 style="font-family: var(--font-title); color: var(--color-accent-gold); margin-top: 15px; font-weight: 700;">IZIN LOKASI WAJIB</h2>
+      <p style="margin-top: 12px; font-size: 0.95rem; line-height: 1.6; color: #FFF8F0;">
+        Aplikasi <strong>SIAP WANAMSKA</strong> memerlukan akses lokasi (GPS) yang aktif untuk melakukan verifikasi wilayah presensi dan memblokir penggunaan Fake GPS sebelum Anda dapat masuk ke dalam portal.
+      </p>
+      <button class="btn btn-gold btn-full" onclick="requestForceLocation()" style="margin-top: 25px; padding: 12px; font-weight: bold; font-size: 1rem;">
+        AKTIFKAN LOKASI SEKARANG
+      </button>
+    </div>
+  </div>
 
   <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
   <div class="overlay" onclick="toggleSidebar()"></div>
@@ -752,6 +829,11 @@
         </div>
       </div>
       <div class="header-user">
+        <!-- ICON LONCENG NOTIFIKASI PORTAL -->
+        <div class="notif-bell-container" onclick="openNotificationsModal()">
+          <span style="font-size: 1.8rem;">🔔</span>
+          <span class="badge-count" id="notif-badge" style="display: none;">0</span>
+        </div>
         <div class="info">
           <p style="font-weight: bold;" id="user-display-name">-</p>
           <span class="role" id="user-display-role">-</span>
@@ -949,9 +1031,10 @@
             </div>
           </div>
 
-          <div class="card" style="margin-top: 30px;">
+          <!-- RIWAYAT ABSENSI GLOBAL (HANYA UNTUK USER ADMIN) -->
+          <div class="card" id="card-riwayat-global" style="display: none; margin-top: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-              <h2 style="font-family: var(--font-title);">Riwayat Absensi</h2>
+              <h2 style="font-family: var(--font-title);">Riwayat Absensi Global</h2>
               <input type="date" id="filter-absen-date" class="form-control" style="width: 200px;" onchange="loadAbsenHistory()">
             </div>
             
@@ -969,6 +1052,26 @@
                 </thead>
                 <tbody id="body-riwayat-absen">
                   <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- NOTIFIKASI RIWAYAT PRIBADI (UNTUK PEMBINA, DEWAN PENGGALANG & PENGGALANG) -->
+          <div class="card" id="card-riwayat-pribadi" style="display: none; margin-top: 30px;">
+            <h2 style="font-family: var(--font-title); margin-bottom: 15px;">Riwayat Kehadiran Pribadi</h2>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Waktu / Jam</th>
+                    <th>Status</th>
+                    <th>Metode Absen</th>
+                    <th>Kode Kegiatan / Catatan</th>
+                  </tr>
+                </thead>
+                <tbody id="body-riwayat-pribadi">
+                  <tr><td colspan="4" style="text-align:center;">Belum ada riwayat kehadiran pribadi.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1296,9 +1399,9 @@
           <textarea id="keg-deskripsi" class="form-control" rows="3" required></textarea>
         </div>
         
-        <!-- OPSI FILE FOTO KREATIF -->
+        <!-- OPSI FILE FOTO KREATIF (UKURAN HINGGA 10 MB) -->
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
-          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 1 (Utama)</label>
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 1 (Utama) - Maksimal 10 MB</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
               <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
@@ -1313,7 +1416,7 @@
         </div>
 
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
-          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 2</label>
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 2 (Opsional) - Maksimal 10 MB</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
               <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
@@ -1328,7 +1431,7 @@
         </div>
 
         <div class="form-group" style="border: 1px solid var(--color-light-brown); padding: 10px; border-radius: var(--rounded-btn); margin-bottom: 10px;">
-          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 3 (Opsional)</label>
+          <label style="font-weight: bold; color: var(--color-primary-brown);">Foto 3 (Opsional) - Maksimal 10 MB</label>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
             <div>
               <span style="font-size: 0.8rem; color: var(--color-text-muted);">Kamera Belakang:</span>
@@ -1509,6 +1612,19 @@
           <textarea id="agd-keterangan" class="form-control" rows="2" placeholder="Catatan tambahan agenda..."></textarea>
         </div>
         <button class="btn btn-gold btn-full" onclick="actionSaveAgenda()">SIMPAN AGENDA</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL POPUP NOTIFIKASI LONCENG PORTAL -->
+  <div id="modal-notifications" class="modal-overlay" style="z-index: 10002;">
+    <div class="modal-box" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3 style="display: flex; align-items: center; gap: 8px;">🔔 Notifikasi Portal Terbaru</h3>
+        <span class="modal-close" onclick="closeNotificationsModal()">&times;</span>
+      </div>
+      <div class="modal-body" id="notifications-list" style="max-height: 400px; overflow-y: auto; padding: 5px;">
+        <p style="text-align: center; color: var(--color-text-muted); padding: 15px;">Memuat notifikasi...</p>
       </div>
     </div>
   </div>
