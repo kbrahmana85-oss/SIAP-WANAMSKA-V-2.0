@@ -1,5 +1,5 @@
 // GANTI dengan URL Web App Apps Script kamu (Deploy > Manage deployments)
-const API_URL = "https://script.google.com/macros/s/AKfycbyBmjc1DVQIt2Vcpnv0QI6Cxd_34Gm3MCldd4XxkrL-VlHmdY9g3GWAidcA5aua16p5dQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyGQK99mYyGz4jvkaG6lPsNSAe_WC9dEzh1jcTcjXOZMUC8BEelwsp_ULS4IFQMR2QAng/exec";
 
 // VERSI APLIKASI UNTUK RESET CORRUPT PWA CACHE (Ditingkatkan ke 2.1.1)
 const APP_VERSION = "2.1.1"; 
@@ -11,20 +11,8 @@ let currentUser = null;
 
 let streamRef = null;
 let base64SelfieString = "";
+let profilePhotoBase64 = ""; // Variabel global penampung base64 foto profil
 let currentFacingMode = "user"; // Menyimpan status kamera ("user" untuk depan, "environment" untuk belakang)
-
-// Perhitungan Jarak Koordinat GPS Pramuka Surakarta (Haversine Formula)
-function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371000; // Radius bumi dalam meter
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c; // Jarak dalam meter
-}
 
 async function callAPI(funcName, params = []) {
   const res = await fetch(API_URL, {
@@ -512,55 +500,39 @@ function actionSubmitAbsen() {
     showToast("Harap isi kode kegiatan pelaksanaan absensi!", true); return;
   }
 
-  // VALIDASI GEOLOCATION RADIUS 100M UNTUK DEWAN PENGGALANG & PENGGALANG
-  if ((userRole === "Dewan Penggalang" || userRole === "Penggalang") && status === "Hadir") {
-    if (!navigator.geolocation) {
-      showToast("ABSENSI DITOLAK: Fitur Geolocation tidak didukung oleh browser Anda.", true);
-      return;
-    }
-    
-    setLoader(true, "Memverifikasi lokasi GPS (Anti-FakeGPS)...");
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLat = position.coords.latitude;
-        const userLon = position.coords.longitude;
-        
-        // Titik Koordinat yang Ditentukan
-        const targetLat = -7.563383309402712;
-        const targetLon = 110.83081309791396;
-        
-        const distance = getDistance(userLat, userLon, targetLat, targetLon);
-        
-        if (distance > 100) {
+  // Geofencing GPS untuk Dewan Penggalang & Penggalang
+  if (userRole === "Dewan Penggalang" || userRole === "Penggalang") {
+    setLoader(true, "Mendeteksi koordinat lokasi GPS Anda...");
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          sendAbsenRequest(status, base64SelfieString, metode, kegiatanCode, keterangan, lat, lng);
+        },
+        function(error) {
           setLoader(false);
-          showToast("ABSENSI DITOLAK: Anda berada di luar radius area latihan yang diizinkan (" + Math.round(distance) + " meter dari pusat).", true);
-        } else {
-          proceedSubmitAbsen(status, base64SelfieString, metode, kegiatanCode, keterangan + " (GPS Valid: " + Math.round(distance) + "m)");
-        }
-      },
-      (error) => {
-        setLoader(false);
-        let errorMsg = "ABSENSI DITOLAK: Gagal mendapatkan sinyal GPS.";
-        if (error.code === error.PERMISSION_DENIED) {
-          errorMsg = "ABSENSI DITOLAK: Izin lokasi diblokir. Harap aktifkan izin lokasi GPS Anda.";
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          errorMsg = "ABSENSI DITOLAK: Informasi posisi lokasi tidak tersedia.";
-        } else if (error.code === error.TIMEOUT) {
-          errorMsg = "ABSENSI DITOLAK: Waktu tunggu permintaan lokasi GPS habis.";
-        }
-        showToast(errorMsg, true);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+          let errMsg = "Akses lokasi diblokir atau gagal dideteksi. Pastikan GPS aktif.";
+          if (error.code === error.PERMISSION_DENIED) {
+            errMsg = "Izin akses lokasi ditolak. Silakan izinkan lokasi di browser Anda.";
+          }
+          showToast("ABSENSI DITOLAK: " + errMsg, true);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      setLoader(false);
+      showToast("ABSENSI DITOLAK: Perangkat tidak mendukung pelacakan GPS.", true);
+    }
   } else {
-    proceedSubmitAbsen(status, base64SelfieString, metode, kegiatanCode, keterangan);
+    // Admin dan Pembina melewati validasi geofencing lokasi
+    sendAbsenRequest(status, base64SelfieString, metode, kegiatanCode, keterangan, null, null);
   }
 }
 
-function proceedSubmitAbsen(status, selfieStr, metode, kegiatanCode, keterangan) {
+function sendAbsenRequest(status, fotoSelfie, metode, kegiatanTerkait, keterangan, lat, lng) {
   setLoader(true, "Mengirim data absensi...");
-  callAPI('submitAbsen', [sessionToken, status, selfieStr, metode, kegiatanCode, keterangan])
+  callAPI('submitAbsen', [sessionToken, status, fotoSelfie, metode, kegiatanTerkait, keterangan, lat, lng])
     .then(res => {
       setLoader(false);
       if (res.success) {
@@ -570,7 +542,7 @@ function proceedSubmitAbsen(status, selfieStr, metode, kegiatanCode, keterangan)
         document.getElementById('absen-keterangan').value = "";
         loadAbsenHistory();
       } else {
-        showToast(res.message, true);
+        showToast(res.message, true); // Menampilkan "ABSENSI DITOLAK: ..."
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
@@ -787,10 +759,10 @@ function openKegiatanModal(keg) {
   document.getElementById('keg-foto-2-base64').value = keg ? (keg.foto2 || "") : "";
   document.getElementById('keg-foto-3-base64').value = keg ? (keg.foto3 || "") : "";
   
-  // RESET NATIVE FILE INPUTS (Mencegah desinkronisasi tampilan "pilih file" saat modal dibuka ulang)
+  // Mengosongkan form file input secara fisik agar bisa memicu event onchange
   const fileInputs = document.querySelectorAll('#modal-kegiatan input[type="file"]');
   fileInputs.forEach(input => input.value = "");
-
+  
   document.getElementById('modal-kegiatan').style.display = 'flex';
 }
 
@@ -801,9 +773,6 @@ function closeKegiatanModal() {
 function processKegiatanPhoto(index, event) {
   const file = event.target.files[0];
   if (!file) return;
-
-  setLoader(true, "Memproses Gambar " + index + "...");
-
   const reader = new FileReader();
   reader.onload = function (e) {
     const img = new Image();
@@ -827,21 +796,11 @@ function processKegiatanPhoto(index, event) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      
       document.getElementById('keg-foto-' + index + '-base64').value = dataUrl;
-      setLoader(false);
       showToast("Foto " + index + " berhasil diproses.");
     };
-    img.onerror = function () {
-      setLoader(false);
-      showToast("Gagal memuat file gambar " + index, true);
-    }
     img.src = e.target.result;
   };
-  reader.onerror = function () {
-    setLoader(false);
-    showToast("Gagal membaca berkas file gambar " + index, true);
-  }
   reader.readAsDataURL(file);
 }
 
@@ -851,12 +810,11 @@ function actionSaveKegiatan() {
   const lokasi = document.getElementById('keg-lokasi').value;
   const deskripsi = document.getElementById('keg-deskripsi').value;
   const foto1 = document.getElementById('keg-foto-1-base64').value;
-  const foto2 = document.getElementById('keg-foto-2-base64').value || ""; // Foto 2 dibuat opsional di JS
-  const foto3 = document.getElementById('keg-foto-3-base64').value || "";
+  const foto2 = document.getElementById('keg-foto-2-base64').value; // Foto 2 sekarang opsional
 
-  // Sesuai temuan 1: Validasi diperketat hanya untuk Foto 1 (Utama) agar bisa disimpan lancar
+  // Hanya memvalidasi Foto Utama (Foto 1), Foto 2 & Foto 3 opsional
   if (!nama || !tanggal || !lokasi || !deskripsi || !foto1) {
-    showToast("Field nama, tanggal, lokasi, deskripsi, serta Foto 1 (Utama) wajib dilampirkan.", true);
+    showToast("Field nama, tanggal, lokasi, deskripsi, serta Foto Utama (Foto 1) wajib dilampirkan.", true);
     return;
   }
 
@@ -867,8 +825,8 @@ function actionSaveKegiatan() {
     lokasi: lokasi,
     deskripsi: deskripsi,
     foto1: foto1,
-    foto2: foto2,
-    foto3: foto3
+    foto2: foto2, // dikirim kosong ke backend jika tidak diunggah
+    foto3: document.getElementById('keg-foto-3-base64').value
   };
   setLoader(true, "Menyimpan dokumentasi...");
 
@@ -1087,10 +1045,10 @@ function loadProfileDiri() {
         document.getElementById('prof-hp').value = p.no_hp || "";
         if (p.foto_profil) {
           document.getElementById('prof-preview-img').src = p.foto_profil;
-          document.getElementById('prof-preview-img').dataset.base64 = p.foto_profil;
+          profilePhotoBase64 = p.foto_profil; // Set variabel global dengan data URL lama
         } else {
           document.getElementById('prof-preview-img').src = "";
-          document.getElementById('prof-preview-img').dataset.base64 = "";
+          profilePhotoBase64 = "";
         }
       }
     })
@@ -1116,7 +1074,7 @@ function previewAndResizeProfilePhoto(event) {
       ctx.drawImage(img, sx, sy, size, size, 0, 0, 300, 300);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       document.getElementById('prof-preview-img').src = dataUrl;
-      document.getElementById('prof-preview-img').dataset.base64 = dataUrl;
+      profilePhotoBase64 = dataUrl; // Update variabel global khusus dengan foto baru
     };
     img.src = e.target.result;
   };
@@ -1124,36 +1082,18 @@ function previewAndResizeProfilePhoto(event) {
 }
 
 function actionSaveProfile() {
-  const uId = document.getElementById('prof-user-id').value;
-  const namaVal = document.getElementById('prof-nama').value.trim();
-
-  // VALIDASI SINKRONISASI NAMA (Sesuai temuan 1: Mencegah nama terhapus di Users sheet)
-  if (!namaVal) {
-    showToast("Field Nama Lengkap wajib diisi.", true);
-    return;
-  }
-
-  // Pengambilan nilai foto_profil secara aman (agar tidak merusak data jika belum ada foto)
-  let fotoProfilVal = document.getElementById('prof-preview-img').dataset.base64 || "";
-  if (!fotoProfilVal) {
-    const currentSrc = document.getElementById('prof-preview-img').getAttribute('src') || "";
-    if (currentSrc.indexOf("http") === 0) {
-      fotoProfilVal = currentSrc;
-    }
-  }
-
   const payload = {
-    user_id: uId,
-    nta: document.getElementById('prof-nta').value.trim(),
-    nama_lengkap: namaVal,
-    tempat_lahir: document.getElementById('prof-tempat-lahir').value.trim(),
+    user_id: document.getElementById('prof-user-id').value,
+    nta: document.getElementById('prof-nta').value,
+    nama_lengkap: document.getElementById('prof-nama').value,
+    tempat_lahir: document.getElementById('prof-tempat-lahir').value,
     tanggal_lahir: document.getElementById('prof-tanggal-lahir').value,
     jenis_kelamin: document.getElementById('prof-jk').value,
-    golongan: document.getElementById('prof-golongan').value.trim(),
-    regu_sangga: document.getElementById('prof-regu').value.trim(),
-    alamat: document.getElementById('prof-alamat').value.trim(),
-    no_hp: document.getElementById('prof-hp').value.trim(),
-    foto_profil: fotoProfilVal
+    golongan: document.getElementById('prof-golongan').value,
+    regu_sangga: document.getElementById('prof-regu').value,
+    alamat: document.getElementById('prof-alamat').value,
+    no_hp: document.getElementById('prof-hp').value,
+    foto_profil: profilePhotoBase64 // Menggunakan variabel global khusus agar data tidak corrupt menjadi URL host halaman
   };
   setLoader(true, "Menyimpan profil...");
 
@@ -1347,7 +1287,7 @@ function simpanKehadiran() {
     if (!select) return;
     const targetUserId = select.id.replace('status_', '');
     requests.push(
-      callAPI('submitAbsen', [sessionToken, select.value, "", "Manual", "", "Dicatat massal oleh " + userId + " untuk " + targetUserId])
+      callAPI('submitAbsen', [sessionToken, select.value, "", "Manual", "", "Dicatat massal oleh " + userId + " untuk " + targetUserId, null, null])
     );
   });
 
