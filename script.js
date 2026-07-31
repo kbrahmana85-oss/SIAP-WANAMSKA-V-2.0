@@ -1,5 +1,5 @@
 // GANTI dengan URL Web App Apps Script Anda
-const API_URL = "https://script.google.com/macros/s/AKfycbx0TzNLsXZe8zeXUGWfgcmisDPlU-oDUjDZIjxlGoOpggeKwziAJw13aQapfBI2Rs0l0w/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwjZ0sONMa_5UEJv4Qh7dvh64XslpjwG9ZA1UGoySZqhUmSi8dF9Lfoq5RsIHtDYqCHFQ/exec";
 
 // VERSI APLIKASI DI-UPDATE KE 2.4.2 UNTUK FIX BUG INVENTARIS, KAS, TANGGAL PROFIL & KAMERA UPLOAD
 const APP_VERSION = "2.4.2"; 
