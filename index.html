@@ -457,7 +457,6 @@
       aspect-ratio: 4/3;
     }
 
-    /* PERBAIKAN PENTING: DILARANG MIRROR PADA KANVAS DAN KAMERA DEPAN/BELAKANG */
     #camera-video, #selfie-canvas-preview {
       width: 100%;
       height: 100%;
@@ -815,11 +814,11 @@
       <span style="font-size: 4rem; display: block; margin-bottom: 20px; animation: pulse 2s infinite;">📡</span>
       <h2 style="font-family: var(--font-title); margin-bottom: 12px; color: var(--color-accent-gold); letter-spacing: 1px;">SISTEM LOKASI WAJIB</h2>
       <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; color: #E0D4C5;">SIAP WANAMSKA memerlukan verifikasi GPS aktif. Silakan izinkan akses lokasi GPS Anda.</p>
-      <button class="btn btn-gold btn-full" onclick="requestGPSPermission()" style="padding: 14px; font-size: 1rem; border-radius: var(--rounded-btn); font-weight: bold; border: none; letter-spacing: 0.5px;">AKTIFKAN AKSES LOKASI</button>
+      <button class="btn btn-gold btn-full" type="button" onclick="requestGPSPermission()" style="padding: 14px; font-size: 1rem; border-radius: var(--rounded-btn); font-weight: bold; border: none; letter-spacing: 0.5px;">AKTIFKAN AKSES LOKASI</button>
     </div>
   </div>
 
-  <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+  <button class="menu-toggle" type="button" onclick="toggleSidebar()">☰</button>
   <div class="overlay" onclick="toggleSidebar()"></div>
 
   <div id="toast-container"></div>
@@ -897,7 +896,7 @@
           <span class="icon">&#127941;</span> Dokumentasi Kegiatan
         </div>
 
-        <!-- MODUL BARU: MATERI KEGIATAN (KHUSUS ADMIN, PEMBINA, DEWAN PENGGALANG) -->
+        <!-- MODUL MATERI KEGIATAN -->
         <div class="menu-item role-restricted" id="menu-materi" onclick="switchSection('section-materi', this)">
           <span class="icon">&#128218;</span> Materi Kegiatan
         </div>
@@ -958,7 +957,7 @@
           </div>
           
           <div style="margin-top: 15px; margin-bottom: 25px;" id="dashboard-absen-massal-box">
-            <button class="btn btn-primary btn-gold" onclick="showAbsenPage()" style="padding: 12px 24px; font-weight: bold; border-radius: var(--radius);">
+            <button type="button" class="btn btn-primary btn-gold" onclick="showAbsenPage()" style="padding: 12px 24px; font-weight: bold; border-radius: var(--radius);">
               Input Kehadiran Anggota
             </button>
           </div>
@@ -996,7 +995,7 @@
         <section id="section-agenda" class="app-section">
           <div class="section-header">
             <h1>Agenda Kegiatan</h1>
-            <button class="btn btn-gold" id="btn-tambah-agenda-trigger" onclick="openAgendaModal()">+ Tambah Agenda</button>
+            <button type="button" class="btn btn-gold" id="btn-tambah-agenda-trigger" onclick="openAgendaModal()">+ Tambah Agenda</button>
           </div>
           <div class="card">
             <div class="table-responsive">
@@ -1053,7 +1052,7 @@
                 <textarea id="absen-keterangan" class="form-control" rows="2" placeholder="Tulis catatan jika izin/sakit..."></textarea>
               </div>
 
-              <button class="btn btn-gold btn-full" onclick="actionSubmitAbsen()">KIRIM ABSENSI</button>
+              <button type="button" class="btn btn-gold btn-full" onclick="actionSubmitAbsen()">KIRIM ABSENSI</button>
             </div>
 
             <div class="card" id="absen-camera-panel">
@@ -1065,9 +1064,9 @@
               </div>
 
               <div class="camera-controls">
-                <button class="btn" onclick="startCamera()">Aktifkan Kamera</button>
-                <button class="btn btn-gold" id="btn-capture" onclick="captureSnapshot()">Ambil Foto</button>
-                <button class="btn btn-primary" id="btn-flip-camera" onclick="flipCamera()">Balik Kamera 🔄</button>
+                <button type="button" class="btn" onclick="startCamera()">Aktifkan Kamera</button>
+                <button type="button" class="btn btn-gold" id="btn-capture" onclick="captureSnapshot()">Ambil Foto</button>
+                <button type="button" class="btn btn-primary" id="btn-flip-camera" onclick="flipCamera()">Balik Kamera 🔄</button>
               </div>
             </div>
           </div>
@@ -1108,12 +1107,12 @@
         <section id="section-kegiatan" class="app-section">
           <div class="section-header">
             <h1>Dokumentasi Kegiatan</h1>
-            <button class="btn btn-gold" id="btn-tambah-kegiatan-trigger" onclick="openKegiatanModal()">+ Tambah Kegiatan</button>
+            <button type="button" class="btn btn-gold" id="btn-tambah-kegiatan-trigger" onclick="openKegiatanModal()">+ Tambah Kegiatan</button>
           </div>
           <div class="kegiatan-grid" id="grid-list-kegiatan"></div>
         </section>
 
-        <!-- SECTION BARU: MATERI KEGIATAN KEPRAMUKAAN -->
+        <!-- SECTION MATERI KEGIATAN KEPRAMUKAAN -->
         <section id="section-materi" class="app-section">
           <div class="section-header">
             <h1>Materi Kegiatan Kepramukaan</h1>
@@ -1190,7 +1189,7 @@
           <div class="card" id="materi-files-container" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--color-light-brown); padding-bottom: 10px;">
               <h2 id="materi-folder-title" style="font-family: var(--font-title); color: var(--color-primary-brown); font-size: 1.2rem;">Folder File</h2>
-              <button class="btn btn-danger" onclick="closeMateriFilesContainer()">Tutup Folder ✖</button>
+              <button type="button" class="btn btn-danger" onclick="closeMateriFilesContainer()">Tutup Folder ✖</button>
             </div>
             
             <div class="table-responsive">
@@ -1215,7 +1214,7 @@
         <section id="section-inventaris" class="app-section">
           <div class="section-header">
             <h1>Inventaris Barang</h1>
-            <button class="btn btn-gold" onclick="openInventarisModal()">+ Tambah Barang</button>
+            <button type="button" class="btn btn-gold" onclick="openInventarisModal()">+ Tambah Barang</button>
           </div>
           <div class="card">
             <div class="table-responsive">
@@ -1241,7 +1240,7 @@
         <section id="section-kas" class="app-section">
           <div class="section-header">
             <h1>Arus Kas Pramuka</h1>
-            <button class="btn btn-gold" id="btn-tambah-kas" onclick="openKasModal()">+ Catat Kas Baru</button>
+            <button type="button" class="btn btn-gold" id="btn-tambah-kas" onclick="openKasModal()">+ Catat Kas Baru</button>
           </div>
           <div class="grid-dashboard">
             <div class="card-stat">
@@ -1330,7 +1329,7 @@
                 <label>No. HP (WhatsApp)</label>
                 <input type="text" id="prof-hp" class="form-control">
               </div>
-              <button class="btn btn-gold btn-full" onclick="actionSaveProfile()">SIMPAN PROFIL</button>
+              <button type="button" class="btn btn-gold btn-full" onclick="actionSaveProfile()">SIMPAN PROFIL</button>
             </div>
 
             <div>
@@ -1352,7 +1351,7 @@
                   <label>Password Baru</label>
                   <input type="password" id="pass-baru" class="form-control">
                 </div>
-                <button class="btn btn-danger btn-full" onclick="actionGantiPassword()">UPDATE PASSWORD</button>
+                <button type="button" class="btn btn-danger btn-full" onclick="actionGantiPassword()">UPDATE PASSWORD</button>
               </div>
             </div>
           </div>
@@ -1362,7 +1361,7 @@
         <section id="section-users" class="app-section">
           <div class="section-header">
             <h1>Manajemen Pengguna</h1>
-            <button class="btn btn-gold" onclick="openUserModal()">+ Pendaftaran Anggota Baru</button>
+            <button type="button" class="btn btn-gold" onclick="openUserModal()">+ Pendaftaran Anggota Baru</button>
           </div>
           <div class="card">
             <div class="table-responsive">
@@ -1392,19 +1391,19 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 15px;">
               <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;" id="export-absensi-box">
                 <h3>Laporan Absensi</h3>
-                <button class="btn btn-full btn-gold" onclick="triggerExport('absensi', 'excel')">Excel (.xlsx)</button>
-                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('absensi', 'pdf')">PDF</button>
-                <button class="btn btn-full" style="margin-top: 10px; background-color: #1E429F; color:#fff;" onclick="triggerExport('absensi', 'doc')" id="btn-export-doc-absensi" style="display:none;">Word (.doc)</button>
+                <button type="button" class="btn btn-full btn-gold" onclick="triggerExport('absensi', 'excel')">Excel (.xlsx)</button>
+                <button type="button" class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('absensi', 'pdf')">PDF</button>
+                <button type="button" class="btn btn-full" style="margin-top: 10px; background-color: #1E429F; color:#fff;" onclick="triggerExport('absensi', 'doc')" id="btn-export-doc-absensi" style="display:none;">Word (.doc)</button>
               </div>
               <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;" id="export-inventaris-box">
                 <h3>Buku Inventaris</h3>
-                <button class="btn btn-full btn-gold" onclick="triggerExport('inventaris', 'excel')">Excel (.xlsx)</button>
-                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('inventaris', 'pdf')">PDF</button>
+                <button type="button" class="btn btn-full btn-gold" onclick="triggerExport('inventaris', 'excel')">Excel (.xlsx)</button>
+                <button type="button" class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('inventaris', 'pdf')">PDF</button>
               </div>
               <div class="card" style="border: 1px solid var(--color-light-brown); margin: 0;" id="export-kas-box">
                 <h3>Buku Kas</h3>
-                <button class="btn btn-full btn-gold" onclick="triggerExport('kas', 'excel')">Excel (.xlsx)</button>
-                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('kas', 'pdf')">PDF</button>
+                <button type="button" class="btn btn-full btn-gold" onclick="triggerExport('kas', 'excel')">Excel (.xlsx)</button>
+                <button type="button" class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('kas', 'pdf')">PDF</button>
               </div>
             </div>
           </div>
@@ -1459,7 +1458,7 @@
         <section id="absen-page" class="app-section">
           <div class="section-header">
             <h1>Input Kehadiran Anggota</h1>
-            <button class="btn" onclick="kembaliKeDashboard()">Kembali</button>
+            <button type="button" class="btn" onclick="kembaliKeDashboard()">Kembali</button>
           </div>
           <div class="card">
             <div class="form-group" style="max-width: 300px;">
@@ -1482,8 +1481,8 @@
               </table>
             </div>
             <div style="margin-top: 20px; display: flex; gap: 10px;">
-              <button class="btn btn-gold" onclick="simpanKehadiran()">Simpan Kehadiran</button>
-              <button class="btn btn-danger" onclick="kembaliKeDashboard()">Batal</button>
+              <button type="button" class="btn btn-gold" onclick="simpanKehadiran()">Simpan Kehadiran</button>
+              <button type="button" class="btn btn-danger" onclick="kembaliKeDashboard()">Batal</button>
             </div>
           </div>
         </section>
@@ -1567,7 +1566,7 @@
           <input type="hidden" id="keg-foto-3-base64">
         </div>
 
-        <button class="btn btn-gold btn-full" onclick="actionSaveKegiatan()">SIMPAN DOKUMENTASI</button>
+        <button type="button" class="btn btn-gold btn-full" onclick="actionSaveKegiatan()">SIMPAN DOKUMENTASI</button>
       </div>
     </div>
   </div>
@@ -1618,7 +1617,7 @@
           <label>Keterangan</label>
           <textarea id="inv-keterangan" class="form-control" rows="2"></textarea>
         </div>
-        <button class="btn btn-gold btn-full" onclick="actionSaveInventaris()">SIMPAN DATA BARANG</button>
+        <button type="button" class="btn btn-gold btn-full" onclick="actionSaveInventaris()">SIMPAN DATA BARANG</button>
       </div>
     </div>
   </div>
@@ -1654,7 +1653,7 @@
           <label>Keterangan</label>
           <textarea id="kas-keterangan-form" class="form-control" rows="2"></textarea>
         </div>
-        <button class="btn btn-gold btn-full" onclick="actionSaveKas()">SIMPAN TRANSAKSI KAS</button>
+        <button type="button" class="btn btn-gold btn-full" onclick="actionSaveKas()">SIMPAN TRANSAKSI KAS</button>
       </div>
     </div>
   </div>
@@ -1695,7 +1694,7 @@
             <option value="Nonaktif">Nonaktif</option>
           </select>
         </div>
-        <button class="btn btn-gold btn-full" onclick="actionSaveUser()">SIMPAN PENGGUNA</button>
+        <button type="button" class="btn btn-gold btn-full" onclick="actionSaveUser()">SIMPAN PENGGUNA</button>
       </div>
     </div>
   </div>
@@ -1733,7 +1732,7 @@
           <label for="agd-keterangan">Keterangan</label>
           <textarea id="agd-keterangan" class="form-control" rows="2" placeholder="Catatan tambahan agenda..."></textarea>
         </div>
-        <button class="btn btn-gold btn-full" onclick="actionSaveAgenda()">SIMPAN AGENDA</button>
+        <button type="button" class="btn btn-gold btn-full" onclick="actionSaveAgenda()">SIMPAN AGENDA</button>
       </div>
     </div>
   </div>
@@ -1751,7 +1750,7 @@
     </div>
   </div>
 
-  <!-- Cache version 2.4.1 -->
-  <script src="script.js?v=2.4.1"></script>
+  <!-- Cache version 2.4.2 -->
+  <script src="script.js?v=2.4.2"></script>
 </body>
 </html>
