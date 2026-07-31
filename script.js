@@ -1,8 +1,8 @@
 // GANTI dengan URL Web App Apps Script Anda
-const API_URL = "https://script.google.com/macros/s/AKfycbwjZ0sONMa_5UEJv4Qh7dvh64XslpjwG9ZA1UGoySZqhUmSi8dF9Lfoq5RsIHtDYqCHFQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx0TzNLsXZe8zeXUGWfgcmisDPlU-oDUjDZIjxlGoOpggeKwziAJw13aQapfBI2Rs0l0w/exec";
 
-// VERSI APLIKASI DI-UPDATE KE 2.4.1 UNTUK AUTO-PURGE CACHE & KAMERA ANTI-MIRROR
-const APP_VERSION = "2.4.1"; 
+// VERSI APLIKASI DI-UPDATE KE 2.4.2 UNTUK FIX BUG INVENTARIS, KAS, TANGGAL PROFIL & KAMERA UPLOAD
+const APP_VERSION = "2.4.2"; 
 
 let sessionToken = "";
 let userRole = "";
@@ -30,7 +30,7 @@ async function callAPI(funcName, params = []) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // 1. PEMBERSIHAN CACHE SERVICE WORKER AGRESIF (VERSI 2.4.1 - TANPA UNINSTALL!)
+  // 1. PEMBERSIHAN CACHE SERVICE WORKER AGRESIF (VERSI 2.4.2)
   if (localStorage.getItem("app_version") !== APP_VERSION) {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function (registrations) {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
     localStorage.setItem("app_version", APP_VERSION);
-    console.log("Sistem mendeteksi pembaruan versi " + APP_VERSION + ". Perbaikan Kamera & Auto-Sync Materi diaktifkan.");
+    console.log("Sistem mendeteksi pembaruan versi " + APP_VERSION + ". Perbaikan Inventaris, Kas, Tanggal Lahir & Kamera Aktif.");
     setTimeout(() => { window.location.reload(true); }, 500);
     return;
   }
@@ -392,9 +392,6 @@ function setupRBACUI(role) {
   const docExportBtn = document.getElementById('btn-export-doc-absensi');
   if (docExportBtn) docExportBtn.style.display = 'none';
 
-  // ATURAN HAK AKSES PERAN (RBAC) MATERI KEGIATAN:
-  // ADMIN, PEMBINA, DAN DEWAN PENGGALANG -> DAPAT MENGAKSES & DOWNLOAD
-  // PENGGALANG -> TIDAK DAPAT MENGAKSES (SAMA SEKALI DISEMBUNYIKAN)
   if (role === "Admin" || role === "Pembina" || role === "Dewan Penggalang") {
     document.getElementById('menu-materi').style.display = 'flex';
   }
@@ -594,7 +591,7 @@ function openMateriFolder(folderKey, folderTitle) {
               <td><strong>${file.name}</strong></td>
               <td>${file.size}</td>
               <td>
-                <button class="btn btn-gold" style="padding: 6px 14px; font-size: 0.85rem;" onclick="actionDownloadMateri('${file.downloadUrl}', '${file.viewUrl}', '${file.name}')">
+                <button type="button" class="btn btn-gold" style="padding: 6px 14px; font-size: 0.85rem;" onclick="actionDownloadMateri('${file.downloadUrl}', '${file.viewUrl}', '${file.name}')">
                   ⬇️ Download
                 </button>
               </td>
@@ -652,7 +649,7 @@ function loadDashboard() {
 }
 
 // =========================================================================
-// === KAMERA (SELFIE ABSENSI) - MENJAGA ORIENTASI NORMAL ANTI-MIRROR   ===
+// === KAMERA (SELFIE ABSENSI)                                           ===
 // =========================================================================
 function startCamera() {
   const video = document.getElementById('camera-video');
@@ -697,7 +694,6 @@ function captureSnapshot() {
   canvas.height = video.videoHeight || 480;
   const ctx = canvas.getContext('2d');
 
-  // PROSES PROYEKSI TANGKAPAN DILAKUKAN SECARA LANGSUNG TANPA PERUBAHAN MATRIX MIRROR
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   base64SelfieString = canvas.toDataURL('image/jpeg', 0.85);
   
@@ -766,6 +762,9 @@ function sendAbsenRequest(status, fotoSelfie, metode, kegiatanTerkait, keteranga
         loadNotifications(false);
       } else {
         showToast(res.message, true);
+        if (res.message && res.message.includes("Sesi")) {
+          showPage('login-page');
+        }
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
@@ -849,10 +848,10 @@ function loadAgenda() {
         res.list.forEach(agd => {
           let actionButtons = "";
           if (isPengurus) {
-            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openAgendaModal(${JSON.stringify(agd)})'>Edit</button>`;
+            actionButtons += `<button type="button" class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openAgendaModal(${JSON.stringify(agd)})'>Edit</button>`;
           }
           if (isAdmin) {
-            actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteAgenda('${agd.id_agenda}')">Hapus</button>`;
+            actionButtons += `<button type="button" class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteAgenda('${agd.id_agenda}')">Hapus</button>`;
           }
 
           tbody.innerHTML += `
@@ -918,10 +917,17 @@ function actionSaveAgenda() {
   callAPI('saveAgenda', [sessionToken, payload])
     .then(res => {
       setLoader(false);
-      showToast(res.message);
-      closeAgendaModal();
-      loadAgenda();
-      loadNotifications(false);
+      if (res.success) {
+        showToast(res.message);
+        closeAgendaModal();
+        loadAgenda();
+        loadNotifications(false);
+      } else {
+        showToast(res.message, true);
+        if (res.message && res.message.includes("Sesi")) {
+          showPage('login-page');
+        }
+      }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
@@ -1050,16 +1056,23 @@ function actionSaveKegiatan() {
   callAPI('saveKegiatan', [sessionToken, payload])
     .then(res => {
       setLoader(false);
-      showToast(res.message);
-      closeKegiatanModal();
-      loadKegiatan();
-      loadNotifications(false);
+      if (res.success) {
+        showToast(res.message);
+        closeKegiatanModal();
+        loadKegiatan();
+        loadNotifications(false);
+      } else {
+        showToast(res.message, true);
+        if (res.message && res.message.includes("Sesi")) {
+          showPage('login-page');
+        }
+      }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
 // =========================================================================
-// === INVENTARIS & KAS                                                  ===
+// === INVENTARIS & KAS (PERBAIKAN FATAL BUG 1)                           ===
 // =========================================================================
 function loadInventaris() {
   callAPI('getInventarisList', [sessionToken])
@@ -1068,16 +1081,21 @@ function loadInventaris() {
         const tbody = document.getElementById('body-inventaris');
         if (!tbody) return;
         tbody.innerHTML = "";
+        if (res.list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada data inventaris tersimpan.</td></tr>`;
+          return;
+        }
         res.list.forEach(row => {
+          let tglStr = row.tanggal_masuk ? String(row.tanggal_masuk).substring(0, 10) : "-";
           tbody.innerHTML += `
             <tr>
-              <td>${row.id_barang}</td>
+              <td><strong>${row.id_barang}</strong></td>
               <td>${row.nama_barang}</td>
               <td>${row.kategori}</td>
               <td>${row.jumlah}</td>
               <td>${row.kondisi}</td>
               <td>${row.locations_simpan}</td>
-              <td>-</td>
+              <td><button type="button" class="btn" style="padding:4px 8px; font-size:0.8rem;" onclick='openInventarisModal(${JSON.stringify(row)})'>Edit</button></td>
             </tr>`;
         });
       }
@@ -1085,15 +1103,69 @@ function loadInventaris() {
     .catch(err => showToast(err.message, true));
 }
 
-function openInventarisModal() {
+function openInventarisModal(inv) {
+  if (inv && inv.id_barang) {
+    document.getElementById('inv-modal-title').innerText = "Edit Data Barang";
+    document.getElementById('inv-id').value = inv.id_barang;
+    document.getElementById('inv-nama').value = inv.nama_barang || "";
+    document.getElementById('inv-kategori').value = inv.kategori || "Perlengkapan Kemah";
+    document.getElementById('inv-jumlah').value = inv.jumlah || "";
+    document.getElementById('inv-kondisi').value = inv.kondisi || "Baik";
+    document.getElementById('inv-lokasi').value = inv.locations_simpan || "";
+    document.getElementById('inv-tanggal').value = inv.tanggal_masuk ? String(inv.tanggal_masuk).substring(0, 10) : new Date().toISOString().substring(0, 10);
+    document.getElementById('inv-keterangan').value = inv.keterangan || "";
+  } else {
+    document.getElementById('inv-modal-title').innerText = "Form Tambah Barang";
+    document.getElementById('inv-id').value = "";
+    document.getElementById('inv-nama').value = "";
+    document.getElementById('inv-kategori').value = "Perlengkapan Kemah";
+    document.getElementById('inv-jumlah').value = "";
+    document.getElementById('inv-kondisi').value = "Baik";
+    document.getElementById('inv-lokasi').value = "";
+    document.getElementById('inv-tanggal').value = new Date().toISOString().substring(0, 10);
+    document.getElementById('inv-keterangan').value = "";
+  }
   document.getElementById('modal-inventaris').style.display = 'flex';
 }
+
 function closeInventarisModal() {
   document.getElementById('modal-inventaris').style.display = 'none';
 }
+
 function actionSaveInventaris() {
-  closeInventarisModal();
-  showToast("Inventaris disimpan.");
+  const payload = {
+    id_barang: document.getElementById('inv-id').value,
+    nama_barang: document.getElementById('inv-nama').value,
+    kategori: document.getElementById('inv-kategori').value,
+    jumlah: document.getElementById('inv-jumlah').value,
+    kondisi: document.getElementById('inv-kondisi').value,
+    locations_simpan: document.getElementById('inv-lokasi').value,
+    tanggal_masuk: document.getElementById('inv-tanggal').value,
+    keterangan: document.getElementById('inv-keterangan').value
+  };
+
+  if (!payload.nama_barang || !payload.jumlah || !payload.locations_simpan || !payload.tanggal_masuk) {
+    showToast("Nama barang, jumlah, lokasi simpan, dan tanggal masuk wajib diisi!", true);
+    return;
+  }
+
+  setLoader(true, "Menyimpan data inventaris...");
+  callAPI('saveInventaris', [sessionToken, payload])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        closeInventarisModal();
+        loadInventaris();
+        loadNotifications(false);
+      } else {
+        showToast(res.message, true);
+        if (res.message && res.message.includes("Sesi")) {
+          showPage('login-page');
+        }
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
 function loadKas() {
@@ -1108,14 +1180,18 @@ function loadKas() {
         const tbody = document.getElementById('body-kas');
         if (tbody) {
           tbody.innerHTML = "";
+          if (res.list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada transaksi kas tercatat.</td></tr>`;
+            return;
+          }
           res.list.forEach(row => {
             tbody.innerHTML += `
               <tr>
                 <td>${row.tanggal}</td>
-                <td>${row.jenis}</td>
+                <td><strong>${row.jenis}</strong></td>
                 <td>${row.kategori}</td>
                 <td>Rp ${Number(row.jumlah).toLocaleString('id-ID')}</td>
-                <td>${row.keterangan}</td>
+                <td>${row.keterangan || "-"}</td>
                 <td>Rp ${Number(row.saldo_berjalan).toLocaleString('id-ID')}</td>
               </tr>`;
           });
@@ -1142,18 +1218,53 @@ function drawKasChart(masuk, keluar) {
 }
 
 function openKasModal() {
+  document.getElementById('kas-jenis').value = "Pemasukan";
+  document.getElementById('kas-kategori').value = "";
+  document.getElementById('kas-jumlah').value = "";
+  document.getElementById('kas-tanggal-form').value = new Date().toISOString().substring(0, 10);
+  document.getElementById('kas-keterangan-form').value = "";
   document.getElementById('modal-kas').style.display = 'flex';
 }
+
 function closeKasModal() {
   document.getElementById('modal-kas').style.display = 'none';
 }
+
 function actionSaveKas() {
-  closeKasModal();
-  showToast("Kas berhasil dicatat.");
+  const payload = {
+    jenis: document.getElementById('kas-jenis').value,
+    kategori: document.getElementById('kas-kategori').value,
+    jumlah: document.getElementById('kas-jumlah').value,
+    tanggal: document.getElementById('kas-tanggal-form').value,
+    keterangan: document.getElementById('kas-keterangan-form').value
+  };
+
+  if (!payload.jenis || !payload.kategori || !payload.jumlah || !payload.tanggal) {
+    showToast("Jenis, kategori, jumlah, dan tanggal transaksi wajib diisi!", true);
+    return;
+  }
+
+  setLoader(true, "Mencatat transaksi kas...");
+  callAPI('addKasTransaction', [sessionToken, payload])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        closeKasModal();
+        loadKas();
+        loadNotifications(false);
+      } else {
+        showToast(res.message, true);
+        if (res.message && res.message.includes("Sesi")) {
+          showPage('login-page');
+        }
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
 // =========================================================================
-// === PROFIL DIRI & SIMPAN FOTO KE DRIVE                                ===
+// === PROFIL DIRI & SIMPAN FOTO KE DRIVE (PERBAIKAN FATAL BUG 3)         ===
 // =========================================================================
 function loadProfileDiri() {
   callAPI('getUserProfile', [sessionToken, userId])
@@ -1164,7 +1275,14 @@ function loadProfileDiri() {
         document.getElementById('prof-nama').value = p.nama_lengkap || "";
         document.getElementById('prof-nta').value = p.nta || "";
         document.getElementById('prof-tempat-lahir').value = p.tempat_lahir || "";
-        document.getElementById('prof-tanggal-lahir').value = p.tanggal_lahir ? p.tanggal_lahir.substring(0, 10) : "";
+        
+        // PERBAIKAN TANGGAL LAHIR: DAPATKAN FORMAT YYYY-MM-DD PRESISI
+        if (p.tanggal_lahir) {
+          document.getElementById('prof-tanggal-lahir').value = String(p.tanggal_lahir).substring(0, 10);
+        } else {
+          document.getElementById('prof-tanggal-lahir').value = "";
+        }
+
         if (p.jenis_kelamin) document.getElementById('prof-jk').value = p.jenis_kelamin;
         document.getElementById('prof-golongan').value = p.golongan || "";
         document.getElementById('prof-regu').value = p.regu_sangga || "";
@@ -1223,8 +1341,12 @@ function actionSaveProfile() {
   callAPI('saveUserProfile', [sessionToken, payload])
     .then(res => {
       setLoader(false);
-      showToast(res.message);
-      loadProfileDiri();
+      if (res.success) {
+        showToast(res.message);
+        loadProfileDiri();
+      } else {
+        showToast(res.message, true);
+      }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
