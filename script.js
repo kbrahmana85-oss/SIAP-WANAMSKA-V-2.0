@@ -1,8 +1,8 @@
 // GANTI dengan URL Web App Apps Script Anda
 const API_URL = "https://script.google.com/macros/s/AKfycbwJZsplwxNomrT1mgZdUKbMj29qsz9vu7vSoz1j_7N1mYEk9YH2dgLfsWo_AFFSG6_CMA/exec";
 
-// VERSI APLIKASI UNTUK RESET CORRUPT PWA CACHE (Diperbarui ke 2.3.0)
-const APP_VERSION = "2.3.0"; 
+// VERSI APLIKASI DI-UPDATE KE 2.4.0 UNTUK RESET CORRUPT PWA CACHE SECARA OTOMATIS
+const APP_VERSION = "2.4.0"; 
 
 let sessionToken = "";
 let userRole = "";
@@ -30,7 +30,7 @@ async function callAPI(funcName, params = []) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // 1. PEMBERSIHAN CACHE SERVICE WORKER AGRESIF
+  // 1. PEMBERSIHAN CACHE SERVICE WORKER AGRESIF (VERSI 2.4.0 - USER TIDAK PERLU UNINSTALL!)
   if (localStorage.getItem("app_version") !== APP_VERSION) {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function (registrations) {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
     localStorage.setItem("app_version", APP_VERSION);
-    console.log("Sistem mendeteksi pembaruan versi " + APP_VERSION + ". Cache dibersihkan.");
+    console.log("Sistem mendeteksi pembaruan versi " + APP_VERSION + ". Modul Materi Kegiatan diaktifkan.");
     setTimeout(() => { window.location.reload(true); }, 500);
     return;
   }
@@ -78,10 +78,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
   initLiveTimer();
   initCreativeCalendar();
+  requestPushNotificationPermission();
 });
 
 // =========================================================================
-// === FITUR TAMPILKAN / SEMBUNYIKAN PASSWORD (FIXED)                     ===
+// === FITUR NATIVE PUSH NOTIFICATION UNTUK HP PENGGUNA                  ===
+// =========================================================================
+function requestPushNotificationPermission() {
+  if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission().then(function (permission) {
+      if (permission === "granted") {
+        console.log("Izin notifikasi diterima.");
+      }
+    });
+  }
+}
+
+function triggerNativeNotification(title, body) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification(title, {
+        body: body,
+        icon: 'https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png'
+      });
+    } catch (e) {
+      console.log("Native notification error:", e);
+    }
+  }
+}
+
+// =========================================================================
+// === FITUR TAMPILKAN / SEMBUNYIKAN PASSWORD                           ===
 // =========================================================================
 function togglePassword() {
   const passwordInput = document.getElementById('password');
@@ -233,6 +260,9 @@ function switchSection(sectionId, elementMenu) {
   else if (sectionId === 'section-absensi') loadAbsenHistory();
   else if (sectionId === 'section-kegiatan') loadKegiatan();
   else if (sectionId === 'section-agenda') loadAgenda();
+  else if (sectionId === 'section-materi') {
+    closeMateriFilesContainer();
+  }
   else if (sectionId === 'section-inventaris') loadInventaris();
   else if (sectionId === 'section-kas') loadKas();
   else if (sectionId === 'section-profile') loadProfileDiri();
@@ -290,7 +320,7 @@ function initCreativeCalendar() {
 }
 
 // =========================================================================
-// === LOGIN / LOGOUT & RBAC INTERFACE                                   ===
+// === LOGIN / LOGOUT & RBAC INTERFACE PERAN                              ===
 // =========================================================================
 function handleLogin() {
   const userIdVal = document.getElementById('userId').value.trim();
@@ -335,6 +365,7 @@ function actionLogout() {
 }
 
 function setupRBACUI(role) {
+  document.getElementById('menu-materi').style.display = 'none';
   document.getElementById('menu-inventaris').style.display = 'none';
   document.getElementById('menu-kas').style.display = 'none';
   document.getElementById('menu-users').style.display = 'none';
@@ -360,6 +391,13 @@ function setupRBACUI(role) {
 
   const docExportBtn = document.getElementById('btn-export-doc-absensi');
   if (docExportBtn) docExportBtn.style.display = 'none';
+
+  // ATURAN HAK AKSES PERAN (RBAC) MATERI KEGIATAN:
+  // ADMIN, PEMBINA, DAN DEWAN PENGGALANG -> DAPAT MENGAKSES & DOWNLOAD
+  // PENGGALANG -> TIDAK DAPAT MENGAKSES (SAMA SEKALI DISEMBUNYIKAN)
+  if (role === "Admin" || role === "Pembina" || role === "Dewan Penggalang") {
+    document.getElementById('menu-materi').style.display = 'flex';
+  }
 
   if (role === "Admin") {
     document.getElementById('card-riwayat-absen-global').style.display = 'block';
@@ -466,12 +504,17 @@ function loadNotifications(markAsRead = false) {
 
         if (res.list.length > 0) {
           const newestId = res.list[0].id;
+          const lastReadId = localStorage.getItem('last_read_notif_id_' + userId);
+
+          if (lastReadId !== newestId && !markAsRead) {
+            triggerNativeNotification("SIAP WANAMSKA Pembaruan", res.list[0].title);
+          }
+
           if (markAsRead) {
             localStorage.setItem('last_read_notif_id_' + userId, newestId);
             const badge = document.getElementById('lonceng-badge');
             if (badge) badge.style.display = 'none';
           } else {
-            const lastReadId = localStorage.getItem('last_read_notif_id_' + userId);
             const badge = document.getElementById('lonceng-badge');
             if (badge) {
               if (lastReadId !== newestId) {
@@ -502,6 +545,87 @@ function formatDateString(dateStr) {
     });
   } catch (e) {
     return dateStr;
+  }
+}
+
+// =========================================================================
+// === FITUR MODUL MATERI KEGIATAN KEPRAMUKAAN                            ===
+// =========================================================================
+
+function openMateriFolder(folderKey, folderTitle) {
+  const container = document.getElementById('materi-files-container');
+  const titleEl = document.getElementById('materi-folder-title');
+  const tbody = document.getElementById('body-materi-files');
+
+  if (!container || !tbody) return;
+
+  titleEl.innerText = "Folder File: " + folderTitle;
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Memuat daftar file dari Google Drive...</td></tr>`;
+  container.style.display = 'block';
+
+  // SCROLLING HALUS KE TAMPILAN FILE
+  container.scrollIntoView({ behavior: 'smooth' });
+
+  setLoader(true, "Mengambil berkas materi dari Google Drive...");
+
+  callAPI('getMateriFileList', [sessionToken, folderKey])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        tbody.innerHTML = "";
+        if (res.list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--color-text-muted);">Folder ini masih kosong atau belum ada file yang ditambahkan.</td></tr>`;
+          return;
+        }
+
+        res.list.forEach(file => {
+          let fileIcon = "📄";
+          const mime = file.mimeType.toLowerCase();
+          const fname = file.name.toLowerCase();
+
+          if (mime.includes("pdf")) fileIcon = "📕 PDF";
+          else if (mime.includes("image") || fname.endsWith(".jpg") || fname.endsWith(".png") || fname.endsWith(".jpeg")) fileIcon = "🖼️ GAMBAR";
+          else if (mime.includes("audio") || fname.endsWith(".mp3")) fileIcon = "🎵 AUDIO";
+          else if (mime.includes("video") || fname.endsWith(".mp4")) fileIcon = "🎬 VIDEO";
+          else if (mime.includes("word") || fname.endsWith(".doc") || fname.endsWith(".docx")) fileIcon = "📘 WORD";
+
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${fileIcon}</strong></td>
+              <td><strong>${file.name}</strong></td>
+              <td>${file.size}</td>
+              <td>
+                <button class="btn btn-gold" style="padding: 6px 14px; font-size: 0.85rem;" onclick="actionDownloadMateri('${file.downloadUrl}', '${file.viewUrl}', '${file.name}')">
+                  ⬇️ Download
+                </button>
+              </td>
+            </tr>`;
+        });
+      } else {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--color-danger-red);">${res.message}</td></tr>`;
+        showToast(res.message, true);
+      }
+    })
+    .catch(err => {
+      setLoader(false);
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--color-danger-red);">${err.message}</td></tr>`;
+      showToast(err.message, true);
+    });
+}
+
+function closeMateriFilesContainer() {
+  const container = document.getElementById('materi-files-container');
+  if (container) container.style.display = 'none';
+}
+
+function actionDownloadMateri(downloadUrl, viewUrl, fileName) {
+  // POPUP IZIN KONFIRMASI DOWNLOAD SETIAP PERANGKAT PENGGUNA
+  if (confirm("IZIN DOWNLOAD: Apakah Anda setuju untuk mengunduh file '" + fileName + "' ke perangkat Anda?")) {
+    showToast("Memulai pengunduhan file: " + fileName);
+    var win = window.open(downloadUrl, '_blank');
+    if (!win) {
+      window.location.href = viewUrl;
+    }
   }
 }
 
@@ -707,7 +831,7 @@ function loadAbsenHistory() {
 }
 
 // =========================================================================
-// === AGENDA KEGIATAN & RESPONSIVE EDIT AGENDA                            ===
+// === AGENDA KEGIATAN                                                   ===
 // =========================================================================
 function loadAgenda() {
   callAPI('getAgendaList', [sessionToken])
@@ -815,7 +939,7 @@ function actionDeleteAgenda(idAgenda) {
 }
 
 // =========================================================================
-// === DOKUMENTASI KEGIATAN (MAKSIMAL 10 MB & SIMPAN KE DRIVE)          ===
+// === DOKUMENTASI KEGIATAN                                              ===
 // =========================================================================
 function processKegiatanPhoto(index, event) {
   const file = event.target.files[0];
