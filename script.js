@@ -1,8 +1,8 @@
 // GANTI dengan URL Web App Apps Script Anda
 const API_URL = "https://script.google.com/macros/s/AKfycbx0TzNLsXZe8zeXUGWfgcmisDPlU-oDUjDZIjxlGoOpggeKwziAJw13aQapfBI2Rs0l0w/exec";
 
-// VERSI APLIKASI DI-UPDATE KE 2.4.0 UNTUK RESET CORRUPT PWA CACHE SECARA OTOMATIS
-const APP_VERSION = "2.4.0"; 
+// VERSI APLIKASI DI-UPDATE KE 2.4.1 UNTUK AUTO-PURGE CACHE & KAMERA ANTI-MIRROR
+const APP_VERSION = "2.4.1"; 
 
 let sessionToken = "";
 let userRole = "";
@@ -30,7 +30,7 @@ async function callAPI(funcName, params = []) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // 1. PEMBERSIHAN CACHE SERVICE WORKER AGRESIF (VERSI 2.4.0 - USER TIDAK PERLU UNINSTALL!)
+  // 1. PEMBERSIHAN CACHE SERVICE WORKER AGRESIF (VERSI 2.4.1 - TANPA UNINSTALL!)
   if (localStorage.getItem("app_version") !== APP_VERSION) {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function (registrations) {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
     localStorage.setItem("app_version", APP_VERSION);
-    console.log("Sistem mendeteksi pembaruan versi " + APP_VERSION + ". Modul Materi Kegiatan diaktifkan.");
+    console.log("Sistem mendeteksi pembaruan versi " + APP_VERSION + ". Perbaikan Kamera & Auto-Sync Materi diaktifkan.");
     setTimeout(() => { window.location.reload(true); }, 500);
     return;
   }
@@ -563,7 +563,6 @@ function openMateriFolder(folderKey, folderTitle) {
   tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">Memuat daftar file dari Google Drive...</td></tr>`;
   container.style.display = 'block';
 
-  // SCROLLING HALUS KE TAMPILAN FILE
   container.scrollIntoView({ behavior: 'smooth' });
 
   setLoader(true, "Mengambil berkas materi dari Google Drive...");
@@ -619,7 +618,6 @@ function closeMateriFilesContainer() {
 }
 
 function actionDownloadMateri(downloadUrl, viewUrl, fileName) {
-  // POPUP IZIN KONFIRMASI DOWNLOAD SETIAP PERANGKAT PENGGUNA
   if (confirm("IZIN DOWNLOAD: Apakah Anda setuju untuk mengunduh file '" + fileName + "' ke perangkat Anda?")) {
     showToast("Memulai pengunduhan file: " + fileName);
     var win = window.open(downloadUrl, '_blank');
@@ -654,7 +652,7 @@ function loadDashboard() {
 }
 
 // =========================================================================
-// === KAMERA (SELFIE ABSENSI)                                           ===
+// === KAMERA (SELFIE ABSENSI) - MENJAGA ORIENTASI NORMAL ANTI-MIRROR   ===
 // =========================================================================
 function startCamera() {
   const video = document.getElementById('camera-video');
@@ -698,6 +696,8 @@ function captureSnapshot() {
   canvas.width = video.videoWidth || 640;
   canvas.height = video.videoHeight || 480;
   const ctx = canvas.getContext('2d');
+
+  // PROSES PROYEKSI TANGKAPAN DILAKUKAN SECARA LANGSUNG TANPA PERUBAHAN MATRIX MIRROR
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   base64SelfieString = canvas.toDataURL('image/jpeg', 0.85);
   
