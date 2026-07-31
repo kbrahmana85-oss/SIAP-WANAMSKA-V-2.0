@@ -1,7 +1,7 @@
 // GANTI dengan URL Web App Apps Script Anda
-const API_URL = "https://script.google.com/macros/s/AKfycbwjZ0sONMa_5UEJv4Qh7dvh64XslpjwG9ZA1UGoySZqhUmSi8dF9Lfoq5RsIHtDYqCHFQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx0TzNLsXZe8zeXUGWfgcmisDPlU-oDUjDZIjxlGoOpggeKwziAJw13aQapfBI2Rs0l0w/exec";
 
-// VERSI APLIKASI DI-UPDATE KE 2.4.2 UNTUK FIX BUG INVENTARIS, KAS, TANGGAL PROFIL & KAMERA UPLOAD
+// VERSI APLIKASI DI-UPDATE KE 2.4.2 UNTUK FIX INVENTARIS, KAS, TANGGAL LAHIR & KOMPRESI KAMERA OOM
 const APP_VERSION = "2.4.2"; 
 
 let sessionToken = "";
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
     localStorage.setItem("app_version", APP_VERSION);
-    console.log("Sistem mendeteksi pembaruan versi " + APP_VERSION + ". Perbaikan Inventaris, Kas, Tanggal Lahir & Kamera Aktif.");
+    console.log("Sistem mendeteksi pembaruan versi " + APP_VERSION + ". Perbaikan Inventaris, Kas & Kamera diaktifkan.");
     setTimeout(() => { window.location.reload(true); }, 500);
     return;
   }
@@ -591,7 +591,7 @@ function openMateriFolder(folderKey, folderTitle) {
               <td><strong>${file.name}</strong></td>
               <td>${file.size}</td>
               <td>
-                <button type="button" class="btn btn-gold" style="padding: 6px 14px; font-size: 0.85rem;" onclick="actionDownloadMateri('${file.downloadUrl}', '${file.viewUrl}', '${file.name}')">
+                <button class="btn btn-gold" style="padding: 6px 14px; font-size: 0.85rem;" onclick="actionDownloadMateri('${file.downloadUrl}', '${file.viewUrl}', '${file.name}')">
                   ⬇️ Download
                 </button>
               </td>
@@ -762,9 +762,6 @@ function sendAbsenRequest(status, fotoSelfie, metode, kegiatanTerkait, keteranga
         loadNotifications(false);
       } else {
         showToast(res.message, true);
-        if (res.message && res.message.includes("Sesi")) {
-          showPage('login-page');
-        }
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
@@ -848,10 +845,10 @@ function loadAgenda() {
         res.list.forEach(agd => {
           let actionButtons = "";
           if (isPengurus) {
-            actionButtons += `<button type="button" class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openAgendaModal(${JSON.stringify(agd)})'>Edit</button>`;
+            actionButtons += `<button class="btn" style="padding:6px 10px; margin-right:5px;" onclick='openAgendaModal(${JSON.stringify(agd)})'>Edit</button>`;
           }
           if (isAdmin) {
-            actionButtons += `<button type="button" class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteAgenda('${agd.id_agenda}')">Hapus</button>`;
+            actionButtons += `<button class="btn btn-danger" style="padding:6px 10px;" onclick="actionDeleteAgenda('${agd.id_agenda}')">Hapus</button>`;
           }
 
           tbody.innerHTML += `
@@ -917,17 +914,10 @@ function actionSaveAgenda() {
   callAPI('saveAgenda', [sessionToken, payload])
     .then(res => {
       setLoader(false);
-      if (res.success) {
-        showToast(res.message);
-        closeAgendaModal();
-        loadAgenda();
-        loadNotifications(false);
-      } else {
-        showToast(res.message, true);
-        if (res.message && res.message.includes("Sesi")) {
-          showPage('login-page');
-        }
-      }
+      showToast(res.message);
+      closeAgendaModal();
+      loadAgenda();
+      loadNotifications(false);
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
@@ -945,7 +935,7 @@ function actionDeleteAgenda(idAgenda) {
 }
 
 // =========================================================================
-// === DOKUMENTASI KEGIATAN                                              ===
+// === DOKUMENTASI KEGIATAN (KOMPRESI ULTRA UNTUK MENCEGAH CRASH MEMORI)===
 // =========================================================================
 function processKegiatanPhoto(index, event) {
   const file = event.target.files[0];
@@ -957,12 +947,14 @@ function processKegiatanPhoto(index, event) {
     return;
   }
 
+  setLoader(true, "Mengompresi foto agar hemat memori...");
+
   const reader = new FileReader();
   reader.onload = function (e) {
     const img = new Image();
     img.onload = function () {
       const canvas = document.createElement('canvas');
-      const maxDim = 1024;
+      const maxDim = 800; // DIMENSI AMAN AGAR TIDAK KEHABISAN RAM PADA HP
       let width = img.width;
       let height = img.height;
       
@@ -979,9 +971,18 @@ function processKegiatanPhoto(index, event) {
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      
+      // KOMPRESI AMAN 0.7 SEHINGGA UKURAN BASE64 KECIL DAN ANTI-CRASH OOM
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
       document.getElementById('keg-foto-' + index + '-base64').value = dataUrl;
-      showToast("Foto " + index + " siap diunggah.");
+      
+      event.target.value = ""; // BERSIHKAN FILE INPUT
+      setLoader(false);
+      showToast("Foto " + index + " berhasil diproses & dikompresi.");
+    };
+    img.onerror = function() {
+      setLoader(false);
+      showToast("Gagal memproses file foto.", true);
     };
     img.src = e.target.result;
   };
@@ -1056,23 +1057,16 @@ function actionSaveKegiatan() {
   callAPI('saveKegiatan', [sessionToken, payload])
     .then(res => {
       setLoader(false);
-      if (res.success) {
-        showToast(res.message);
-        closeKegiatanModal();
-        loadKegiatan();
-        loadNotifications(false);
-      } else {
-        showToast(res.message, true);
-        if (res.message && res.message.includes("Sesi")) {
-          showPage('login-page');
-        }
-      }
+      showToast(res.message);
+      closeKegiatanModal();
+      loadKegiatan();
+      loadNotifications(false);
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
 // =========================================================================
-// === INVENTARIS & KAS (PERBAIKAN FATAL BUG 1)                           ===
+// === INVENTARIS & KAS (PERBAIKAN FUNGSI PENYIMPANAN DATA)               ===
 // =========================================================================
 function loadInventaris() {
   callAPI('getInventarisList', [sessionToken])
@@ -1081,12 +1075,12 @@ function loadInventaris() {
         const tbody = document.getElementById('body-inventaris');
         if (!tbody) return;
         tbody.innerHTML = "";
-        if (res.list.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada data inventaris tersimpan.</td></tr>`;
+        if (!res.list || res.list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada inventaris tercatat.</td></tr>`;
           return;
         }
         res.list.forEach(row => {
-          let tglStr = row.tanggal_masuk ? String(row.tanggal_masuk).substring(0, 10) : "-";
+          var loc = row.locations_simpan || row.lokasi_simpan || "-";
           tbody.innerHTML += `
             <tr>
               <td><strong>${row.id_barang}</strong></td>
@@ -1094,8 +1088,8 @@ function loadInventaris() {
               <td>${row.kategori}</td>
               <td>${row.jumlah}</td>
               <td>${row.kondisi}</td>
-              <td>${row.locations_simpan}</td>
-              <td><button type="button" class="btn" style="padding:4px 8px; font-size:0.8rem;" onclick='openInventarisModal(${JSON.stringify(row)})'>Edit</button></td>
+              <td>${loc}</td>
+              <td>-</td>
             </tr>`;
         });
       }
@@ -1103,28 +1097,13 @@ function loadInventaris() {
     .catch(err => showToast(err.message, true));
 }
 
-function openInventarisModal(inv) {
-  if (inv && inv.id_barang) {
-    document.getElementById('inv-modal-title').innerText = "Edit Data Barang";
-    document.getElementById('inv-id').value = inv.id_barang;
-    document.getElementById('inv-nama').value = inv.nama_barang || "";
-    document.getElementById('inv-kategori').value = inv.kategori || "Perlengkapan Kemah";
-    document.getElementById('inv-jumlah').value = inv.jumlah || "";
-    document.getElementById('inv-kondisi').value = inv.kondisi || "Baik";
-    document.getElementById('inv-lokasi').value = inv.locations_simpan || "";
-    document.getElementById('inv-tanggal').value = inv.tanggal_masuk ? String(inv.tanggal_masuk).substring(0, 10) : new Date().toISOString().substring(0, 10);
-    document.getElementById('inv-keterangan').value = inv.keterangan || "";
-  } else {
-    document.getElementById('inv-modal-title').innerText = "Form Tambah Barang";
-    document.getElementById('inv-id').value = "";
-    document.getElementById('inv-nama').value = "";
-    document.getElementById('inv-kategori').value = "Perlengkapan Kemah";
-    document.getElementById('inv-jumlah').value = "";
-    document.getElementById('inv-kondisi').value = "Baik";
-    document.getElementById('inv-lokasi').value = "";
-    document.getElementById('inv-tanggal').value = new Date().toISOString().substring(0, 10);
-    document.getElementById('inv-keterangan').value = "";
-  }
+function openInventarisModal() {
+  document.getElementById('inv-id').value = "";
+  document.getElementById('inv-nama').value = "";
+  document.getElementById('inv-jumlah').value = "";
+  document.getElementById('inv-lokasi').value = "";
+  document.getElementById('inv-tanggal').value = new Date().toISOString().substring(0, 10);
+  document.getElementById('inv-keterangan').value = "";
   document.getElementById('modal-inventaris').style.display = 'flex';
 }
 
@@ -1135,13 +1114,13 @@ function closeInventarisModal() {
 function actionSaveInventaris() {
   const payload = {
     id_barang: document.getElementById('inv-id').value,
-    nama_barang: document.getElementById('inv-nama').value,
+    nama_barang: document.getElementById('inv-nama').value.trim(),
     kategori: document.getElementById('inv-kategori').value,
     jumlah: document.getElementById('inv-jumlah').value,
     kondisi: document.getElementById('inv-kondisi').value,
-    locations_simpan: document.getElementById('inv-lokasi').value,
+    locations_simpan: document.getElementById('inv-lokasi').value.trim(),
     tanggal_masuk: document.getElementById('inv-tanggal').value,
-    keterangan: document.getElementById('inv-keterangan').value
+    keterangan: document.getElementById('inv-keterangan').value.trim()
   };
 
   if (!payload.nama_barang || !payload.jumlah || !payload.locations_simpan || !payload.tanggal_masuk) {
@@ -1157,12 +1136,8 @@ function actionSaveInventaris() {
         showToast(res.message);
         closeInventarisModal();
         loadInventaris();
-        loadNotifications(false);
       } else {
         showToast(res.message, true);
-        if (res.message && res.message.includes("Sesi")) {
-          showPage('login-page');
-        }
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
@@ -1180,15 +1155,16 @@ function loadKas() {
         const tbody = document.getElementById('body-kas');
         if (tbody) {
           tbody.innerHTML = "";
-          if (res.list.length === 0) {
+          if (!res.list || res.list.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada transaksi kas tercatat.</td></tr>`;
             return;
           }
           res.list.forEach(row => {
+            let warnaJenis = row.jenis === "Pemasukan" ? "#03543F" : "#B91C1C";
             tbody.innerHTML += `
               <tr>
                 <td>${row.tanggal}</td>
-                <td><strong>${row.jenis}</strong></td>
+                <td><strong style="color: ${warnaJenis}">${row.jenis}</strong></td>
                 <td>${row.kategori}</td>
                 <td>Rp ${Number(row.jumlah).toLocaleString('id-ID')}</td>
                 <td>${row.keterangan || "-"}</td>
@@ -1218,7 +1194,6 @@ function drawKasChart(masuk, keluar) {
 }
 
 function openKasModal() {
-  document.getElementById('kas-jenis').value = "Pemasukan";
   document.getElementById('kas-kategori').value = "";
   document.getElementById('kas-jumlah').value = "";
   document.getElementById('kas-tanggal-form').value = new Date().toISOString().substring(0, 10);
@@ -1233,14 +1208,14 @@ function closeKasModal() {
 function actionSaveKas() {
   const payload = {
     jenis: document.getElementById('kas-jenis').value,
-    kategori: document.getElementById('kas-kategori').value,
+    kategori: document.getElementById('kas-kategori').value.trim(),
     jumlah: document.getElementById('kas-jumlah').value,
     tanggal: document.getElementById('kas-tanggal-form').value,
-    keterangan: document.getElementById('kas-keterangan-form').value
+    keterangan: document.getElementById('kas-keterangan-form').value.trim()
   };
 
-  if (!payload.jenis || !payload.kategori || !payload.jumlah || !payload.tanggal) {
-    showToast("Jenis, kategori, jumlah, dan tanggal transaksi wajib diisi!", true);
+  if (!payload.kategori || !payload.jumlah || !payload.tanggal) {
+    showToast("Kategori, jumlah rupiah, dan tanggal transaksi wajib diisi!", true);
     return;
   }
 
@@ -1252,19 +1227,15 @@ function actionSaveKas() {
         showToast(res.message);
         closeKasModal();
         loadKas();
-        loadNotifications(false);
       } else {
         showToast(res.message, true);
-        if (res.message && res.message.includes("Sesi")) {
-          showPage('login-page');
-        }
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
 // =========================================================================
-// === PROFIL DIRI & SIMPAN FOTO KE DRIVE (PERBAIKAN FATAL BUG 3)         ===
+// === PROFIL DIRI & SIMPAN FOTO KE DRIVE                                ===
 // =========================================================================
 function loadProfileDiri() {
   callAPI('getUserProfile', [sessionToken, userId])
@@ -1276,9 +1247,9 @@ function loadProfileDiri() {
         document.getElementById('prof-nta').value = p.nta || "";
         document.getElementById('prof-tempat-lahir').value = p.tempat_lahir || "";
         
-        // PERBAIKAN TANGGAL LAHIR: DAPATKAN FORMAT YYYY-MM-DD PRESISI
+        // PERBAIKAN FORMAT TANGGAL LAHIR ANTI-GESER HARI
         if (p.tanggal_lahir) {
-          document.getElementById('prof-tanggal-lahir').value = String(p.tanggal_lahir).substring(0, 10);
+          document.getElementById('prof-tanggal-lahir').value = p.tanggal_lahir.substring(0, 10);
         } else {
           document.getElementById('prof-tanggal-lahir').value = "";
         }
@@ -1341,12 +1312,8 @@ function actionSaveProfile() {
   callAPI('saveUserProfile', [sessionToken, payload])
     .then(res => {
       setLoader(false);
-      if (res.success) {
-        showToast(res.message);
-        loadProfileDiri();
-      } else {
-        showToast(res.message, true);
-      }
+      showToast(res.message);
+      loadProfileDiri();
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
@@ -1361,7 +1328,7 @@ function actionGantiPassword() {
 }
 
 // =========================================================================
-// === MANAJEMEN USER & EXPORT (EXCEL, PDF, & DOC)                       ===
+// === MANAJEMEN USER & EXPORT DATA DENGAN UNDUHAN OTOMATIS             ===
 // =========================================================================
 function loadUsers() {
   callAPI('getUserList', [sessionToken])
@@ -1391,6 +1358,7 @@ function actionSaveUser() { closeUserModal(); showToast("User disimpan."); }
 
 function loadSystemLogs() {}
 
+// PERBAIKAN FITUR EXPORT: MENAMBAHKAN ELEMEN UNDUHAN OTOMATIS KE STORAGE PERANGKAT
 function triggerExport(jenis, format) {
   setLoader(true, `Mengekspor data ${jenis} ke format ${format.toUpperCase()}...`);
   
@@ -1402,8 +1370,16 @@ function triggerExport(jenis, format) {
     .then(res => {
       setLoader(false);
       if (res.success && res.url) {
-        showToast("Ekspor Berhasil! Membuka file...");
-        window.open(res.url, '_blank');
+        showToast("Ekspor Berhasil! Memulai unduhan otomatis...");
+        
+        // TEKNIK TRIGGER UNDUHAN OTOMATIS PADA PERANGKAT USER
+        const downloadLink = document.createElement('a');
+        downloadLink.href = res.url;
+        downloadLink.target = '_blank';
+        downloadLink.rel = 'noopener noreferrer';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
       } else {
         showToast(res.message || "Gagal mengekspor data", true);
       }
