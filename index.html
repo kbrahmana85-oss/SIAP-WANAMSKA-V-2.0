@@ -502,6 +502,44 @@
       justify-content: space-between;
     }
 
+    /* GRID FOLDER MATERI KEGIATAN KREATIF */
+    .materi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    .folder-card {
+      background-color: var(--color-white);
+      border-radius: var(--rounded-box);
+      padding: 20px;
+      box-shadow: var(--shadow-soft);
+      border-left: 6px solid var(--color-accent-gold);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .folder-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-bold);
+      background-color: #FFF9F2;
+    }
+    .folder-icon {
+      font-size: 2.2rem;
+    }
+    .folder-info h3 {
+      font-size: 0.95rem;
+      font-family: var(--font-title);
+      color: var(--color-primary-brown);
+      margin-bottom: 2px;
+    }
+    .folder-info p {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+
     .chart-container {
       width: 100%;
       max-width: 600px;
@@ -767,7 +805,7 @@
 </head>
 <body>
 
-  <!-- GPS LOCK OVERLAY (GEOFENCING & LOCATION MANDATORY BEFORE LOGIN) -->
+  <!-- GPS LOCK OVERLAY -->
   <div id="gps-blocking-overlay">
     <div class="gps-lock-card">
       <span style="font-size: 4rem; display: block; margin-bottom: 20px; animation: pulse 2s infinite;">📡</span>
@@ -854,6 +892,12 @@
         <div class="menu-item" onclick="switchSection('section-kegiatan', this)">
           <span class="icon">&#127941;</span> Dokumentasi Kegiatan
         </div>
+
+        <!-- MODUL BARU: MATERI KEGIATAN (KHUSUS ADMIN, PEMBINA, DEWAN PENGGALANG) -->
+        <div class="menu-item role-restricted" id="menu-materi" onclick="switchSection('section-materi', this)">
+          <span class="icon">&#128218;</span> Materi Kegiatan
+        </div>
+
         <div class="menu-item role-restricted" id="menu-inventaris" onclick="switchSection('section-inventaris', this)">
           <span class="icon">&#128230;</span> Inventaris
         </div>
@@ -1024,7 +1068,6 @@
             </div>
           </div>
 
-          <!-- RIWAYAT GLOBAL: KHUSUS ADMIN -->
           <div class="card" style="margin-top: 30px; display: none;" id="card-riwayat-absen-global">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <h2 style="font-family: var(--font-title);">Riwayat Absensi Global (Admin Only)</h2>
@@ -1049,7 +1092,6 @@
             </div>
           </div>
 
-          <!-- RIWAYAT PRIBADI: PEMBINA, DEWAN PENGGALANG, PENGGALANG -->
           <div class="card" style="margin-top: 30px; display: none;" id="card-riwayat-absen-pribadi">
             <h2 style="font-family: var(--font-title); margin-bottom: 15px;">Riwayat Absensi Pribadi Saya</h2>
             <div id="body-riwayat-absen-pribadi" style="display: flex; flex-direction: column; gap: 15px;">
@@ -1065,6 +1107,104 @@
             <button class="btn btn-gold" id="btn-tambah-kegiatan-trigger" onclick="openKegiatanModal()">+ Tambah Kegiatan</button>
           </div>
           <div class="kegiatan-grid" id="grid-list-kegiatan"></div>
+        </section>
+
+        <!-- SECTION BARU: MATERI KEGIATAN KEPRAMUKAAN -->
+        <section id="section-materi" class="app-section">
+          <div class="section-header">
+            <h1>Materi Kegiatan Kepramukaan</h1>
+          </div>
+
+          <!-- GRID 8 FOLDER UTAMA -->
+          <div class="materi-grid">
+            <div class="folder-card" onclick="openMateriFolder('SEJARAH', '1. Sejarah Pramuka')">
+              <div class="folder-icon">📜</div>
+              <div class="folder-info">
+                <h3>1. Sejarah Pramuka</h3>
+                <p>Klik untuk membuka file</p>
+              </div>
+            </div>
+
+            <div class="folder-card" onclick="openMateriFolder('SKU_SKK', '2. SKU dan SKK')">
+              <div class="folder-icon">🎗️</div>
+              <div class="folder-info">
+                <h3>2. SKU dan SKK</h3>
+                <p>Klik untuk membuka file</p>
+              </div>
+            </div>
+
+            <div class="folder-card" onclick="openMateriFolder('SANDI', '3. Sandi')">
+              <div class="folder-icon">🔐</div>
+              <div class="folder-info">
+                <h3>3. Sandi</h3>
+                <p>Klik untuk membuka file</p>
+              </div>
+            </div>
+
+            <div class="folder-card" onclick="openMateriFolder('PETA_KOMPAS', '4. Peta dan Kompas')">
+              <div class="folder-icon">🧩</div>
+              <div class="folder-info">
+                <h3>4. Peta dan Kompas</h3>
+                <p>Klik untuk membuka file</p>
+              </div>
+            </div>
+
+            <div class="folder-card" onclick="openMateriFolder('KEWARGANEGARAAN', '5. Kewarganegaraan dan Organisasi')">
+              <div class="folder-icon">🏛️</div>
+              <div class="folder-info">
+                <h3>5. Kewarganegaraan</h3>
+                <p>Klik untuk membuka file</p>
+              </div>
+            </div>
+
+            <div class="folder-card" onclick="openMateriFolder('PERMAINAN', '6. Permainan Kepramukaan')">
+              <div class="folder-icon">🎯</div>
+              <div class="folder-info">
+                <h3>6. Permainan</h3>
+                <p>Klik untuk membuka file</p>
+              </div>
+            </div>
+
+            <div class="folder-card" onclick="openMateriFolder('LAGU', '7. Lagu Pramuka')">
+              <div class="folder-icon">🎶</div>
+              <div class="folder-info">
+                <h3>7. Lagu Pramuka</h3>
+                <p>Klik untuk membuka file</p>
+              </div>
+            </div>
+
+            <div class="folder-card" onclick="openMateriFolder('MATERI_UMUM', '8. Materi Umum')">
+              <div class="folder-icon">📚</div>
+              <div class="folder-info">
+                <h3>8. Materi Umum</h3>
+                <p>Klik untuk membuka file</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTAINER DAFTAR FILE DALAM FOLDER MATERI -->
+          <div class="card" id="materi-files-container" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--color-light-brown); padding-bottom: 10px;">
+              <h2 id="materi-folder-title" style="font-family: var(--font-title); color: var(--color-primary-brown); font-size: 1.2rem;">Folder File</h2>
+              <button class="btn btn-danger" onclick="closeMateriFilesContainer()">Tutup Folder ✖</button>
+            </div>
+            
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tipe File</th>
+                    <th>Nama File Materi</th>
+                    <th>Ukuran File</th>
+                    <th>Aksi &amp; Unduh</th>
+                  </tr>
+                </thead>
+                <tbody id="body-materi-files">
+                  <tr><td colspan="4" style="text-align: center;">Memuat daftar file dari Google Drive...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </section>
 
         <!-- SECTION 5: INVENTARIS -->
@@ -1238,7 +1378,7 @@
           </div>
         </section>
 
-        <!-- SECTION 9: EXPORT DATA (DENGAN DUKUNGAN EXCEL, PDF, & DOC) -->
+        <!-- SECTION 9: EXPORT DATA -->
         <section id="section-exports" class="app-section">
           <div class="section-header">
             <h1>Export Database Administrasi</h1>
@@ -1352,7 +1492,7 @@
     <button id="btnInstallPWA" style="padding:14px 24px; background:#FFC107; color:#000; border:none; border-radius:10px; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.2);">📲 Install Aplikasi</button>
   </div>
 
-  <!-- MODAL KEGIATAN DENGAN PEMBATASAN MAKSIMAL 10 MB -->
+  <!-- MODAL KEGIATAN -->
   <div id="modal-kegiatan" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1607,7 +1747,7 @@
     </div>
   </div>
 
-  <!-- Cache version 2.3.0 -->
-  <script src="script.js?v=2.3.0"></script>
+  <!-- Cache version 2.4.0 -->
+  <script src="script.js?v=2.4.0"></script>
 </body>
 </html>
