@@ -1,5 +1,5 @@
 // GANTI dengan URL Web App Apps Script Anda
-const API_URL = "https://script.google.com/macros/s/AKfycbxhTdWuR5fm9J91NFAbIdivUnAcbvR0qAJiUW7_0tGL2FmTg2y6yXEcL8B2EtiZ1DYF_g/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwAxShOxzhnYbztgicrcYy8m_DnE1l3qIFLtzEKRxnklVJXtIrp6FAMpX_I8hyOAbTP4g/exec";
 // VERSI APLIKASI DI-UPDATE KE 2.5.0 UNTUK FIX INVENTARIS, KAS, TANGGAL PROFIL, & KOMPRESI DOKUMENTASI
 const APP_VERSION = "2.5.0"; 
 
