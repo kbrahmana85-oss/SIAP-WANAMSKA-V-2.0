@@ -1,5 +1,5 @@
 // GANTI dengan URL Web App Apps Script Anda
-const API_URL = "https://script.google.com/macros/s/AKfycbwAxShOxzhnYbztgicrcYy8m_DnE1l3qIFLtzEKRxnklVJXtIrp6FAMpX_I8hyOAbTP4g/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbybcgXECU5JLc7BAIHkXVAhPy_9q3icA_Tw8q2X0gaXBuaMeAjxAc6sPju6cj4hDHN2yw/exec";
 // VERSI APLIKASI DI-UPDATE KE 2.5.1 UNTUK FIX PERFORMANCE (LOGIN CEPAT & BACA DATA RINGAN)
 const APP_VERSION = "2.5.1"; 
 
