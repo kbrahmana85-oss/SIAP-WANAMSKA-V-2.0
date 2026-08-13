@@ -348,15 +348,27 @@ function initCreativeCalendar() {
 // =========================================================================
 // === LOGIN / LOGOUT & RBAC INTERFACE PERAN                              ===
 // =========================================================================
+function setLoginLoading(isLoading) {
+  const logo = document.getElementById('login-logo');
+  const btn = document.getElementById('loginBtn');
+  if (logo) logo.classList.toggle('login-logo-animate', isLoading);
+  if (btn) {
+    btn.disabled = isLoading;
+    btn.innerText = isLoading ? 'Memproses...' : 'Login';
+  }
+}
+
 function handleLogin() {
   const userIdVal = document.getElementById('userId').value.trim();
   const passwordVal = document.getElementById('password').value.trim();
 
   if (!userIdVal || !passwordVal) { showToast('User ID dan Password wajib diisi', true); return; }
   showToast('Sedang autentikasi...');
+  setLoginLoading(true);
 
   callAPI('loginUser', [userIdVal, passwordVal])
     .then(res => {
+      setLoginLoading(false);
       if (res.success) {
         sessionStorage.setItem('sessionToken', res.sessionToken);
         sessionStorage.setItem('user', JSON.stringify(res.user));
@@ -376,7 +388,10 @@ function handleLogin() {
         showToast(res.message || 'Login gagal', true);
       }
     })
-    .catch(err => showToast(err.message || 'Login gagal', true));
+    .catch(err => {
+      setLoginLoading(false);
+      showToast(err.message || 'Login gagal', true);
+    });
 }
 
 function actionLogout() {
