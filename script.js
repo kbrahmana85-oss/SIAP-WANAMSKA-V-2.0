@@ -1,7 +1,7 @@
 // GANTI dengan URL Web App Apps Script Anda
 const API_URL = "https://script.google.com/macros/s/AKfycbybcgXECU5JLc7BAIHkXVAhPy_9q3icA_Tw8q2X0gaXBuaMeAjxAc6sPju6cj4hDHN2yw/exec";
-// VERSI APLIKASI DI-UPDATE KE 2.5.0 UNTUK FIX INVENTARIS, KAS, TANGGAL PROFIL, & KOMPRESI DOKUMENTASI
-const APP_VERSION = "2.5.0"; 
+// VERSI APLIKASI DI-UPDATE KE 2.5.1 UNTUK FIX PERFORMANCE (LOGIN CEPAT & BACA DATA RINGAN)
+const APP_VERSION = "2.5.1"; 
 
 let sessionToken = "";
 let userRole = "";
@@ -17,16 +17,58 @@ let userLatitude = null;
 let userLongitude = null;
 let isFakeGPSDetected = false;
 
-async function callAPI(funcName, params = []) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ func: funcName, params: params })
-  });
-  const response = await res.json();
-  if (response.status === 'success') return response.data;
-  else throw new Error(response.message);
+// === KESIMPULAN OPTIMASI: cache data baca + timeout agar login & baca data cepat ===
+const API_CACHE = new Map();
+const API_CACHE_TTL = 60000; // 60 detik data dianggap segar (kurangi panggilan berulang)
+
+const READ_ONLY_FUNCS = new Set([
+  'getDashboardData', 'getAbsenHistory', 'getKegiatanList', 'getAgendaList',
+  'getInventarisList', 'getKasData', 'getUserProfile', 'getUserList',
+  'getNotificationList', 'getSystemLogs', 'getMateriFileList'
+]);
+
+function isWriteFunc(name) {
+  return /^(save|add|submit|delete|change|logout|export|initialize)/.test(name);
 }
+
+async function callAPI(funcName, params = [], options = {}) {
+  const useCache = options.cache !== false && READ_ONLY_FUNCS.has(funcName);
+  const cacheKey = funcName + '|' + JSON.stringify(params || []);
+
+  // Kembalikan hasil cache bila masih segar (hindari baca ulang dari Apps Script)
+  if (useCache) {
+    const hit = API_CACHE.get(cacheKey);
+    if (hit && (Date.now() - hit.t) < API_CACHE_TTL) return hit.data;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 detik timeout
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ func: funcName, params: params }),
+      signal: controller.signal
+    });
+    const response = await res.json();
+    if (response.status === 'success') {
+      if (useCache) API_CACHE.set(cacheKey, { t: Date.now(), data: response.data });
+      if (isWriteFunc(funcName)) API_CACHE.clear(); // data berubah -> buang cache lama
+      return response.data;
+    }
+    throw new Error(response.message);
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('Koneksi lambat / server tidak merespons. Coba lagi sebentar.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function clearAPICache() { API_CACHE.clear(); }
 
 document.addEventListener('DOMContentLoaded', function () {
   if (localStorage.getItem("app_version") !== APP_VERSION) {
@@ -64,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setupRBACUI(userRole);
     showPage('dashboard-page');
-    loadDashboard();
+    // loadDashboard() sudah dipanggil di dalam showPage -> switchSection
   } else {
     showPage('login-page');
   }
@@ -126,10 +168,11 @@ function togglePassword() {
 // =========================================================================
 function requestGPSPermission() {
   if (navigator.geolocation) {
-    setLoader(true, "Mendapatkan sinyal koordinat GPS...");
+    // OPTIMASI LOGIN: jangan tampilkan loader penuh & jangan paksa fix satelit baru
+    // saat startup. GPS presisi tinggi hanya dibutuhkan saat absensi, sehingga
+    // halaman login tidak lagi tertahan menunggu GPS.
     navigator.geolocation.getCurrentPosition(
       function (position) {
-        setLoader(false);
         userLatitude = position.coords.latitude;
         userLongitude = position.coords.longitude;
         
@@ -145,24 +188,12 @@ function requestGPSPermission() {
         if (blockingOverlay) {
           blockingOverlay.style.display = 'none';
         }
-        showToast("GPS aktif & terverifikasi.");
       },
-      function (error) {
-        setLoader(false);
-        let errorMsg = "Harap izinkan akses lokasi pada browser Anda.";
-        if (error.code === error.PERMISSION_DENIED) {
-          errorMsg = "Akses lokasi ditolak! Anda wajib mengaktifkan GPS untuk menggunakan aplikasi.";
-        }
-        showToast(errorMsg, true);
-        const blockingOverlay = document.getElementById('gps-blocking-overlay');
-        if (blockingOverlay) {
-          blockingOverlay.style.display = 'flex';
-        }
+      function () {
+        // Tidak memblokir halaman login; penolakan GPS baru dicegah saat absensi.
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
     );
-  } else {
-    showToast("Browser/Perangkat Anda tidak mendukung fitur lokasi GPS.", true);
   }
 }
 
@@ -317,15 +348,27 @@ function initCreativeCalendar() {
 // =========================================================================
 // === LOGIN / LOGOUT & RBAC INTERFACE PERAN                              ===
 // =========================================================================
+function setLoginLoading(isLoading) {
+  const logo = document.getElementById('login-logo');
+  const btn = document.getElementById('loginBtn');
+  if (logo) logo.classList.toggle('login-logo-animate', isLoading);
+  if (btn) {
+    btn.disabled = isLoading;
+    btn.innerText = isLoading ? 'Memproses...' : 'Login';
+  }
+}
+
 function handleLogin() {
   const userIdVal = document.getElementById('userId').value.trim();
   const passwordVal = document.getElementById('password').value.trim();
 
   if (!userIdVal || !passwordVal) { showToast('User ID dan Password wajib diisi', true); return; }
   showToast('Sedang autentikasi...');
+  setLoginLoading(true);
 
   callAPI('loginUser', [userIdVal, passwordVal])
     .then(res => {
+      setLoginLoading(false);
       if (res.success) {
         sessionStorage.setItem('sessionToken', res.sessionToken);
         sessionStorage.setItem('user', JSON.stringify(res.user));
@@ -340,12 +383,15 @@ function handleLogin() {
 
         setupRBACUI(res.user.role);
         showPage('dashboard-page');
-        loadDashboard();
+        // loadDashboard() sudah dipanggil di dalam showPage -> switchSection
       } else {
         showToast(res.message || 'Login gagal', true);
       }
     })
-    .catch(err => showToast(err.message || 'Login gagal', true));
+    .catch(err => {
+      setLoginLoading(false);
+      showToast(err.message || 'Login gagal', true);
+    });
 }
 
 function actionLogout() {
@@ -368,7 +414,9 @@ function setupRBACUI(role) {
   document.getElementById('menu-logs').style.display = 'none';
   
   document.getElementById('btn-lonceng').style.display = 'flex';
-  loadNotifications(false);
+  // OPTIMASI LOGIN: jangan hitung notifikasi (membaca 5 sheet sekaligus di server)
+  // secara sinkron saat login. Tunda beberapa saat agar login terasa cepat.
+  setTimeout(function () { loadNotifications(false); }, 2000);
   
   document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'none';
   document.getElementById('btn-tambah-agenda-trigger').style.display = 'none';
@@ -1393,6 +1441,16 @@ function closeUserModal() { document.getElementById('modal-user').style.display 
 function actionSaveUser() { closeUserModal(); showToast("User disimpan."); }
 
 function loadSystemLogs() {}
+
+// Fungsi ini dipanggil dari onclick foto absensi namun sebelumnya belum didefinisikan.
+function viewFullImage(src) {
+  if (!src) return;
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write('<html><head><title>Foto Absensi</title></head><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="' + src + '" style="max-width:100%;max-height:100vh;object-fit:contain;" /></body></html>');
+    win.document.close();
+  }
+}
 
 // FITUR AUTO DOWNLOAD HASIL EXPORT
 function triggerExport(jenis, format) {

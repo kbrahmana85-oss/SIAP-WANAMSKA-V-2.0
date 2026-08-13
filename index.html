@@ -157,6 +157,20 @@
       to { transform: rotate(360deg); }
     }
 
+    /* ANIMASI LOGO SAAT PROSES LOGIN (AUTENTIKASI) */
+    @keyframes loginLogoLoading {
+      0%   { transform: scale(1) rotate(0deg); }
+      25%  { transform: scale(1.15) rotate(-8deg); }
+      50%  { transform: scale(0.95) rotate(8deg); }
+      75%  { transform: scale(1.1) rotate(-4deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .login-logo-animate {
+      animation: loginLogoLoading 0.9s ease-in-out infinite;
+      transform-origin: center;
+      filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.7));
+    }
+
     #login-screen {
       display: flex;
       align-items: center;
@@ -854,7 +868,7 @@
   <!-- LOGIN SCREEN -->
   <div id="login-screen">
     <div class="login-box">
-      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto;">
+      <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" id="login-logo" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto;">
       <h1>SIAP WANAMSKA</h1>
       <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.9rem;">Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
       
@@ -1737,6 +1751,6 @@
   </div>
 
   <!-- Cache version 2.5.0 -->
-  <script src="script.js?v=2.5.0"></script>
+  <script src="script.js?v=2.5.1"></script>
 </body>
 </html>
