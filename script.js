@@ -2,9 +2,9 @@
 // === KONFIGURASI SISTEM & API APPS SCRIPT                               ===
 // =========================================================================
 
-// GANTI dengan URL Web App Apps Script Anda
-const API_URL = "https://script.google.com/macros/s/AKfycbybcgXECU5JLc7BAIHkXVAhPy_9q3icA_Tw8q2X0gaXBuaMeAjxAc6sPju6cj4hDHN2yw/exec";
-const APP_VERSION = "2.6.0"; 
+// GANTI dengan URL Web App Apps Script Anda yang telah dideploy
+const API_URL = "https://script.google.com/macros/s/AKfycbx1HRvZ36IZ8Z-iOSBHWqeA5hIoFOViK0k5vz4i1S_Ug7_GVYbscN4I0OdOTkHZNjMPJQ/exec";
+const APP_VERSION = "2.7.0"; 
 
 let sessionToken = "";
 let userRole = "";
@@ -21,8 +21,9 @@ let userLatitude = null;
 let userLongitude = null;
 let isFakeGPSDetected = false;
 
-// Cache data berita dokumentasi kegiatan untuk mode baca reader
+// Cache data untuk reader dokumentasi dan inventaris
 let kegiatanListCache = [];
+let inventarisListCache = [];
 
 // Variabel penampung upload berkas materi
 let materiFileBase64 = "";
@@ -38,15 +39,14 @@ const API_CACHE_TTL = 60000; // 60 detik
 
 const READ_ONLY_FUNCS = new Set([
   'getDashboardData', 'getAbsenHistory', 'getKegiatanList', 'getAgendaList',
-  'getInventarisList', 'getKasData', 'getUserProfile', 'getUserList',
+  'getInventarisList', 'getPeminjamanList', 'getKasData', 'getUserProfile', 'getUserList',
   'getNotificationList', 'getSystemLogs', 'getMateriFileList', 'getPotensiList'
 ]);
 
 function isWriteFunc(name) {
-  return /^(save|add|submit|delete|change|logout|export|initialize)/.test(name);
+  return /^(save|add|submit|delete|change|logout|export|initialize|kembalikan|register)/.test(name);
 }
 
-// HELPER: Cek apakah user adalah pengelola kas khusus (ID: DGW20264 / DGW20265)
 function isKasSpecialUser(uid) {
   if (!uid) return false;
   const u = String(uid).trim().toUpperCase();
@@ -112,12 +112,12 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
     localStorage.setItem("app_version", APP_VERSION);
-    console.log("Sistem diperbarui ke versi " + APP_VERSION);
     setTimeout(() => { window.location.reload(true); }, 400);
     return;
   }
 
   requestGPSPermission();
+  requestPushNotificationPermission();
 
   sessionToken = sessionStorage.getItem('sessionToken');
   const userData = sessionStorage.getItem('user');
@@ -136,36 +136,249 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW registration:', e));
   }
 
   initLiveTimer();
   initCreativeCalendar();
-  requestPushNotificationPermission();
 });
 
 // =========================================================================
-// === SISTEM PUSH NOTIFIKASI & PERMISSION                               ===
+// === SISTEM NOTIFIKASI PAKSA KE PERANGKAT/HP (POIN 7)                 ===
 // =========================================================================
 
 function requestPushNotificationPermission() {
-  if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-    Notification.requestPermission();
+  if ("Notification" in window) {
+    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          triggerNativeNotification("SIAP WANAMSKA", "Notifikasi perangkat berhasil diaktifkan.");
+        }
+      });
+    }
   }
 }
 
 function triggerNativeNotification(title, body) {
   if ("Notification" in window && Notification.permission === "granted") {
     try {
-      new Notification(title, {
-        body: body,
-        icon: 'https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png'
-      });
+      if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, {
+            body: body,
+            icon: 'https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_pwa.png',
+            badge: 'https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_pwa.png',
+            vibrate: [200, 100, 200]
+          });
+        });
+      } else {
+        new Notification(title, {
+          body: body,
+          icon: 'https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/38ae1a1852e585227cf41ae4e6627420df71b199/logo_pwa.png'
+        });
+      }
     } catch (e) {
-      console.log("Native notification error:", e);
+      console.log("Device notification trigger error:", e);
     }
   }
 }
+
+// =========================================================================
+// === BIOMETRIK & PASSKEY WEBAUTHN ENGINE (POIN 3 & 4)                   ===
+// =========================================================================
+
+function bufferToBase64Url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64UrlToBuffer(base64url) {
+  let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4) base64 += '=';
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+// REGISTRASI PASSKEY PADA PROFIL DIRI (POIN 4)
+async function actionRegisterPasskey() {
+  if (!window.PublicKeyCredential) {
+    showToast("Perangkat atau peramban ini tidak mendukung otentikasi Biometrik/Passkey.", true);
+    return;
+  }
+
+  try {
+    const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if (!isAvailable) {
+      showToast("Sensor sidik jari / kunci biometrik tidak tersedia pada perangkat ini.", true);
+      return;
+    }
+
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+
+    const userIdBytes = new TextEncoder().encode(userId);
+
+    const createOptions = {
+      publicKey: {
+        challenge: challenge,
+        rp: {
+          name: "SIAP WANAMSKA",
+          id: window.location.hostname || "localhost"
+        },
+        user: {
+          id: userIdBytes,
+          name: userId,
+          displayName: currentUser.nama_lengkap || userId
+        },
+        pubKeyCredParams: [
+          { type: "public-key", alg: -7 },  // ES256
+          { type: "public-key", alg: -257 } // RS256
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: "platform",
+          userVerification: "required",
+          requireResidentKey: false
+        },
+        timeout: 60000,
+        attestation: "none"
+      }
+    };
+
+    setLoader(true, "Sentuh sensor sidik jari / masukkan PIN perangkat...");
+    const credential = await navigator.credentials.create(createOptions);
+    setLoader(false);
+
+    if (credential) {
+      const credIdBase64 = bufferToBase64Url(credential.rawId);
+      const deviceName = navigator.userAgent.includes("Android") ? "HP Android" : 
+                         navigator.userAgent.includes("iPhone") ? "Apple iPhone" : 
+                         navigator.userAgent.includes("Windows") ? "Laptop/PC Windows" : "Perangkat Biometrik";
+
+      setLoader(true, "Mendaftarkan biometrik ke server...");
+      const res = await callAPI('registerPasskey', [sessionToken, {
+        credentialId: credIdBase64,
+        deviceName: deviceName
+      }]);
+      setLoader(false);
+
+      if (res.success) {
+        localStorage.setItem("saved_passkey_cred_" + userId.toLowerCase(), credIdBase64);
+        localStorage.setItem("last_passkey_user_id", userId.toLowerCase());
+        showToast("✅ Sidik jari perangkat berhasil didaftarkan! Anda kini bisa login menggunakan biometrik.");
+        triggerNativeNotification("SIAP WANAMSKA", "Biometrik berhasil didaftarkan untuk akun Anda.");
+      } else {
+        showToast(res.message, true);
+      }
+    }
+  } catch (err) {
+    setLoader(false);
+    console.error("Passkey registration failed:", err);
+    if (err.name === "NotAllowedError") {
+      showToast("Pendaftaran biometrik dibatalkan oleh pengguna.", true);
+    } else {
+      showToast("Gagal mendaftarkan biometrik: " + err.message, true);
+    }
+  }
+}
+
+// LOGIN MENGGUNAKAN PASSKEY / SIDIK JARI (POIN 3)
+async function handlePasskeyLogin() {
+  if (!window.PublicKeyCredential) {
+    showToast("Peramban Anda tidak mendukung otentikasi Biometrik.", true);
+    return;
+  }
+
+  let inputUserId = document.getElementById('userId').value.trim().toLowerCase();
+  if (!inputUserId) {
+    inputUserId = localStorage.getItem("last_passkey_user_id") || "";
+  }
+
+  if (!inputUserId) {
+    const prompted = prompt("Silakan masukkan User ID akun Anda untuk verifikasi biometrik:");
+    if (!prompted) return;
+    inputUserId = prompted.trim().toLowerCase();
+    document.getElementById('userId').value = inputUserId;
+  }
+
+  const savedCredId = localStorage.getItem("saved_passkey_cred_" + inputUserId);
+
+  try {
+    const challenge = new Uint8Array(32);
+    window.crypto.getRandomValues(challenge);
+
+    const getOptions = {
+      publicKey: {
+        challenge: challenge,
+        timeout: 60000,
+        userVerification: "required",
+        rpId: window.location.hostname || "localhost"
+      }
+    };
+
+    if (savedCredId) {
+      getOptions.publicKey.allowCredentials = [{
+        id: base64UrlToBuffer(savedCredId),
+        type: 'public-key',
+        transports: ['internal']
+      }];
+    }
+
+    setLoader(true, "Verifikasi sidik jari / kunci biometrik perangkat...");
+    const assertion = await navigator.credentials.get(getOptions);
+    setLoader(false);
+
+    if (assertion) {
+      const credIdUsed = bufferToBase64Url(assertion.rawId);
+      
+      setLoader(true, "Mengotentikasi ke sistem...");
+      const res = await callAPI('loginWithPasskey', [inputUserId, credIdUsed]);
+      setLoader(false);
+
+      if (res.success) {
+        sessionStorage.setItem('sessionToken', res.sessionToken);
+        sessionStorage.setItem('user', JSON.stringify(res.user));
+
+        sessionToken = res.sessionToken;
+        currentUser = res.user;
+        userRole = res.user.role;
+        userId = res.user.user_id;
+
+        localStorage.setItem("last_passkey_user_id", userId.toLowerCase());
+        localStorage.setItem("saved_passkey_cred_" + userId.toLowerCase(), credIdUsed);
+
+        document.getElementById('user-display-name').innerText = res.user.nama_lengkap;
+        document.getElementById('user-display-role').innerText = res.user.role;
+
+        setupRBACUI(res.user.role);
+        showPage('dashboard-page');
+        showToast("Login Biometrik Berhasil! Selamat datang, " + res.user.nama_lengkap);
+        triggerNativeNotification("SIAP WANAMSKA", "Berhasil masuk via Biometrik/Passkey");
+      } else {
+        showToast(res.message, true);
+      }
+    }
+  } catch (err) {
+    setLoader(false);
+    console.error("Passkey login error:", err);
+    if (err.name === "NotAllowedError") {
+      showToast("Otentikasi biometrik dibatalkan.", true);
+    } else {
+      showToast("Biometrik gagal atau belum terdaftar untuk User ID tersebut.", true);
+    }
+  }
+}
+
+// =========================================================================
+// === UTILITY & UI HELPER                                               ===
+// =========================================================================
 
 function togglePassword() {
   const passwordInput = document.getElementById('password');
@@ -197,10 +410,6 @@ function requestGPSPermission() {
     );
   }
 }
-
-// =========================================================================
-// === ROUTER & UI UTILITIES                                             ===
-// =========================================================================
 
 function showPage(pageId) {
   if (pageId === 'login-page' || pageId === 'login-screen') {
@@ -295,7 +504,6 @@ function initLiveTimer() {
     const hrs = String(now.getHours()).padStart(2, '0');
     const mins = String(now.getMinutes()).padStart(2, '0');
     const secs = String(now.getSeconds()).padStart(2, '0');
-    
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const dateStr = now.toLocaleDateString('id-ID', options);
     
@@ -330,7 +538,7 @@ function initCreativeCalendar() {
 }
 
 // =========================================================================
-// === AUTENTIKASI & RBAC INTERFACE PERAN (POIN 4 & 5)                   ===
+// === AUTENTIKASI PASSWORD & RBAC (POIN 5: CASE-INSENSITIVE)            ===
 // =========================================================================
 
 function setLoginLoading(isLoading) {
@@ -366,11 +574,15 @@ function handleLogin() {
         userRole = res.user.role;
         userId = res.user.user_id;
 
+        localStorage.setItem("last_passkey_user_id", userId.toLowerCase());
+
         document.getElementById('user-display-name').innerText = res.user.nama_lengkap;
         document.getElementById('user-display-role').innerText = res.user.role;
 
         setupRBACUI(res.user.role);
         showPage('dashboard-page');
+        showToast("Selamat Datang, " + res.user.nama_lengkap);
+        triggerNativeNotification("SIAP WANAMSKA", "Selamat datang kembali di sistem pangkalan!");
       } else {
         showToast(res.message || 'Login gagal', true);
       }
@@ -395,7 +607,6 @@ function actionLogout() {
 function setupRBACUI(role) {
   const isSpecialKas = isKasSpecialUser(userId);
 
-  // Sembunyikan semua menu terbatas secara default
   document.getElementById('menu-materi').style.display = 'none';
   document.getElementById('menu-inventaris').style.display = 'none';
   document.getElementById('menu-kas').style.display = 'none';
@@ -403,15 +614,14 @@ function setupRBACUI(role) {
   document.getElementById('menu-exports').style.display = 'none';
   document.getElementById('menu-logs').style.display = 'none';
   
-  // Tombol aksi terbatas
   document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'none';
   document.getElementById('btn-tambah-agenda-trigger').style.display = 'none';
   document.getElementById('btn-tambah-materi-trigger').style.display = 'none';
   document.getElementById('btn-tambah-potensi-trigger').style.display = 'none';
   document.getElementById('btn-tambah-kas').style.display = 'none';
   document.getElementById('btn-tambah-inventaris-trigger').style.display = 'none';
+  document.getElementById('btn-tambah-peminjaman-trigger').style.display = 'none';
   
-  // Card dan Box Export
   document.getElementById('card-dash-kas').style.display = 'none';
   document.getElementById('export-absensi-box').style.display = 'none';
   document.getElementById('export-inventaris-box').style.display = 'none';
@@ -420,18 +630,17 @@ function setupRBACUI(role) {
   document.getElementById('btn-lonceng').style.display = 'flex';
   setTimeout(function () { loadNotifications(false); }, 1500);
 
-  // Materi Kegiatan: Admin, Pembina, Dewan Penggalang
   if (role === "Admin" || role === "Pembina" || role === "Dewan Penggalang") {
     document.getElementById('menu-materi').style.display = 'flex';
+    document.getElementById('menu-inventaris').style.display = 'flex';
+    document.getElementById('btn-tambah-peminjaman-trigger').style.display = 'inline-block';
   }
 
-  // Tombol Tambah Materi: Hanya Admin & Pembina (Poin 3)
   if (role === "Admin" || role === "Pembina") {
     document.getElementById('btn-tambah-materi-trigger').style.display = 'inline-block';
     document.getElementById('btn-tambah-potensi-trigger').style.display = 'inline-block';
   }
 
-  // PENGATURAN KAS KHUSUS (POIN 4 & 5)
   if (role === "Admin" || isSpecialKas) {
     document.getElementById('btn-tambah-kas').style.display = 'inline-block';
     document.getElementById('export-kas-box').style.display = 'block';
@@ -441,7 +650,6 @@ function setupRBACUI(role) {
     document.getElementById('card-riwayat-absen-global').style.display = 'block';
     document.getElementById('card-riwayat-absen-pribadi').style.display = 'none';
 
-    document.getElementById('menu-inventaris').style.display = 'flex';
     document.getElementById('menu-kas').style.display = 'flex';
     document.getElementById('menu-users').style.display = 'flex';
     document.getElementById('menu-exports').style.display = 'flex';
@@ -461,7 +669,6 @@ function setupRBACUI(role) {
     document.getElementById('card-riwayat-absen-pribadi').style.display = 'block';
 
     if (role === "Pembina") {
-      document.getElementById('menu-inventaris').style.display = 'flex';
       document.getElementById('menu-kas').style.display = 'flex';
       document.getElementById('menu-exports').style.display = 'flex';
       
@@ -473,16 +680,13 @@ function setupRBACUI(role) {
       document.getElementById('export-absensi-box').style.display = 'block';
       
     } else if (role === "Dewan Penggalang") {
-      document.getElementById('menu-inventaris').style.display = 'flex';
       document.getElementById('menu-kas').style.display = 'flex';
-      
       document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
       document.getElementById('btn-tambah-agenda-trigger').style.display = 'inline-block';
       document.getElementById('btn-tambah-inventaris-trigger').style.display = 'inline-block';
       document.getElementById('card-dash-kas').style.display = 'flex';
     }
 
-    // Jika user khusus kas (DGW20264 / DGW20265) login sebagai Penggalang/Dewan:
     if (isSpecialKas) {
       document.getElementById('menu-kas').style.display = 'flex';
       document.getElementById('menu-exports').style.display = 'flex';
@@ -492,7 +696,7 @@ function setupRBACUI(role) {
 }
 
 // =========================================================================
-// === NOTIFIKASI LONCENG 24 JAM TERAKHIR (POIN 2)                       ===
+// === NOTIFIKASI LONCENG & PUSH UPDATE                                  ===
 // =========================================================================
 
 function openNotifikasiModal() {
@@ -513,7 +717,6 @@ function loadNotifications(markAsRead = false) {
       if (res.success) {
         container.innerHTML = "";
         
-        // POIN 2: JIKA SUDAH LEBIH DARI 24 JAM ATAU KOSONG
         if (!res.list || res.list.length === 0) {
           container.innerHTML = `
             <div style="text-align: center; padding: 25px 15px; color: var(--color-text-muted);">
@@ -547,7 +750,7 @@ function loadNotifications(markAsRead = false) {
         const lastReadId = localStorage.getItem('last_read_notif_id_' + userId);
 
         if (lastReadId !== newestId && !markAsRead) {
-          triggerNativeNotification("SIAP WANAMSKA Pembaruan", res.list[0].title);
+          triggerNativeNotification("SIAP WANAMSKA: " + res.list[0].title, res.list[0].detail);
         }
 
         const badge = document.getElementById('lonceng-badge');
@@ -578,7 +781,7 @@ function formatDateString(dateStr) {
 }
 
 // =========================================================================
-// === DOKUMENTASI KEGIATAN: DETAILS & PDF READER (POIN 1)               ===
+// === DOKUMENTASI KEGIATAN & PEMBACA FOTO LAMPIRAN BERITA (POIN 6)       ===
 // =========================================================================
 
 function loadKegiatan() {
@@ -621,6 +824,7 @@ function loadKegiatan() {
     .catch(err => showToast(err.message, true));
 }
 
+// POIN 6: TAMPILKAN SELURUH FOTO LAMPIRAN PADA SAAT BACA BERITA
 function openBacaKegiatanModal(index) {
   const keg = kegiatanListCache[index];
   if (!keg) return;
@@ -634,12 +838,17 @@ function openBacaKegiatanModal(index) {
   const gallery = document.getElementById('reader-gallery-container');
   gallery.innerHTML = "";
   
-  const photos = [keg.foto1, keg.foto2, keg.foto3, keg.foto4].filter(f => f && f.trim() !== "");
+  const photos = [keg.foto1, keg.foto2, keg.foto3, keg.foto4].filter(f => f && String(f).trim() !== "");
+  
   if (photos.length === 0) {
-    gallery.innerHTML = `<p style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic;">Tidak ada lampiran foto untuk dokumentasi ini.</p>`;
+    gallery.innerHTML = `<p style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic; grid-column: 1/-1;">Tidak ada lampiran foto untuk dokumentasi berita ini.</p>`;
   } else {
     photos.forEach((photoUrl, pIdx) => {
-      gallery.innerHTML += `<img src="${photoUrl}" alt="Dokumentasi ${pIdx+1}" onclick="viewFullImage('${photoUrl}')" title="Klik untuk memperbesar">`;
+      gallery.innerHTML += `
+        <div style="display:flex; flex-direction:column; align-items:center;">
+          <img src="${photoUrl}" alt="Lampiran Foto ${pIdx+1}" onclick="viewFullImage('${photoUrl}')" title="Klik untuk memperbesar tampilan">
+          <span style="font-size:0.75rem; color:var(--color-text-muted); margin-top:4px;">Lampiran Foto ${pIdx+1}</span>
+        </div>`;
     });
   }
 
@@ -733,7 +942,261 @@ function actionSaveKegiatan() {
 }
 
 // =========================================================================
-// === MODUL MATERI KEGIATAN (POIN 3)                                    ===
+// === MODUL INVENTARIS & PEMINJAMAN BARANG (POIN 1 & 2)                  ===
+// =========================================================================
+
+function switchInventarisTab(tabType) {
+  const btnSimpan = document.getElementById('tab-btn-simpan');
+  const btnPinjam = document.getElementById('tab-btn-pinjam');
+  const viewSimpan = document.getElementById('view-inventaris-tersimpan');
+  const viewPinjam = document.getElementById('view-inventaris-dipinjam');
+
+  if (tabType === 'tersimpan') {
+    btnSimpan.classList.add('active');
+    btnPinjam.classList.remove('active');
+    viewSimpan.style.display = 'block';
+    viewPinjam.style.display = 'none';
+    loadInventaris();
+  } else {
+    btnPinjam.classList.add('active');
+    btnSimpan.classList.remove('active');
+    viewPinjam.style.display = 'block';
+    viewSimpan.style.display = 'none';
+    loadPeminjaman();
+  }
+}
+
+function loadInventaris() {
+  callAPI('getInventarisList', [sessionToken])
+    .then(res => {
+      if (res.success) {
+        inventarisListCache = res.list || [];
+        const tbody = document.getElementById('body-inventaris');
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        
+        if (inventarisListCache.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Belum ada barang di inventaris.</td></tr>`;
+          return;
+        }
+
+        inventarisListCache.forEach(row => {
+          const lokasi = row.locations_simpan || row.lokasi_simpan || "-";
+          const stokBadge = row.jumlah > 0 ? `<span class="badge badge-hadir">${row.jumlah} Unit</span>` : `<span class="badge badge-dipinjam">Habis / 0</span>`;
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${row.id_barang}</strong></td>
+              <td>${row.nama_barang}</td>
+              <td>${row.kategori}</td>
+              <td>${stokBadge}</td>
+              <td>${row.kondisi}</td>
+              <td>${lokasi}</td>
+            </tr>`;
+        });
+      }
+    })
+    .catch(err => showToast(err.message, true));
+}
+
+function loadPeminjaman() {
+  callAPI('getPeminjamanList', [sessionToken])
+    .then(res => {
+      if (res.success) {
+        const tbody = document.getElementById('body-peminjaman');
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        if (!res.list || res.list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Belum ada riwayat peminjaman barang.</td></tr>`;
+          return;
+        }
+
+        res.list.forEach(p => {
+          const isDipinjam = (p.status === "Dipinjam");
+          const badgeClass = isDipinjam ? "badge-dipinjam" : "badge-kembali";
+          
+          let actionBtn = "-";
+          if (isDipinjam && (userRole === "Admin" || userRole === "Pembina" || userRole === "Dewan Penggalang")) {
+            actionBtn = `<button class="btn btn-gold" style="padding:4px 10px; font-size:0.8rem;" onclick="actionKembalikanBarang('${p.id_pinjam}')">Kembalikan ↩️</button>`;
+          }
+
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${p.id_pinjam}</strong></td>
+              <td><strong>${p.nama_barang}</strong><br><span style="font-size:0.75rem; color:var(--color-text-muted);">${p.id_barang}</span></td>
+              <td>${p.jumlah_pinjam} Unit</td>
+              <td>Pinjam: ${p.tanggal_pinjam}<br><span style="font-size:0.75rem;">Kembali: ${p.tanggal_kembali || "-"}</span></td>
+              <td><strong>${p.nama_peminjam}</strong></td>
+              <td><span class="badge ${badgeClass}">${p.status}</span></td>
+              <td>${actionBtn}</td>
+            </tr>`;
+        });
+      }
+    })
+    .catch(err => showToast(err.message, true));
+}
+
+// POIN 1: FORM MODAL PEMINJAMAN & AUTO-POPULATE FIELD
+function openPeminjamanModal() {
+  const selectBarang = document.getElementById('pjm-select-barang');
+  selectBarang.innerHTML = `<option value="">-- Pilih Barang yang Tersedia --</option>`;
+
+  // Isi dropdown dari cache inventaris yang memiliki stok > 0
+  if (inventarisListCache.length === 0) {
+    callAPI('getInventarisList', [sessionToken]).then(res => {
+      if (res.success) {
+        inventarisListCache = res.list || [];
+        populateSelectBarangOptions();
+      }
+    });
+  } else {
+    populateSelectBarangOptions();
+  }
+
+  document.getElementById('pjm-id-barang').value = "";
+  document.getElementById('pjm-nama-barang').value = "";
+  document.getElementById('pjm-stok-tersedia').value = "-";
+  document.getElementById('pjm-jumlah').value = "1";
+  
+  const today = new Date().toISOString().substring(0, 10);
+  document.getElementById('pjm-tgl-pinjam').value = today;
+  
+  // Set default tgl kembali +3 hari
+  const next3Days = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+  document.getElementById('pjm-tgl-kembali').value = next3Days;
+  document.getElementById('pjm-nama-peminjam').value = "";
+
+  document.getElementById('modal-peminjaman').style.display = 'flex';
+}
+
+function populateSelectBarangOptions() {
+  const selectBarang = document.getElementById('pjm-select-barang');
+  inventarisListCache.forEach(item => {
+    if (item.jumlah > 0) {
+      selectBarang.innerHTML += `<option value="${item.id_barang}">${item.nama_barang} (Stok: ${item.jumlah})</option>`;
+    }
+  });
+}
+
+function onPeminjamanBarangChange() {
+  const selectedId = document.getElementById('pjm-select-barang').value;
+  const targetItem = inventarisListCache.find(b => b.id_barang === selectedId);
+
+  if (targetItem) {
+    document.getElementById('pjm-id-barang').value = targetItem.id_barang;
+    document.getElementById('pjm-nama-barang').value = targetItem.nama_barang;
+    document.getElementById('pjm-stok-tersedia').value = targetItem.jumlah + " Unit Tersedia";
+    document.getElementById('pjm-jumlah').max = targetItem.jumlah;
+  } else {
+    document.getElementById('pjm-id-barang').value = "";
+    document.getElementById('pjm-nama-barang').value = "";
+    document.getElementById('pjm-stok-tersedia').value = "-";
+  }
+}
+
+function closePeminjamanModal() {
+  document.getElementById('modal-peminjaman').style.display = 'none';
+}
+
+function actionSavePeminjaman() {
+  const payload = {
+    id_barang: document.getElementById('pjm-id-barang').value,
+    nama_barang: document.getElementById('pjm-nama-barang').value,
+    jumlah_pinjam: parseInt(document.getElementById('pjm-jumlah').value) || 0,
+    tanggal_pinjam: document.getElementById('pjm-tgl-pinjam').value,
+    tanggal_kembali: document.getElementById('pjm-tgl-kembali').value,
+    nama_peminjam: document.getElementById('pjm-nama-peminjam').value.trim(),
+    status: document.getElementById('pjm-status').value
+  };
+
+  if (!payload.id_barang || payload.jumlah_pinjam <= 0 || !payload.tanggal_pinjam || !payload.nama_peminjam) {
+    showToast("Semua field peminjaman wajib diisi dengan benar!", true);
+    return;
+  }
+
+  setLoader(true, "Mencatat peminjaman & mengurangi stok...");
+  callAPI('savePeminjaman', [sessionToken, payload])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        closePeminjamanModal();
+        switchInventarisTab('dipinjam');
+        loadNotifications(false);
+      } else {
+        showToast(res.message, true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function actionKembalikanBarang(idPinjam) {
+  if (!confirm("Konfirmasi pengembalian barang ini? Stok inventaris akan otomatis ditambahkan kembali.")) return;
+
+  setLoader(true, "Memproses pengembalian barang...");
+  callAPI('kembalikanBarang', [sessionToken, idPinjam])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        loadPeminjaman();
+        loadInventaris();
+      } else {
+        showToast(res.message, true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function openInventarisModal() {
+  document.getElementById('inv-id').value = "";
+  document.getElementById('inv-nama').value = "";
+  document.getElementById('inv-jumlah').value = "1";
+  document.getElementById('inv-lokasi').value = "";
+  document.getElementById('inv-tanggal').value = new Date().toISOString().substring(0, 10);
+  document.getElementById('inv-keterangan').value = "";
+  document.getElementById('modal-inventaris').style.display = 'flex';
+}
+
+function closeInventarisModal() {
+  document.getElementById('modal-inventaris').style.display = 'none';
+}
+
+function actionSaveInventaris() {
+  const payload = {
+    id_barang: document.getElementById('inv-id').value,
+    nama_barang: document.getElementById('inv-nama').value.trim(),
+    kategori: document.getElementById('inv-kategori').value,
+    jumlah: document.getElementById('inv-jumlah').value,
+    kondisi: document.getElementById('inv-kondisi').value,
+    locations_simpan: document.getElementById('inv-lokasi').value.trim(),
+    lokasi_simpan: document.getElementById('inv-lokasi').value.trim(),
+    tanggal_masuk: document.getElementById('inv-tanggal').value,
+    keterangan: document.getElementById('inv-keterangan').value.trim()
+  };
+
+  if (!payload.nama_barang || !payload.jumlah || !payload.lokasi_simpan || !payload.tanggal_masuk) {
+    showToast("Field Nama Barang, Jumlah, Lokasi, dan Tanggal Masuk wajib diisi!", true);
+    return;
+  }
+
+  setLoader(true, "Menyimpan data inventaris...");
+  callAPI('saveInventaris', [sessionToken, payload])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        closeInventarisModal();
+        loadInventaris();
+      } else {
+        showToast(res.message, true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// =========================================================================
+// === MATERI KEGIATAN & SYNC DRIVE                                      ===
 // =========================================================================
 
 function openTambahMateriModal() {
@@ -871,7 +1334,7 @@ function actionDownloadMateri(downloadUrl, viewUrl, fileName) {
 }
 
 // =========================================================================
-// === MODUL KENALI POTENSIMU (POIN 6 & 9)                               ===
+// === MODUL KENALI POTENSIMU                                            ===
 // =========================================================================
 
 function loadPotensi() {
@@ -883,7 +1346,6 @@ function loadPotensi() {
     .then(res => {
       if (res.success) {
         if (!res.list || res.list.length === 0) {
-          // POIN 6: TAMPILKAN =Segera= JIKA BELUM ADA PENUGASAN
           emptyState.style.display = 'block';
           grid.style.display = 'none';
           return;
@@ -974,7 +1436,7 @@ function actionDeletePotensi(idPotensi) {
 }
 
 // =========================================================================
-// === KAMERA (SELFIE ABSENSI) ANTI-MIRRORING (POIN 10)                  ===
+// === KAMERA (SELFIE ABSENSI) ANTI-MIRRORING                            ===
 // =========================================================================
 
 function isFrontCameraActive() {
@@ -1155,7 +1617,7 @@ function captureSnapshot() {
 }
 
 // =========================================================================
-// === ABSENSI MANDIRI (POIN 7 & 8)                                      ===
+// === ABSENSI MANDIRI                                                   ===
 // =========================================================================
 
 function actionSubmitAbsen() {
@@ -1390,79 +1852,8 @@ function actionDeleteAgenda(idAgenda) {
 }
 
 // =========================================================================
-// === INVENTARIS & KAS PRAMUKA (POIN 4 & 5)                              ===
+// === KAS PRAMUKA                                                       ===
 // =========================================================================
-
-function loadInventaris() {
-  callAPI('getInventarisList', [sessionToken])
-    .then(res => {
-      if (res.success) {
-        const tbody = document.getElementById('body-inventaris');
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        res.list.forEach(row => {
-          var lokasi = row.locations_simpan || row.lokasi_simpan || "-";
-          tbody.innerHTML += `
-            <tr>
-              <td>${row.id_barang}</td>
-              <td><strong>${row.nama_barang}</strong></td>
-              <td>${row.kategori}</td>
-              <td>${row.jumlah}</td>
-              <td>${row.kondisi}</td>
-              <td>${lokasi}</td>
-            </tr>`;
-        });
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
-
-function openInventarisModal() {
-  document.getElementById('inv-id').value = "";
-  document.getElementById('inv-nama').value = "";
-  document.getElementById('inv-jumlah').value = "";
-  document.getElementById('inv-lokasi').value = "";
-  document.getElementById('inv-tanggal').value = new Date().toISOString().substring(0, 10);
-  document.getElementById('inv-keterangan').value = "";
-  document.getElementById('modal-inventaris').style.display = 'flex';
-}
-
-function closeInventarisModal() {
-  document.getElementById('modal-inventaris').style.display = 'none';
-}
-
-function actionSaveInventaris() {
-  const payload = {
-    id_barang: document.getElementById('inv-id').value,
-    nama_barang: document.getElementById('inv-nama').value.trim(),
-    kategori: document.getElementById('inv-kategori').value,
-    jumlah: document.getElementById('inv-jumlah').value,
-    kondisi: document.getElementById('inv-kondisi').value,
-    locations_simpan: document.getElementById('inv-lokasi').value.trim(),
-    lokasi_simpan: document.getElementById('inv-lokasi').value.trim(),
-    tanggal_masuk: document.getElementById('inv-tanggal').value,
-    keterangan: document.getElementById('inv-keterangan').value.trim()
-  };
-
-  if (!payload.nama_barang || !payload.jumlah || !payload.lokasi_simpan || !payload.tanggal_masuk) {
-    showToast("Field Nama Barang, Jumlah, Lokasi, dan Tanggal Masuk wajib diisi!", true);
-    return;
-  }
-
-  setLoader(true, "Menyimpan data inventaris...");
-  callAPI('saveInventaris', [sessionToken, payload])
-    .then(res => {
-      setLoader(false);
-      if (res.success) {
-        showToast(res.message);
-        closeInventarisModal();
-        loadInventaris();
-      } else {
-        showToast(res.message, true);
-      }
-    })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
-}
 
 function loadKas() {
   callAPI('getKasData', [sessionToken])
@@ -1732,7 +2123,7 @@ function viewFullImage(src) {
 }
 
 // =========================================================================
-// === MANAJEMEN EXPORT LAPORAN (POIN 5)                                  ===
+// === MANAJEMEN EXPORT LAPORAN                                          ===
 // =========================================================================
 
 function triggerExport(jenis, format) {
