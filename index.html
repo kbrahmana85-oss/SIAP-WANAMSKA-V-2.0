@@ -290,8 +290,9 @@
       flex-direction: column;
     }
 
+    /* HEADER STICKY & ANTI-OVERLAP */
     header {
-      background-color: var(--color-primary);
+      background-color: var(--color-primary) !important;
       color: var(--color-white);
       padding: 14px 25px;
       display: flex;
@@ -300,17 +301,22 @@
       border-bottom: 4px solid var(--color-accent-gold);
       position: sticky;
       top: 0;
-      z-index: 900;
+      z-index: 1000 !important;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.18);
     }
     .header-logo {
       display: flex;
       align-items: center;
       gap: 15px;
       margin-left: 45px;
+      position: relative;
+      z-index: 1002;
     }
     .header-logo img {
       height: 42px;
       width: auto;
+      object-fit: contain;
+      display: block;
     }
     .header-title h2 {
       font-size: 1.3rem;
@@ -341,6 +347,7 @@
     .main-wrapper {
       display: flex;
       flex: 1;
+      position: relative;
     }
 
     .sidebar {
@@ -400,6 +407,8 @@
       padding: 25px;
       background-color: var(--color-bg-cream);
       overflow-y: auto;
+      position: relative;
+      z-index: 1;
     }
 
     .app-section {
@@ -611,7 +620,7 @@
       gap: 6px;
     }
 
-    /* READER MODAL / PDF DOCUMENT STYLE (POIN 6) */
+    /* READER MODAL / PDF DOCUMENT STYLE */
     .reader-document {
       background: #FFFFFF;
       border-radius: 8px;
@@ -738,7 +747,7 @@
       position: fixed;
       inset: 0;
       background-color: rgba(62, 39, 35, 0.6);
-      z-index: 1000;
+      z-index: 2000;
       display: none;
       align-items: center;
       justify-content: center;
@@ -776,9 +785,9 @@
     .menu-toggle {
       display: block;
       position: fixed;
-      top: 12px;
+      top: 14px;
       left: 15px;
-      z-index: 1001;
+      z-index: 1003;
       font-size: 20px;
       background: var(--color-primary);
       color: white;
@@ -964,10 +973,11 @@
     <p id="loader-text">Memproses data...</p>
   </div>
 
-  <!-- LOGIN SCREEN (POIN 3 & 5: DUKUNGAN PASSKEY/BIOMETRIK & CASE-INSENSITIVE) -->
+  <!-- LOGIN SCREEN -->
   <div id="login-screen">
     <div class="login-box">
-     <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/b262b29a3a0737518a0b1495819fd3cd2ff9c9e1/icon.png" class="logo" id="login-logo" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto;">      <h1>SIAP WANAMSKA</h1>
+      <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png" class="logo" id="login-logo" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto;">
+      <h1>SIAP WANAMSKA</h1>
       <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.85rem;">Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
       
       <div class="form-group">
@@ -985,7 +995,7 @@
       
       <button type="button" id="loginBtn" class="btn btn-full btn-gold" onclick="handleLogin()" style="padding: 12px; font-weight: 700;">Login</button>
 
-      <!-- TOMBOL BIOMETRIK / PASSKEY LOGIN (POIN 3) -->
+      <!-- TOMBOL BIOMETRIK / PASSKEY LOGIN -->
       <div class="login-divider">ATAU</div>
       <button type="button" id="btn-login-passkey" class="btn btn-full btn-biometric" onclick="handlePasskeyLogin()" style="padding: 11px; font-weight: 600;">
         🔐 Login dengan Sidik Jari / Passkey
@@ -1003,7 +1013,7 @@
     
     <header>
       <div class="header-logo">
-        <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/blob/main/icon.png" class="logo" alt="Logo">
+        <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png" class="logo" alt="Logo">
         <div class="header-title">
           <h2>SIAP WANAMSKA</h2>
           <p>Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
@@ -1120,7 +1130,7 @@
           </div>
           
           <div class="dev">
-            <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" alt="Arif Nuur Iswahyudi">
+            <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/foto.png" alt="Arif Nuur Iswahyudi">
             <div>
               <b>Arif Nuur Iswahyudi (Developer)</b><br>
               <span style="font-size: 0.85rem; color:#666;">Guru Matematika dan Pembina Pramuka</span>
@@ -1228,7 +1238,7 @@
           </div>
         </section>
 
-        <!-- SECTION 4: DOKUMENTASI KEGIATAN (POIN 1 & 6) -->
+        <!-- SECTION 4: DOKUMENTASI KEGIATAN -->
         <section id="section-kegiatan" class="app-section">
           <div class="section-header">
             <h1>Dokumentasi Kegiatan</h1>
@@ -1352,7 +1362,7 @@
           </div>
         </section>
 
-        <!-- SECTION 7: INVENTARIS & PEMINJAMAN (POIN 1 & 2: TAB DINAMIS & FORM PINJAM) -->
+        <!-- SECTION 7: INVENTARIS & PEMINJAMAN -->
         <section id="section-inventaris" class="app-section">
           <div class="section-header">
             <h1>Inventaris &amp; Peminjaman Barang</h1>
@@ -1362,7 +1372,7 @@
             </div>
           </div>
 
-          <!-- TAB DINAMIS INVENTARIS (POIN 2) -->
+          <!-- TAB DINAMIS INVENTARIS -->
           <div class="tab-container">
             <button class="tab-btn active" id="tab-btn-simpan" onclick="switchInventarisTab('tersimpan')">📦 Barang Tersimpan</button>
             <button class="tab-btn" id="tab-btn-pinjam" onclick="switchInventarisTab('dipinjam')">📋 Barang Dipinjam</button>
@@ -1457,7 +1467,7 @@
           </div>
         </section>
 
-        <!-- SECTION 9: PROFIL DIRI & BIOMETRIK (POIN 4) -->
+        <!-- SECTION 9: PROFIL DIRI & BIOMETRIK -->
         <section id="section-profile" class="app-section">
           <div class="section-header">
             <h1>Profil Anggota &amp; Pengaturan Akun</h1>
@@ -1517,7 +1527,7 @@
                 <input type="file" id="prof-file" class="form-control" accept="image/*" onchange="previewAndResizeProfilePhoto(event)">
               </div>
 
-              <!-- DAFTAR BIOMETRIK / PASSKEY SIDIK JARI (POIN 4) -->
+              <!-- DAFTAR BIOMETRIK / PASSKEY SIDIK JARI -->
               <div class="card" style="margin-top: 20px; border-left: 6px solid #047857;">
                 <h3 style="margin-bottom: 10px; color: #047857;">🔐 Keamanan Biometrik / Passkey</h3>
                 <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 15px;">
@@ -1625,7 +1635,7 @@
           </div>
           <div class="card">
             <div style="text-align: center; max-width: 600px; margin: 0 auto;">
-              <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/foto.png" class="developer-photo" alt="Developer SIAP WANAMSKA">
+              <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/foto.png" class="developer-photo" alt="Developer SIAP WANAMSKA">
               <h2 style="font-size: 1.3rem; color: var(--color-primary); margin-top: 10px;">ARIF NUUR ISWAHYUDI, S.Pd., Gr</h2>
               <p style="color: var(--color-accent-gold); font-weight: 600; margin-bottom: 12px;">Guru Matematika &amp; Pembina Pramuka</p>
               <p style="font-size: 0.9rem; color: #555;">Aplikasi <strong>SIAP WANAMSKA</strong> digunakan sebagai Sistem Informasi &amp; Absensi Penggalang Gugus Depan 04.109-04.110 Pangkalan SMP Negeri 26 Surakarta.</p>
@@ -1640,7 +1650,7 @@
     </div>
   </div>
 
-  <!-- MODAL PEMINJAMAN BARANG (POIN 1) -->
+  <!-- MODAL PEMINJAMAN BARANG -->
   <div id="modal-peminjaman" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1702,7 +1712,7 @@
     </div>
   </div>
 
-  <!-- MODAL BACA DOKUMENTASI KEGIATAN (POIN 6: TAMPILAN FOTO LAMPIRAN BERITA) -->
+  <!-- MODAL BACA DOKUMENTASI KEGIATAN -->
   <div id="modal-baca-kegiatan" class="modal-overlay">
     <div class="modal-box" style="max-width: 780px;">
       <div class="modal-header">
