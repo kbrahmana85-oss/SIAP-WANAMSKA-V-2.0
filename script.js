@@ -2,9 +2,9 @@
 // === KONFIGURASI SISTEM & API APPS SCRIPT                               ===
 // =========================================================================
 
-// GANTI dengan URL Web App Apps Script Anda yang telah dideploy
-const API_URL = "https://script.google.com/macros/s/AKfycbx1HRvZ36IZ8Z-iOSBHWqeA5hIoFOViK0k5vz4i1S_Ug7_GVYbscN4I0OdOTkHZNjMPJQ/exec";
-const APP_VERSION = "2.7.0"; 
+// URL Web App Apps Script resmi SIAP WANAMSKA
+const API_URL = "https://script.google.com/macros/s/AKfycbyKWdCayLpLpfWTcuiGN4QDEf0rCuyt4uDaQ6j3rhFLjwoVNfIe88qgxKHZdd7aivOixw/exec";
+const APP_VERSION = "2.8.0"; 
 
 let sessionToken = "";
 let userRole = "";
@@ -21,14 +21,17 @@ let userLatitude = null;
 let userLongitude = null;
 let isFakeGPSDetected = false;
 
-// Cache data untuk reader dokumentasi dan inventaris
+// Cache data modul
 let kegiatanListCache = [];
 let inventarisListCache = [];
+let kedaiListCache = [];
+let currentKedaiTab = "Atribut Wajib"; // Default tab aktif Kedai
 
-// Variabel penampung upload berkas materi
+// Variabel penampung upload berkas materi & kedai
 let materiFileBase64 = "";
 let materiFileName = "";
 let materiFileMime = "";
+let kedaiFotoBase64 = "";
 
 // =========================================================================
 // === API CACHE & NETWORK ENGINE                                        ===
@@ -40,17 +43,26 @@ const API_CACHE_TTL = 60000; // 60 detik
 const READ_ONLY_FUNCS = new Set([
   'getDashboardData', 'getAbsenHistory', 'getKegiatanList', 'getAgendaList',
   'getInventarisList', 'getPeminjamanList', 'getKasData', 'getUserProfile', 'getUserList',
-  'getNotificationList', 'getSystemLogs', 'getMateriFileList', 'getPotensiList'
+  'getNotificationList', 'getSystemLogs', 'getMateriFileList', 'getPotensiList',
+  'getKedaiList', 'getKedaiNextId', 'getHasilKedaiList'
 ]);
 
 function isWriteFunc(name) {
-  return /^(save|add|submit|delete|change|logout|export|initialize|kembalikan|register)/.test(name);
+  return /^(save|add|submit|delete|change|logout|export|initialize|kembalikan|register|kurangi)/.test(name);
 }
 
 function isKasSpecialUser(uid) {
   if (!uid) return false;
   const u = String(uid).trim().toUpperCase();
   return u === "DGW20264" || u === "DGW20265";
+}
+
+// HELPER: Cek Pengelola Khusus Kedai (Admin, DGW20261, DGW20262, DGW20264, DGW20265)
+function isKedaiSpecialUser(uid) {
+  if (!uid) return false;
+  if (userRole === "Admin") return true;
+  const u = String(uid).trim().toUpperCase();
+  return ["DGW20261", "DGW20262", "DGW20264", "DGW20265"].indexOf(u) !== -1;
 }
 
 async function callAPI(funcName, params = [], options = {}) {
@@ -144,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // =========================================================================
-// === SISTEM NOTIFIKASI PAKSA KE PERANGKAT/HP (POIN 7)                 ===
+// === SISTEM NOTIFIKASI PAKSA KE PERANGKAT/HP                           ===
 // =========================================================================
 
 function requestPushNotificationPermission() {
@@ -184,7 +196,7 @@ function triggerNativeNotification(title, body) {
 }
 
 // =========================================================================
-// === BIOMETRIK & PASSKEY WEBAUTHN ENGINE (POIN 3 & 4)                   ===
+// === BIOMETRIK & PASSKEY WEBAUTHN ENGINE                               ===
 // =========================================================================
 
 function bufferToBase64Url(buffer) {
@@ -207,7 +219,6 @@ function base64UrlToBuffer(base64url) {
   return bytes.buffer;
 }
 
-// REGISTRASI PASSKEY PADA PROFIL DIRI (POIN 4)
 async function actionRegisterPasskey() {
   if (!window.PublicKeyCredential) {
     showToast("Perangkat atau peramban ini tidak mendukung otentikasi Biometrik/Passkey.", true);
@@ -223,7 +234,6 @@ async function actionRegisterPasskey() {
 
     const challenge = new Uint8Array(32);
     window.crypto.getRandomValues(challenge);
-
     const userIdBytes = new TextEncoder().encode(userId);
 
     const createOptions = {
@@ -239,8 +249,8 @@ async function actionRegisterPasskey() {
           displayName: currentUser.nama_lengkap || userId
         },
         pubKeyCredParams: [
-          { type: "public-key", alg: -7 },  // ES256
-          { type: "public-key", alg: -257 } // RS256
+          { type: "public-key", alg: -7 },
+          { type: "public-key", alg: -257 }
         ],
         authenticatorSelection: {
           authenticatorAttachment: "platform",
@@ -272,7 +282,7 @@ async function actionRegisterPasskey() {
       if (res.success) {
         localStorage.setItem("saved_passkey_cred_" + userId.toLowerCase(), credIdBase64);
         localStorage.setItem("last_passkey_user_id", userId.toLowerCase());
-        showToast("✅ Sidik jari perangkat berhasil didaftarkan! Anda kini bisa login menggunakan biometrik.");
+        showToast("✅ Sidik jari perangkat berhasil didaftarkan!");
         triggerNativeNotification("SIAP WANAMSKA", "Biometrik berhasil didaftarkan untuk akun Anda.");
       } else {
         showToast(res.message, true);
@@ -289,7 +299,6 @@ async function actionRegisterPasskey() {
   }
 }
 
-// LOGIN MENGGUNAKAN PASSKEY / SIDIK JARI (POIN 3)
 async function handlePasskeyLogin() {
   if (!window.PublicKeyCredential) {
     showToast("Peramban Anda tidak mendukung otentikasi Biometrik.", true);
@@ -337,7 +346,6 @@ async function handlePasskeyLogin() {
 
     if (assertion) {
       const credIdUsed = bufferToBase64Url(assertion.rawId);
-      
       setLoader(true, "Mengotentikasi ke sistem...");
       const res = await callAPI('loginWithPasskey', [inputUserId, credIdUsed]);
       setLoader(false);
@@ -360,7 +368,6 @@ async function handlePasskeyLogin() {
         setupRBACUI(res.user.role);
         showPage('dashboard-page');
         showToast("Login Biometrik Berhasil! Selamat datang, " + res.user.nama_lengkap);
-        triggerNativeNotification("SIAP WANAMSKA", "Berhasil masuk via Biometrik/Passkey");
       } else {
         showToast(res.message, true);
       }
@@ -491,6 +498,7 @@ function switchSection(sectionId, elementMenu) {
   else if (sectionId === 'section-agenda') loadAgenda();
   else if (sectionId === 'section-materi') closeMateriFilesContainer();
   else if (sectionId === 'section-potensi') loadPotensi();
+  else if (sectionId === 'section-kedai') loadKedai(); // POIN 1.h
   else if (sectionId === 'section-inventaris') loadInventaris();
   else if (sectionId === 'section-kas') loadKas();
   else if (sectionId === 'section-profile') loadProfileDiri();
@@ -517,7 +525,6 @@ function initLiveTimer() {
 function initCreativeCalendar() {
   const now = new Date();
   const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  
   const monthYearEl = document.getElementById('calendar-month-year');
   if (monthYearEl) monthYearEl.innerText = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
   
@@ -538,7 +545,7 @@ function initCreativeCalendar() {
 }
 
 // =========================================================================
-// === AUTENTIKASI PASSWORD & RBAC (POIN 5: CASE-INSENSITIVE)            ===
+// === AUTENTIKASI PASSWORD & RBAC                                       ===
 // =========================================================================
 
 function setLoginLoading(isLoading) {
@@ -582,7 +589,6 @@ function handleLogin() {
         setupRBACUI(res.user.role);
         showPage('dashboard-page');
         showToast("Selamat Datang, " + res.user.nama_lengkap);
-        triggerNativeNotification("SIAP WANAMSKA", "Selamat datang kembali di sistem pangkalan!");
       } else {
         showToast(res.message || 'Login gagal', true);
       }
@@ -606,7 +612,9 @@ function actionLogout() {
 
 function setupRBACUI(role) {
   const isSpecialKas = isKasSpecialUser(userId);
+  const isSpecialKedai = isKedaiSpecialUser(userId);
 
+  // Sembunyikan elemen terbatas secara default
   document.getElementById('menu-materi').style.display = 'none';
   document.getElementById('menu-inventaris').style.display = 'none';
   document.getElementById('menu-kas').style.display = 'none';
@@ -622,6 +630,10 @@ function setupRBACUI(role) {
   document.getElementById('btn-tambah-inventaris-trigger').style.display = 'none';
   document.getElementById('btn-tambah-peminjaman-trigger').style.display = 'none';
   
+  // POIN 1.f & 1.g: Tombol Kedai Penggalang
+  document.getElementById('btn-tambah-kedai-trigger').style.display = 'none';
+  document.getElementById('btn-kurangi-kedai-trigger').style.display = 'none';
+
   document.getElementById('card-dash-kas').style.display = 'none';
   document.getElementById('export-absensi-box').style.display = 'none';
   document.getElementById('export-inventaris-box').style.display = 'none';
@@ -629,6 +641,17 @@ function setupRBACUI(role) {
 
   document.getElementById('btn-lonceng').style.display = 'flex';
   setTimeout(function () { loadNotifications(false); }, 1500);
+
+  // POIN 1.h: Menu Kedai Penggalang selalu tampil untuk semua peran
+  document.getElementById('menu-kedai').style.display = 'flex';
+
+  // Otorisasi Tombol Kedai Penggalang
+  if (role === "Admin") {
+    document.getElementById('btn-tambah-kedai-trigger').style.display = 'inline-block'; // Poin 1.f
+    document.getElementById('btn-kurangi-kedai-trigger').style.display = 'inline-block'; // Poin 1.g
+  } else if (isSpecialKedai) {
+    document.getElementById('btn-kurangi-kedai-trigger').style.display = 'inline-block'; // Poin 1.g
+  }
 
   if (role === "Admin" || role === "Pembina" || role === "Dewan Penggalang") {
     document.getElementById('menu-materi').style.display = 'flex';
@@ -671,11 +694,9 @@ function setupRBACUI(role) {
     if (role === "Pembina") {
       document.getElementById('menu-kas').style.display = 'flex';
       document.getElementById('menu-exports').style.display = 'flex';
-      
       document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
       document.getElementById('btn-tambah-agenda-trigger').style.display = 'inline-block';
       document.getElementById('btn-tambah-inventaris-trigger').style.display = 'inline-block';
-      
       document.getElementById('card-dash-kas').style.display = 'flex';
       document.getElementById('export-absensi-box').style.display = 'block';
       
@@ -693,6 +714,309 @@ function setupRBACUI(role) {
       document.getElementById('card-dash-kas').style.display = 'flex';
     }
   }
+}
+
+// =========================================================================
+// === MODUL KEDAI PENGGALANG ENGINE (POIN 1.a - 1.l)                    ===
+// =========================================================================
+
+function switchKedaiTab(tabName) {
+  currentKedaiTab = tabName;
+  const tabWajib = document.getElementById('tab-kedai-wajib');
+  const tabPelengkap = document.getElementById('tab-kedai-pelengkap');
+
+  if (tabName === 'Atribut Wajib') {
+    tabWajib.classList.add('active');
+    tabPelengkap.classList.remove('active');
+  } else {
+    tabPelengkap.classList.add('active');
+    tabWajib.classList.remove('active');
+  }
+
+  renderKedaiGrid();
+}
+
+function loadKedai() {
+  const emptyState = document.getElementById('kedai-empty-state');
+  const grid = document.getElementById('kedai-grid-list');
+  if (!grid || !emptyState) return;
+
+  setLoader(true, "Memuat katalog Kedai Penggalang...");
+
+  callAPI('getKedaiList', [sessionToken])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        kedaiListCache = res.list || [];
+        renderKedaiGrid();
+      }
+    })
+    .catch(err => {
+      setLoader(false);
+      showToast(err.message, true);
+    });
+}
+
+function renderKedaiGrid() {
+  const emptyState = document.getElementById('kedai-empty-state');
+  const grid = document.getElementById('kedai-grid-list');
+  if (!grid || !emptyState) return;
+
+  // POIN 1.l: JIKA DATABASE BELUM ADA BARANG, MUNCULKAN ==SEGERA==
+  if (kedaiListCache.length === 0) {
+    emptyState.style.display = 'block';
+    grid.style.display = 'none';
+    return;
+  }
+
+  // Filter sesuai tab aktif
+  const filtered = kedaiListCache.filter(item => item.jenis_atribut === currentKedaiTab);
+
+  if (filtered.length === 0) {
+    emptyState.style.display = 'block';
+    grid.style.display = 'none';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = "";
+
+  // POIN 1.e: TAMPILAN DETAILS DENGAN NAMA BARANG DAN TOMBOL LIHAT HARGA
+  filtered.forEach((item, index) => {
+    const isHabis = (item.jumlah <= 0 || item.keterangan === "Habis");
+    const badgeClass = isHabis ? "badge-habis" : "badge-ada";
+    const statusText = isHabis ? "Stok Habis" : "Stok Tersedia";
+    const imgUrl = item.foto_barang || "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png";
+
+    grid.innerHTML += `
+      <div class="kedai-card">
+        <div class="kedai-img-wrap">
+          <img src="${imgUrl}" alt="${item.nama_barang}" loading="lazy">
+        </div>
+        <div class="kedai-body">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted);">${item.id_barang}</span>
+              <span class="badge ${badgeClass}">${statusText}</span>
+            </div>
+            <h3 style="font-size: 1rem; color: var(--color-primary-dark); margin-bottom: 12px; line-height: 1.4;">${item.nama_barang}</h3>
+          </div>
+          <div>
+            <button class="btn btn-gold btn-full" style="padding: 9px 12px; font-size: 0.85rem;" onclick="openDetailKedaiModal('${item.id_barang}')">
+              🔍 Lihat Harga / Detail
+            </button>
+          </div>
+        </div>
+      </div>`;
+  });
+}
+
+// POIN 1.e: MODAL DETAIL / LIHAT HARGA
+function openDetailKedaiModal(idBarang) {
+  const item = kedaiListCache.find(b => b.id_barang === idBarang);
+  if (!item) return;
+
+  document.getElementById('kedai-detail-nama').innerText = item.nama_barang;
+  document.getElementById('kedai-detail-kategori').innerText = item.jenis_atribut;
+  document.getElementById('kedai-detail-harga').innerText = "Rp " + Number(item.harga_satuan).toLocaleString('id-ID');
+  document.getElementById('kedai-detail-stok').innerText = item.jumlah + " Unit";
+  
+  const isHabis = (item.jumlah <= 0 || item.keterangan === "Habis");
+  const statusEl = document.getElementById('kedai-detail-status');
+  statusEl.className = `badge ${isHabis ? 'badge-habis' : 'badge-ada'}`;
+  statusEl.innerText = isHabis ? "Habis" : "Tersedia";
+
+  const imgEl = document.getElementById('kedai-detail-foto');
+  imgEl.src = item.foto_barang || "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png";
+
+  document.getElementById('modal-detail-kedai').style.display = 'flex';
+}
+
+function closeDetailKedaiModal() {
+  document.getElementById('modal-detail-kedai').style.display = 'none';
+}
+
+// POIN 1.f: MODAL (+) TAMBAH / UPDATE MASTER STOK KEDAI
+function openTambahKedaiModal() {
+  document.getElementById('kedai-form-id').value = "";
+  document.getElementById('kedai-form-nama').value = "";
+  document.getElementById('kedai-form-harga').value = "";
+  document.getElementById('kedai-form-jumlah').value = "1";
+  document.getElementById('kedai-form-file').value = "";
+  document.getElementById('kedai-form-foto-base64').value = "";
+  kedaiFotoBase64 = "";
+
+  onKedaiJenisChange();
+  document.getElementById('modal-tambah-kedai').style.display = 'flex';
+}
+
+function closeTambahKedaiModal() {
+  document.getElementById('modal-tambah-kedai').style.display = 'none';
+}
+
+function onKedaiJenisChange() {
+  const jenis = document.getElementById('kedai-form-jenis').value;
+  callAPI('getKedaiNextId', [sessionToken, jenis]).then(res => {
+    if (res.success && res.nextId) {
+      document.getElementById('kedai-form-id-display').value = res.nextId;
+      document.getElementById('kedai-form-id').value = res.nextId;
+    }
+  });
+}
+
+function processKedaiPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  setLoader(true, "Mengompresi foto barang...");
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxDim = 900;
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      kedaiFotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+      document.getElementById('kedai-form-foto-base64').value = kedaiFotoBase64;
+      setLoader(false);
+      showToast("Foto barang siap diunggah.");
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function actionSaveKedaiBarang() {
+  const payload = {
+    id_barang: document.getElementById('kedai-form-id').value,
+    jenis_atribut: document.getElementById('kedai-form-jenis').value,
+    nama_barang: document.getElementById('kedai-form-nama').value.trim(),
+    harga_satuan: parseFloat(document.getElementById('kedai-form-harga').value) || 0,
+    jumlah: parseInt(document.getElementById('kedai-form-jumlah').value) || 0,
+    foto_barang: document.getElementById('kedai-form-foto-base64').value
+  };
+
+  if (!payload.nama_barang || payload.harga_satuan <= 0 || payload.jumlah <= 0) {
+    showToast("Nama Barang, Harga Satuan, dan Jumlah Stok wajib diisi dengan benar!", true);
+    return;
+  }
+
+  setLoader(true, "Menyimpan data stok ke Kedai Penggalang...");
+  callAPI('saveKedaiBarang', [sessionToken, payload])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        closeTambahKedaiModal();
+        loadKedai();
+        loadNotifications(false);
+      } else {
+        showToast(res.message, true);
+      }
+    })
+    .catch(err => {
+      setLoader(false);
+      showToast(err.message, true);
+    });
+}
+
+// POIN 1.g & 1.j: MODAL (-) JUAL / KURANGI STOK KEDAI
+function openKurangiKedaiModal() {
+  const selectEl = document.getElementById('kedai-jual-select');
+  selectEl.innerHTML = `<option value="">-- Pilih Barang yang Dibeli --</option>`;
+
+  // Filter hanya barang yang stoknya > 0
+  const availableItems = kedaiListCache.filter(item => item.jumlah > 0);
+  availableItems.forEach(item => {
+    selectEl.innerHTML += `<option value="${item.id_barang}">${item.nama_barang} (${item.jenis_atribut} - Sisa: ${item.jumlah})</option>`;
+  });
+
+  document.getElementById('kedai-jual-id').value = "";
+  document.getElementById('kedai-jual-harga-display').value = "-";
+  document.getElementById('kedai-jual-harga-val').value = "0";
+  document.getElementById('kedai-jual-stok-display').value = "-";
+  document.getElementById('kedai-jual-jumlah').value = "1";
+  document.getElementById('kedai-jual-total-display').innerText = "Rp 0";
+
+  document.getElementById('modal-kurangi-kedai').style.display = 'flex';
+}
+
+function closeKurangiKedaiModal() {
+  document.getElementById('modal-kurangi-kedai').style.display = 'none';
+}
+
+function onKedaiJualSelectChange() {
+  const selectedId = document.getElementById('kedai-jual-select').value;
+  const targetItem = kedaiListCache.find(b => b.id_barang === selectedId);
+
+  if (targetItem) {
+    document.getElementById('kedai-jual-id').value = targetItem.id_barang;
+    document.getElementById('kedai-jual-harga-display').value = "Rp " + Number(targetItem.harga_satuan).toLocaleString('id-ID');
+    document.getElementById('kedai-jual-harga-val').value = targetItem.harga_satuan;
+    document.getElementById('kedai-jual-stok-display').value = targetItem.jumlah + " Unit Tersedia";
+    document.getElementById('kedai-jual-jumlah').max = targetItem.jumlah;
+    document.getElementById('kedai-jual-jumlah').value = "1";
+  } else {
+    document.getElementById('kedai-jual-id').value = "";
+    document.getElementById('kedai-jual-harga-display').value = "-";
+    document.getElementById('kedai-jual-harga-val').value = "0";
+    document.getElementById('kedai-jual-stok-display').value = "-";
+  }
+
+  calculateKedaiTotalPembayaran();
+}
+
+function calculateKedaiTotalPembayaran() {
+  const qty = parseInt(document.getElementById('kedai-jual-jumlah').value) || 0;
+  const harga = parseFloat(document.getElementById('kedai-jual-harga-val').value) || 0;
+  const total = qty * harga;
+  document.getElementById('kedai-jual-total-display').innerText = "Rp " + total.toLocaleString('id-ID');
+}
+
+function actionSubmitKurangiKedai() {
+  const payload = {
+    id_barang: document.getElementById('kedai-jual-id').value,
+    jumlah: parseInt(document.getElementById('kedai-jual-jumlah').value) || 0
+  };
+
+  if (!payload.id_barang || payload.jumlah <= 0) {
+    showToast("Pilih barang dan tentukan jumlah unit yang valid!", true);
+    return;
+  }
+
+  setLoader(true, "Memproses transaksi penjualan kedai...");
+  callAPI('kurangiStokKedai', [sessionToken, payload])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        closeKurangiKedaiModal();
+        loadKedai();
+        loadNotifications(false);
+      } else {
+        showToast(res.message, true);
+      }
+    })
+    .catch(err => {
+      setLoader(false);
+      showToast(err.message, true);
+    });
 }
 
 // =========================================================================
@@ -733,6 +1057,7 @@ function loadNotifications(markAsRead = false) {
           let icon = '📢';
           if (notif.type === 'absensi') icon = '✅';
           else if (notif.type === 'inventaris') icon = '📦';
+          else if (notif.type === 'kedai') icon = '🏪';
           else if (notif.type === 'kas') icon = '💰';
           else if (notif.type === 'agenda') icon = '🗓️';
           else if (notif.type === 'potensi') icon = '🎯';
@@ -781,7 +1106,7 @@ function formatDateString(dateStr) {
 }
 
 // =========================================================================
-// === DOKUMENTASI KEGIATAN & PEMBACA FOTO LAMPIRAN BERITA (POIN 6)       ===
+// === DOKUMENTASI KEGIATAN & PEMBACA FOTO LAMPIRAN BERITA               ===
 // =========================================================================
 
 function loadKegiatan() {
@@ -824,7 +1149,6 @@ function loadKegiatan() {
     .catch(err => showToast(err.message, true));
 }
 
-// POIN 6: TAMPILKAN SELURUH FOTO LAMPIRAN PADA SAAT BACA BERITA
 function openBacaKegiatanModal(index) {
   const keg = kegiatanListCache[index];
   if (!keg) return;
@@ -942,7 +1266,7 @@ function actionSaveKegiatan() {
 }
 
 // =========================================================================
-// === MODUL INVENTARIS & PEMINJAMAN BARANG (POIN 1 & 2)                  ===
+// === MODUL INVENTARIS & PEMINJAMAN BARANG                              ===
 // =========================================================================
 
 function switchInventarisTab(tabType) {
@@ -1036,12 +1360,10 @@ function loadPeminjaman() {
     .catch(err => showToast(err.message, true));
 }
 
-// POIN 1: FORM MODAL PEMINJAMAN & AUTO-POPULATE FIELD
 function openPeminjamanModal() {
   const selectBarang = document.getElementById('pjm-select-barang');
   selectBarang.innerHTML = `<option value="">-- Pilih Barang yang Tersedia --</option>`;
 
-  // Isi dropdown dari cache inventaris yang memiliki stok > 0
   if (inventarisListCache.length === 0) {
     callAPI('getInventarisList', [sessionToken]).then(res => {
       if (res.success) {
@@ -1060,8 +1382,6 @@ function openPeminjamanModal() {
   
   const today = new Date().toISOString().substring(0, 10);
   document.getElementById('pjm-tgl-pinjam').value = today;
-  
-  // Set default tgl kembali +3 hari
   const next3Days = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
   document.getElementById('pjm-tgl-kembali').value = next3Days;
   document.getElementById('pjm-nama-peminjam').value = "";
