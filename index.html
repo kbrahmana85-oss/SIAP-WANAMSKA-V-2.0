@@ -96,6 +96,22 @@
       user-select: none;
     }
 
+    .login-divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 18px 0;
+      color: var(--color-text-muted);
+      font-size: 0.8rem;
+    }
+    .login-divider::before, .login-divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--color-light-brown);
+    }
+    .login-divider:not(:empty)::before { margin-right: .5em; }
+    .login-divider:not(:empty)::after { margin-left: .5em; }
+
     /* TOAST NOTIFICATION */
     #toast-container {
       position: fixed;
@@ -224,6 +240,14 @@
       background-color: var(--color-accent-gold-hover);
       color: #000;
     }
+    .btn-biometric {
+      background-color: #047857;
+      color: #FFFFFF;
+    }
+    .btn-biometric:hover {
+      background-color: #065F46;
+      color: #FFFFFF;
+    }
     .btn-danger {
       background-color: var(--color-danger-red);
     }
@@ -232,6 +256,31 @@
     }
     .btn-full {
       width: 100%;
+    }
+
+    /* TAB INVENTARIS DINAMIS */
+    .tab-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--color-light-brown);
+      padding-bottom: 8px;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      background-color: var(--color-primary);
+      color: #FFFFFF;
+      box-shadow: var(--shadow-soft);
     }
 
     /* APP LAYOUT */
@@ -455,6 +504,8 @@
     .badge-hadir { background-color: #DEF7EC; color: #03543F; }
     .badge-izin { background-color: #E1EFFE; color: #1E429F; }
     .badge-sakit { background-color: #FEF08A; color: #713F12; }
+    .badge-dipinjam { background-color: #FEE2E2; color: #991B1B; }
+    .badge-kembali { background-color: #DEF7EC; color: #03543F; }
 
     /* ABSENSI CAMERA STYLES (ANTI-MIRRORING) */
     .absensi-layout {
@@ -504,7 +555,7 @@
       flex-wrap: wrap;
     }
 
-    /* POIN 1: DOKUMENTASI KEGIATAN FORMAT DETAILS & READER */
+    /* DOKUMENTASI KEGIATAN FORMAT DETAILS & READER */
     .kegiatan-detail-list {
       display: flex;
       flex-direction: column;
@@ -560,7 +611,7 @@
       gap: 6px;
     }
 
-    /* READER MODAL / PDF DOCUMENT STYLE */
+    /* READER MODAL / PDF DOCUMENT STYLE (POIN 6) */
     .reader-document {
       background: #FFFFFF;
       border-radius: 8px;
@@ -590,24 +641,25 @@
     }
     .reader-gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
       margin-top: 20px;
     }
     .reader-gallery img {
       width: 100%;
-      height: 180px;
+      height: 200px;
       object-fit: cover;
       border-radius: 8px;
-      border: 1px solid var(--color-light-brown);
+      border: 2px solid var(--color-light-brown);
       cursor: pointer;
-      transition: transform 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
     .reader-gallery img:hover {
       transform: scale(1.03);
+      box-shadow: var(--shadow-bold);
     }
 
-    /* POIN 3: MATERI GRID */
+    /* MATERI GRID */
     .materi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -645,7 +697,7 @@
       color: var(--color-text-muted);
     }
 
-    /* POIN 6: KENALI POTENSIMU STYLES */
+    /* KENALI POTENSIMU STYLES */
     .potensi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -912,7 +964,7 @@
     <p id="loader-text">Memproses data...</p>
   </div>
 
-  <!-- LOGIN SCREEN -->
+  <!-- LOGIN SCREEN (POIN 3 & 5: DUKUNGAN PASSKEY/BIOMETRIK & CASE-INSENSITIVE) -->
   <div id="login-screen">
     <div class="login-box">
       <img src="https://github.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/raw/main/icon.png" class="logo" id="login-logo" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto;">
@@ -921,7 +973,7 @@
       
       <div class="form-group">
         <label for="userId">User ID</label>
-        <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required>
+        <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID (Bebas Huruf Besar/Kecil)" required>
       </div>
       
       <div class="form-group">
@@ -933,6 +985,12 @@
       </div>
       
       <button type="button" id="loginBtn" class="btn btn-full btn-gold" onclick="handleLogin()" style="padding: 12px; font-weight: 700;">Login</button>
+
+      <!-- TOMBOL BIOMETRIK / PASSKEY LOGIN (POIN 3) -->
+      <div class="login-divider">ATAU</div>
+      <button type="button" id="btn-login-passkey" class="btn btn-full btn-biometric" onclick="handlePasskeyLogin()" style="padding: 11px; font-weight: 600;">
+        🔐 Login dengan Sidik Jari / Passkey
+      </button>
 
       <div style="text-align:center; margin-top: 20px;">
         <h3 style="font-size: 0.95rem; color: var(--color-primary);">SELAMAT DATANG</h3>
@@ -983,7 +1041,6 @@
           <span class="icon">&#128218;</span> Materi Kegiatan
         </div>
 
-        <!-- POIN 6: MENU KENALI POTENSIMU -->
         <div class="menu-item" id="menu-potensi" onclick="switchSection('section-potensi', this)">
           <span class="icon">&#127919;</span> Kenali Potensimu
         </div>
@@ -1100,7 +1157,7 @@
           </div>
         </section>
 
-        <!-- SECTION 3: ABSENSI (POIN 7 & 8: TANPA METODE MANUAL & KETERANGAN) -->
+        <!-- SECTION 3: ABSENSI -->
         <section id="section-absensi" class="app-section">
           <div class="absensi-layout">
             <div class="card">
@@ -1172,7 +1229,7 @@
           </div>
         </section>
 
-        <!-- SECTION 4: DOKUMENTASI KEGIATAN (POIN 1: FORMAT DETAILS) -->
+        <!-- SECTION 4: DOKUMENTASI KEGIATAN (POIN 1 & 6) -->
         <section id="section-kegiatan" class="app-section">
           <div class="section-header">
             <h1>Dokumentasi Kegiatan</h1>
@@ -1183,7 +1240,7 @@
           </div>
         </section>
 
-        <!-- SECTION 5: MATERI KEGIATAN (POIN 3: FITUR + UNGGAH MATERI) -->
+        <!-- SECTION 5: MATERI KEGIATAN -->
         <section id="section-materi" class="app-section">
           <div class="section-header">
             <h1>Materi Kegiatan Kepramukaan</h1>
@@ -1280,7 +1337,7 @@
           </div>
         </section>
 
-        <!-- SECTION 6: KENALI POTENSIMU (POIN 6 & 9) -->
+        <!-- SECTION 6: KENALI POTENSIMU -->
         <section id="section-potensi" class="app-section">
           <div class="section-header">
             <h1>Kenali Potensimu</h1>
@@ -1288,7 +1345,6 @@
           </div>
 
           <div id="potensi-container">
-            <!-- TAMPILAN DEFAULT SESUAI POIN 6 -->
             <div class="potensi-empty-box" id="potensi-empty-state">
               <div class="potensi-empty-title">=Segera=</div>
               <p style="color: var(--color-text-muted); font-size: 0.95rem;">Modul Asesmen &amp; Pemetaan Potensi Anggota Pramuka Penggalang Wanamska sedang dipersiapkan.</p>
@@ -1297,32 +1353,67 @@
           </div>
         </section>
 
-        <!-- SECTION 7: INVENTARIS -->
+        <!-- SECTION 7: INVENTARIS & PEMINJAMAN (POIN 1 & 2: TAB DINAMIS & FORM PINJAM) -->
         <section id="section-inventaris" class="app-section">
           <div class="section-header">
-            <h1>Inventaris Barang</h1>
-            <button class="btn btn-gold" id="btn-tambah-inventaris-trigger" onclick="openInventarisModal()">+ Tambah Barang</button>
+            <h1>Inventaris &amp; Peminjaman Barang</h1>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button class="btn btn-gold" id="btn-tambah-peminjaman-trigger" onclick="openPeminjamanModal()">+ Pinjam Barang</button>
+              <button class="btn" id="btn-tambah-inventaris-trigger" onclick="openInventarisModal()">+ Tambah Barang</button>
+            </div>
           </div>
-          <div class="card">
+
+          <!-- TAB DINAMIS INVENTARIS (POIN 2) -->
+          <div class="tab-container">
+            <button class="tab-btn active" id="tab-btn-simpan" onclick="switchInventarisTab('tersimpan')">📦 Barang Tersimpan</button>
+            <button class="tab-btn" id="tab-btn-pinjam" onclick="switchInventarisTab('dipinjam')">📋 Barang Dipinjam</button>
+          </div>
+
+          <!-- VIEW TAB 1: BARANG TERSIMPAN -->
+          <div class="card" id="view-inventaris-tersimpan">
             <div class="table-responsive">
               <table>
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>ID Barang</th>
                     <th>Nama Barang</th>
                     <th>Kategori</th>
-                    <th>Jumlah</th>
+                    <th>Sisa Stok</th>
                     <th>Kondisi</th>
-                    <th>Lokasi</th>
+                    <th>Lokasi Simpan</th>
                   </tr>
                 </thead>
-                <tbody id="body-inventaris"></tbody>
+                <tbody id="body-inventaris">
+                  <tr><td colspan="6" style="text-align:center;">Memuat data inventaris...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- VIEW TAB 2: BARANG DIPINJAM -->
+          <div class="card" id="view-inventaris-dipinjam" style="display: none;">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID Pinjam</th>
+                    <th>ID &amp; Nama Barang</th>
+                    <th>Jumlah</th>
+                    <th>Tgl Pinjam / Kembali</th>
+                    <th>Nama Peminjam</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="body-peminjaman">
+                  <tr><td colspan="7" style="text-align:center;">Memuat data peminjaman...</td></tr>
+                </tbody>
               </table>
             </div>
           </div>
         </section>
 
-        <!-- SECTION 8: KAS PRAMUKA (POIN 4: AKSES KHUSUS ADMIN & DGW20264, DGW20265) -->
+        <!-- SECTION 8: KAS PRAMUKA -->
         <section id="section-kas" class="app-section">
           <div class="section-header">
             <h1>Arus Kas Pramuka</h1>
@@ -1367,10 +1458,10 @@
           </div>
         </section>
 
-        <!-- SECTION 9: PROFIL DIRI -->
+        <!-- SECTION 9: PROFIL DIRI & BIOMETRIK (POIN 4) -->
         <section id="section-profile" class="app-section">
           <div class="section-header">
-            <h1>Profil Anggota</h1>
+            <h1>Profil Anggota &amp; Pengaturan Akun</h1>
           </div>
           <div class="absensi-layout">
             <div class="card">
@@ -1427,8 +1518,19 @@
                 <input type="file" id="prof-file" class="form-control" accept="image/*" onchange="previewAndResizeProfilePhoto(event)">
               </div>
 
+              <!-- DAFTAR BIOMETRIK / PASSKEY SIDIK JARI (POIN 4) -->
+              <div class="card" style="margin-top: 20px; border-left: 6px solid #047857;">
+                <h3 style="margin-bottom: 10px; color: #047857;">🔐 Keamanan Biometrik / Passkey</h3>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 15px;">
+                  Daftarkan sensor sidik jari atau kunci layar perangkat HP/Laptop ini untuk login instan tanpa mengetik password.
+                </p>
+                <button class="btn btn-biometric btn-full" onclick="actionRegisterPasskey()">
+                  🖐️ Daftarkan Sidik Jari Perangkat Ini
+                </button>
+              </div>
+
               <div class="card" style="margin-top: 20px;">
-                <h3 style="margin-bottom: 15px; color: var(--color-primary);">Keamanan Akun</h3>
+                <h3 style="margin-bottom: 15px; color: var(--color-primary);">Ganti Password</h3>
                 <div class="form-group">
                   <label>Password Lama</label>
                   <input type="password" id="pass-lama" class="form-control">
@@ -1443,7 +1545,7 @@
           </div>
         </section>
 
-        <!-- SECTION 10: KELOLA USER (Admin) -->
+        <!-- SECTION 10: KELOLA USER -->
         <section id="section-users" class="app-section">
           <div class="section-header">
             <h1>Manajemen Pengguna</h1>
@@ -1467,7 +1569,7 @@
           </div>
         </section>
 
-        <!-- SECTION 11: EXPORT DATA (POIN 5: KAS TERSEDIA UNTUK DGW20264 & DGW20265) -->
+        <!-- SECTION 11: EXPORT DATA -->
         <section id="section-exports" class="app-section">
           <div class="section-header">
             <h1>Export Database Laporan</h1>
@@ -1539,9 +1641,71 @@
     </div>
   </div>
 
-  <!-- MODAL BACA DOKUMENTASI KEGIATAN (POIN 1: INTERACTIVE READER / PDF VIEW) -->
+  <!-- MODAL PEMINJAMAN BARANG (POIN 1) -->
+  <div id="modal-peminjaman" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="color: var(--color-primary);">Form Peminjaman Barang Inventaris</h3>
+        <span class="modal-close" onclick="closePeminjamanModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Pilih Barang Inventaris</label>
+          <select id="pjm-select-barang" class="form-control" onchange="onPeminjamanBarangChange()" required>
+            <option value="">-- Pilih Barang yang Tersedia --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>ID Barang (Otomatis)</label>
+          <input type="text" id="pjm-id-barang" class="form-control" readonly style="background-color: #EEE; font-weight: bold;">
+        </div>
+
+        <div class="form-group">
+          <label>Nama Barang</label>
+          <input type="text" id="pjm-nama-barang" class="form-control" readonly style="background-color: #EEE;">
+        </div>
+
+        <div class="form-group">
+          <label>Sisa Stok Tersedia</label>
+          <input type="text" id="pjm-stok-tersedia" class="form-control" readonly style="background-color: #DEF7EC; color: #03543F; font-weight: bold;">
+        </div>
+
+        <div class="form-group">
+          <label>Jumlah yang Dipinjam</label>
+          <input type="number" id="pjm-jumlah" class="form-control" min="1" placeholder="Masukkan jumlah unit" required>
+        </div>
+
+        <div class="form-group">
+          <label>Tanggal Pinjam</label>
+          <input type="date" id="pjm-tgl-pinjam" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>Tanggal Rencana Kembali</label>
+          <input type="date" id="pjm-tgl-kembali" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>Nama Peminjam</label>
+          <input type="text" id="pjm-nama-peminjam" class="form-control" placeholder="Nama lengkap peminjam / regu" required>
+        </div>
+
+        <div class="form-group">
+          <label>Status Barang</label>
+          <select id="pjm-status" class="form-control">
+            <option value="Dipinjam">Dipinjam</option>
+          </select>
+        </div>
+
+        <button class="btn btn-gold btn-full" onclick="actionSavePeminjaman()" style="padding: 12px; font-weight: 700;">SIMPAN &amp; POTONG STOK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL BACA DOKUMENTASI KEGIATAN (POIN 6: TAMPILAN FOTO LAMPIRAN BERITA) -->
   <div id="modal-baca-kegiatan" class="modal-overlay">
-    <div class="modal-box" style="max-width: 750px;">
+    <div class="modal-box" style="max-width: 780px;">
       <div class="modal-header">
         <h3 style="color: var(--color-primary);">Dokumentasi Berita Kegiatan</h3>
         <span class="modal-close" onclick="closeBacaKegiatanModal()">&times;</span>
@@ -1556,15 +1720,18 @@
               <span>✍️ Dibuat Oleh: <strong id="reader-author">-</strong></span>
             </div>
           </div>
-          <div style="font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 20px;" id="reader-description">-</div>
-          <h4 style="color: var(--color-primary); margin-bottom: 10px;">Galeri Foto Dokumentasi:</h4>
+          <div style="font-size: 0.95rem; white-space: pre-wrap; margin-bottom: 20px; line-height: 1.8;" id="reader-description">-</div>
+          
+          <h4 style="color: var(--color-primary); margin-top: 25px; margin-bottom: 10px; border-bottom: 1.5px solid var(--color-light-brown); padding-bottom: 5px;">
+            📸 Galeri Lampiran Foto Kegiatan:
+          </h4>
           <div class="reader-gallery" id="reader-gallery-container"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL TAMBAH MATERI KEGIATAN (POIN 3) -->
+  <!-- MODAL TAMBAH MATERI KEGIATAN -->
   <div id="modal-tambah-materi" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1605,7 +1772,7 @@
     </div>
   </div>
 
-  <!-- MODAL PENUGASAN KENALI POTENSIMU (POIN 6) -->
+  <!-- MODAL PENUGASAN KENALI POTENSIMU -->
   <div id="modal-potensi" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1682,7 +1849,7 @@
     </div>
   </div>
 
-  <!-- MODAL INVENTARIS -->
+  <!-- MODAL INVENTARIS BARANG -->
   <div id="modal-inventaris" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
@@ -1706,7 +1873,7 @@
         </div>
         <div class="form-group">
           <label>Jumlah</label>
-          <input type="number" id="inv-jumlah" class="form-control" required>
+          <input type="number" id="inv-jumlah" class="form-control" min="1" required>
         </div>
         <div class="form-group">
           <label>Kondisi</label>
@@ -1848,7 +2015,7 @@
     </div>
   </div>
 
-  <!-- MODAL NOTIFIKASI LONCENG 24 JAM (POIN 2) -->
+  <!-- MODAL NOTIFIKASI LONCENG 24 JAM -->
   <div id="modal-notifikasi" class="modal-overlay">
     <div class="modal-box" style="max-width: 500px;">
       <div class="modal-header">
@@ -1861,7 +2028,7 @@
     </div>
   </div>
 
-  <!-- SCRIPT ENGINE V2.6.0 -->
-  <script src="script.js?v=2.6.0"></script>
+  <!-- SCRIPT ENGINE V2.7.0 -->
+  <script src="script.js?v=2.7.0"></script>
 </body>
 </html>
