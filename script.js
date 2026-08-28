@@ -1155,11 +1155,16 @@ function loadNotifications(markAsRead = false) {
           else if (notif.type === 'potensi') icon = '🎯';
           else if (notif.type === 'kegiatan') icon = '📸';
 
+          const scheduleLine = notif.schedule
+            ? `<div style="font-size:0.8rem; color:var(--color-primary-dark); font-weight:600; background:#FAF4EE; border:1px solid var(--color-light-brown); padding:4px 10px; border-radius:6px; margin-top:5px; display:inline-block;">📅 ${escapeHtml(notif.schedule)}</div>`
+            : '';
+
           container.innerHTML += `
             <div class="notif-item">
               <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 3px;">🕒 <span class="notif-time">${formatRelativeTime(notif.timestamp)}</span> <span style="opacity:0.7;">• ${formatDateString(notif.timestamp)}</span></div>
               <div style="font-weight: 700; color: var(--color-text-dark); font-size: 0.88rem;">${icon} ${escapeHtml(notif.title)}</div>
               <div style="font-size: 0.82rem; color: var(--color-text-muted); margin-top: 2px;">${escapeHtml(notif.detail)}</div>
+              ${scheduleLine}
             </div>`;
         });
 
@@ -2294,6 +2299,7 @@ function openAgendaModal(agd) {
     document.getElementById('agd-waktu').value = agd.waktu || "";
     document.getElementById('agd-pj').value = agd.penanggung_jawab || "";
     document.getElementById('agd-keterangan').value = agd.keterangan || "";
+    setNotifRolesCheckboxes(agd.notif_roles || "");
   } else {
     document.getElementById('agenda-modal-title').innerText = "Form Tambah Agenda";
     document.getElementById('agd-id').value = "";
@@ -2303,8 +2309,37 @@ function openAgendaModal(agd) {
     document.getElementById('agd-waktu').value = "";
     document.getElementById('agd-pj').value = "";
     document.getElementById('agd-keterangan').value = "";
+    setNotifRolesCheckboxes("");
   }
   document.getElementById('modal-agenda').style.display = 'flex';
+}
+
+// Set state checkbox tujuan notifikasi sesuai role tersimpan (kosong = semua)
+function setNotifRolesCheckboxes(rolesStr) {
+  var map = { 'notif-pembina': 'Pembina', 'notif-dewan': 'Dewan Penggalang', 'notif-penggalang': 'Penggalang', 'notif-admin': 'Admin' };
+  var all = ["Pembina", "Dewan Penggalang", "Penggalang", "Admin"];
+  var sel = [];
+  var s = rolesStr ? String(rolesStr) : "";
+  if (!s || /semua|all|pengguna/i.test(s)) {
+    sel = all;
+  } else {
+    sel = s.split(',').map(function (r) { return r.trim(); });
+  }
+  Object.keys(map).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.checked = sel.indexOf(map[id]) !== -1;
+  });
+}
+
+// Ambil daftar role tujuan notifikasi yang tercentang
+function getNotifRoles() {
+  var map = { 'notif-admin': 'Admin', 'notif-pembina': 'Pembina', 'notif-dewan': 'Dewan Penggalang', 'notif-penggalang': 'Penggalang' };
+  var arr = [];
+  Object.keys(map).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el && el.checked) arr.push(map[id]);
+  });
+  return arr;
 }
 
 function closeAgendaModal() {
@@ -2319,7 +2354,8 @@ function actionSaveAgenda() {
     tanggal_pelaksanaan: document.getElementById('agd-tanggal').value,
     waktu: document.getElementById('agd-waktu').value.trim(),
     penanggung_jawab: document.getElementById('agd-pj').value.trim(),
-    keterangan: document.getElementById('agd-keterangan').value.trim()
+    keterangan: document.getElementById('agd-keterangan').value.trim(),
+    notif_roles: getNotifRoles().join(',')
   };
 
   if (!payload.kegiatan || !payload.jenis_kegiatan || !payload.tanggal_pelaksanaan || !payload.waktu || !payload.penanggung_jawab) {
