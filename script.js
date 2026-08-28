@@ -202,6 +202,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
   initLiveTimer();
   initCreativeCalendar();
+
+  // Login dengan menekan tombol Enter pada kolom User ID / Password
+  const loginFields = ['userId', 'password'];
+  loginFields.forEach(function (fieldId) {
+    const input = document.getElementById(fieldId);
+    if (!input) return;
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        if (document.getElementById('loginBtn') && !document.getElementById('loginBtn').disabled) {
+          handleLogin();
+        }
+      }
+    });
+  });
 });
 
 // =========================================================================
