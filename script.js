@@ -4,7 +4,56 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbyKWdCayLpLpfWTcuiGN4QDEf0rCuyt4uDaQ6j3rhFLjwoVNfIe88qgxKHZdd7aivOixw/exec";
-const APP_VERSION = "2.8.0"; 
+const APP_VERSION = "2.9.0"; 
+
+// =========================================================================
+// === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
+// =========================================================================
+// Semua operasi tanggal memakai zona waktu lokal perangkat (Asia/Jakarta /
+// WIB), sehingga tidak lagi "lompat" satu hari karena new Date().toISOString()
+// yang menggunakan UTC.
+function localDateStr(date) {
+  const d = date || new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+// Tanggal default untuk input type=date (lokal, bukan UTC)
+function todayLocalInput() { return localDateStr(); }
+function dateNDaysLocal(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return localDateStr(d);
+}
+// Format ISO string -> "Relatif" (mis. "5 menit lalu") untuk notifikasi
+function formatRelativeTime(input) {
+  try {
+    const t = new Date(input);
+    if (isNaN(t.getTime())) return formatDateString(input);
+    const diff = Date.now() - t.getTime();
+    const sec = Math.floor(diff / 1000);
+    if (sec < 0) return "baru saja";
+    if (sec < 60) return "baru saja";
+    const min = Math.floor(sec / 60);
+    if (min < 60) return min + " menit lalu";
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return hr + " jam lalu";
+    const day = Math.floor(hr / 24);
+    if (day < 7) return day + " hari lalu";
+    return formatDateString(input);
+  } catch (e) { return input; }
+}
+// Escape HTML agar data dari server tidak memicu XSS / merusak layout
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 let sessionToken = "";
 let userRole = "";
@@ -419,12 +468,21 @@ function requestGPSPermission() {
 }
 
 function showPage(pageId) {
+  const toggleBtn = document.querySelector('.menu-toggle');
+  const overlayEl = document.querySelector('.overlay');
+
   if (pageId === 'login-page' || pageId === 'login-screen') {
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('app-container').style.display = 'none';
+    // Sembunyikan tombol menu & overlay agar tidak menumpuk di layar login
+    if (toggleBtn) toggleBtn.style.display = 'none';
+    if (overlayEl) overlayEl.classList.remove('active');
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) { sidebar.classList.remove('active'); sidebar.classList.remove('collapsed'); }
     return;
   }
   if (pageId === 'dashboard-page') {
+    if (toggleBtn) toggleBtn.style.display = 'block';
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-container').style.display = 'flex';
     switchSection('section-dashboard');
@@ -476,6 +534,13 @@ function switchSection(sectionId, elementMenu) {
 
   const target = document.getElementById(sectionId);
   if (target) { target.classList.add('active'); target.style.display = 'block'; }
+  else {
+    // Bagian tidak ditemukan: tampilkan Dashboard agar halaman tidak kosong
+    const dash = document.getElementById('section-dashboard');
+    if (dash) { dash.classList.add('active'); dash.style.display = 'block'; }
+    showToast("Halaman tidak ditemukan.", true);
+    return;
+  }
 
   const menuItems = document.querySelectorAll('.menu-item');
   menuItems.forEach(item => item.classList.remove('active'));
@@ -787,23 +852,25 @@ function renderKedaiGrid() {
     const isHabis = (item.jumlah <= 0 || item.keterangan === "Habis");
     const badgeClass = isHabis ? "badge-habis" : "badge-ada";
     const statusText = isHabis ? "Stok Habis" : "Stok Tersedia";
-    const imgUrl = item.foto_barang || "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png";
+    const imgUrl = escapeHtml(item.foto_barang || "https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png");
+    const safeId = escapeHtml(item.id_barang);
+    const safeName = escapeHtml(item.nama_barang);
 
     grid.innerHTML += `
       <div class="kedai-card">
         <div class="kedai-img-wrap">
-          <img src="${imgUrl}" alt="${item.nama_barang}" loading="lazy">
+          <img src="${imgUrl}" alt="${safeName}" loading="lazy">
         </div>
         <div class="kedai-body">
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted);">${item.id_barang}</span>
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted);">${safeId}</span>
               <span class="badge ${badgeClass}">${statusText}</span>
             </div>
-            <h3 style="font-size: 1rem; color: var(--color-primary-dark); margin-bottom: 12px; line-height: 1.4;">${item.nama_barang}</h3>
+            <h3 style="font-size: 1rem; color: var(--color-primary-dark); margin-bottom: 12px; line-height: 1.4;">${safeName}</h3>
           </div>
           <div>
-            <button class="btn btn-gold btn-full" style="padding: 9px 12px; font-size: 0.85rem;" onclick="openDetailKedaiModal('${item.id_barang}')">
+            <button class="btn btn-gold btn-full" style="padding: 9px 12px; font-size: 0.85rem;" onclick="openDetailKedaiModal('${safeId}')">
               🔍 Lihat Harga / Detail
             </button>
           </div>
@@ -857,12 +924,13 @@ function closeTambahKedaiModal() {
 
 function onKedaiJenisChange() {
   const jenis = document.getElementById('kedai-form-jenis').value;
-  callAPI('getKedaiNextId', [sessionToken, jenis]).then(res => {
+  // cache:false -> ID berikutnya harus selalu fresh agar tidak terduplikasi
+  callAPI('getKedaiNextId', [sessionToken, jenis], { cache: false }).then(res => {
     if (res.success && res.nextId) {
       document.getElementById('kedai-form-id-display').value = res.nextId;
       document.getElementById('kedai-form-id').value = res.nextId;
     }
-  });
+  }).catch(() => {});
 }
 
 function processKedaiPhoto(event) {
@@ -1065,9 +1133,9 @@ function loadNotifications(markAsRead = false) {
 
           container.innerHTML += `
             <div class="notif-item">
-              <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 3px;">🕒 ${formatDateString(notif.timestamp)}</div>
-              <div style="font-weight: 700; color: var(--color-text-dark); font-size: 0.88rem;">${icon} ${notif.title}</div>
-              <div style="font-size: 0.82rem; color: var(--color-text-muted); margin-top: 2px;">${notif.detail}</div>
+              <div style="font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 3px;">🕒 <span class="notif-time">${formatRelativeTime(notif.timestamp)}</span> <span style="opacity:0.7;">• ${formatDateString(notif.timestamp)}</span></div>
+              <div style="font-weight: 700; color: var(--color-text-dark); font-size: 0.88rem;">${icon} ${escapeHtml(notif.title)}</div>
+              <div style="font-size: 0.82rem; color: var(--color-text-muted); margin-top: 2px;">${escapeHtml(notif.detail)}</div>
             </div>`;
         });
 
@@ -1131,13 +1199,13 @@ function loadKegiatan() {
           container.innerHTML += `
             <div class="kegiatan-detail-item" onclick="openBacaKegiatanModal(${idx})">
               <div style="flex: 1;">
-                <div style="font-weight: 700; color: var(--color-primary); font-size: 1.05rem;">${keg.nama_kegiatan}</div>
+                <div style="font-weight: 700; color: var(--color-primary); font-size: 1.05rem;">${escapeHtml(keg.nama_kegiatan)}</div>
                 <div class="kegiatan-meta">
-                  <span>📅 Tanggal: <strong>${tgl}</strong></span>
-                  <span>📍 Lokasi: <strong>${keg.lokasi}</strong></span>
-                  <span>👤 ID Pembuat: <strong>${authorId}</strong></span>
+                  <span>📅 Tanggal: <strong>${escapeHtml(tgl)}</strong></span>
+                  <span>📍 Lokasi: <strong>${escapeHtml(keg.lokasi)}</strong></span>
+                  <span>👤 ID Pembuat: <strong>${escapeHtml(authorId)}</strong></span>
                 </div>
-                <div class="kegiatan-brief">${keg.deskripsi}</div>
+                <div class="kegiatan-brief">${escapeHtml(keg.deskripsi)}</div>
               </div>
               <div>
                 <span class="badge-reader-btn">📖 Baca Berita</span>
@@ -1225,7 +1293,7 @@ function openKegiatanModal() {
   document.getElementById('kegiatan-modal-title').innerText = "Form Tambah Dokumentasi Kegiatan";
   document.getElementById('keg-id').value = "";
   document.getElementById('keg-nama').value = "";
-  document.getElementById('keg-tanggal').value = new Date().toISOString().substring(0, 10);
+  document.getElementById('keg-tanggal').value = todayLocalInput();
   document.getElementById('keg-lokasi').value = "";
   document.getElementById('keg-deskripsi').value = "";
   document.getElementById('keg-foto-1-base64').value = "";
@@ -1309,12 +1377,12 @@ function loadInventaris() {
           const stokBadge = row.jumlah > 0 ? `<span class="badge badge-hadir">${row.jumlah} Unit</span>` : `<span class="badge badge-dipinjam">Habis / 0</span>`;
           tbody.innerHTML += `
             <tr>
-              <td><strong>${row.id_barang}</strong></td>
-              <td>${row.nama_barang}</td>
-              <td>${row.kategori}</td>
+              <td><strong>${escapeHtml(row.id_barang)}</strong></td>
+              <td>${escapeHtml(row.nama_barang)}</td>
+              <td>${escapeHtml(row.kategori)}</td>
               <td>${stokBadge}</td>
-              <td>${row.kondisi}</td>
-              <td>${lokasi}</td>
+              <td>${escapeHtml(row.kondisi)}</td>
+              <td>${escapeHtml(lokasi)}</td>
             </tr>`;
         });
       }
@@ -1346,12 +1414,12 @@ function loadPeminjaman() {
 
           tbody.innerHTML += `
             <tr>
-              <td><strong>${p.id_pinjam}</strong></td>
-              <td><strong>${p.nama_barang}</strong><br><span style="font-size:0.75rem; color:var(--color-text-muted);">${p.id_barang}</span></td>
-              <td>${p.jumlah_pinjam} Unit</td>
-              <td>Pinjam: ${p.tanggal_pinjam}<br><span style="font-size:0.75rem;">Kembali: ${p.tanggal_kembali || "-"}</span></td>
-              <td><strong>${p.nama_peminjam}</strong></td>
-              <td><span class="badge ${badgeClass}">${p.status}</span></td>
+              <td><strong>${escapeHtml(p.id_pinjam)}</strong></td>
+              <td><strong>${escapeHtml(p.nama_barang)}</strong><br><span style="font-size:0.75rem; color:var(--color-text-muted);">${escapeHtml(p.id_barang)}</span></td>
+              <td>${escapeHtml(p.jumlah_pinjam)} Unit</td>
+              <td>Pinjam: ${escapeHtml(p.tanggal_pinjam)}<br><span style="font-size:0.75rem;">Kembali: ${escapeHtml(p.tanggal_kembali) || "-"}</span></td>
+              <td><strong>${escapeHtml(p.nama_peminjam)}</strong></td>
+              <td><span class="badge ${badgeClass}">${escapeHtml(p.status)}</span></td>
               <td>${actionBtn}</td>
             </tr>`;
         });
@@ -1380,9 +1448,9 @@ function openPeminjamanModal() {
   document.getElementById('pjm-stok-tersedia').value = "-";
   document.getElementById('pjm-jumlah').value = "1";
   
-  const today = new Date().toISOString().substring(0, 10);
+  const today = todayLocalInput();
   document.getElementById('pjm-tgl-pinjam').value = today;
-  const next3Days = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10);
+  const next3Days = dateNDaysLocal(3);
   document.getElementById('pjm-tgl-kembali').value = next3Days;
   document.getElementById('pjm-nama-peminjam').value = "";
 
@@ -1473,7 +1541,7 @@ function openInventarisModal() {
   document.getElementById('inv-nama').value = "";
   document.getElementById('inv-jumlah').value = "1";
   document.getElementById('inv-lokasi').value = "";
-  document.getElementById('inv-tanggal').value = new Date().toISOString().substring(0, 10);
+  document.getElementById('inv-tanggal').value = todayLocalInput();
   document.getElementById('inv-keterangan').value = "";
   document.getElementById('modal-inventaris').style.display = 'flex';
 }
@@ -1684,14 +1752,14 @@ function loadPotensi() {
             <div class="potensi-card">
               <div>
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                  <span class="badge badge-hadir">${item.kategori}</span>
-                  <span style="font-size:0.75rem; color:var(--color-text-muted);">${item.id_potensi}</span>
+                  <span class="badge badge-hadir">${escapeHtml(item.kategori)}</span>
+                  <span style="font-size:0.75rem; color:var(--color-text-muted);">${escapeHtml(item.id_potensi)}</span>
                 </div>
-                <h3 style="font-size:1.1rem; color:var(--color-primary); margin-bottom:8px;">${item.judul}</h3>
+                <h3 style="font-size:1.1rem; color:var(--color-primary); margin-bottom:8px;">${escapeHtml(item.judul)}</h3>
                 <p style="font-size:0.8rem; color:var(--color-text-muted); margin-bottom:15px;">Dibuat: ${formatDateString(item.created_at)}</p>
               </div>
               <div style="display:flex; gap:8px; justify-content:space-between; align-items:center;">
-                <a href="${item.link_url}" target="_blank" class="btn btn-gold" style="flex:1; padding:8px 12px; font-size:0.85rem; text-decoration:none;">
+                <a href="${escapeHtml(item.link_url)}" target="_blank" rel="noopener" class="btn btn-gold" style="flex:1; padding:8px 12px; font-size:0.85rem; text-decoration:none;">
                   🚀 Buka Asesmen
                 </a>
                 ${deleteBtn}
@@ -2090,12 +2158,12 @@ function loadAgenda() {
 
           tbody.innerHTML += `
             <tr>
-              <td><strong>${agd.kegiatan}</strong></td>
-              <td>${agd.jenis_kegiatan}</td>
-              <td>${agd.tanggal_pelaksanaan}</td>
-              <td>${agd.waktu}</td>
-              <td>${agd.penanggung_jawab}</td>
-              <td>${agd.keterangan || "-"}</td>
+              <td><strong>${escapeHtml(agd.kegiatan)}</strong></td>
+              <td>${escapeHtml(agd.jenis_kegiatan)}</td>
+              <td>${escapeHtml(agd.tanggal_pelaksanaan)}</td>
+              <td>${escapeHtml(agd.waktu)}</td>
+              <td>${escapeHtml(agd.penanggung_jawab)}</td>
+              <td>${escapeHtml(agd.keterangan) || "-"}</td>
               <td>${actionButtons || "-"}</td>
             </tr>`;
         });
@@ -2119,7 +2187,7 @@ function openAgendaModal(agd) {
     document.getElementById('agd-id').value = "";
     document.getElementById('agd-kegiatan').value = "";
     document.getElementById('agd-jenis').value = "";
-    document.getElementById('agd-tanggal').value = new Date().toISOString().substring(0, 10);
+    document.getElementById('agd-tanggal').value = todayLocalInput();
     document.getElementById('agd-waktu').value = "";
     document.getElementById('agd-pj').value = "";
     document.getElementById('agd-keterangan').value = "";
@@ -2275,7 +2343,7 @@ function drawKasChart(masuk, keluar, saldo) {
 function openKasModal() {
   document.getElementById('kas-kategori').value = "";
   document.getElementById('kas-jumlah').value = "";
-  document.getElementById('kas-tanggal-form').value = new Date().toISOString().substring(0, 10);
+  document.getElementById('kas-tanggal-form').value = todayLocalInput();
   document.getElementById('kas-keterangan-form').value = "";
   document.getElementById('modal-kas').style.display = 'flex';
 }
@@ -2412,14 +2480,22 @@ function loadUsers() {
         const tbody = document.getElementById('body-users');
         if (!tbody) return;
         tbody.innerHTML = "";
+        if (!res.list || res.list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada pengguna terdaftar.</td></tr>`;
+          return;
+        }
         res.list.forEach(row => {
+          const isSelf = String(row.user_id).toLowerCase() === String(userId).toLowerCase();
+          const statusBadge = String(row.status_aktif).toLowerCase() === 'aktif' ? 'badge-hadir' : 'badge-dipinjam';
+          const editBtn = `<button class="btn" style="padding:4px 10px; font-size:0.78rem; margin-right:4px;" onclick="openUserModal(${JSON.stringify(row).replace(/"/g, '&quot;')})">Edit</button>`;
+          const delBtn = isSelf ? "" : `<button class="btn btn-danger" style="padding:4px 10px; font-size:0.78rem;" onclick="actionDeleteUser('${escapeHtml(row.user_id)}')">Hapus</button>`;
           tbody.innerHTML += `
             <tr>
-              <td><strong>${row.user_id}</strong></td>
-              <td>${row.nama_lengkap}</td>
-              <td><span class="role">${row.role}</span></td>
-              <td><span class="badge badge-hadir">${row.status_aktif}</span></td>
-              <td>-</td>
+              <td><strong>${escapeHtml(row.user_id)}</strong></td>
+              <td>${escapeHtml(row.nama_lengkap)}</td>
+              <td><span class="role" style="background:var(--color-accent-gold);color:#1A0C00;padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">${escapeHtml(row.role)}</span></td>
+              <td><span class="badge ${statusBadge}">${escapeHtml(row.status_aktif)}</span></td>
+              <td>${editBtn} ${delBtn || "-"}</td>
             </tr>`;
         });
       }
@@ -2427,19 +2503,113 @@ function loadUsers() {
     .catch(err => showToast(err.message, true));
 }
 
-function openUserModal() { document.getElementById('modal-user').style.display = 'flex'; }
+function openUserModal(user) {
+  document.getElementById('modal-user').style.display = 'flex';
+  if (user && user.user_id) {
+    document.getElementById('usr-id').value = user.user_id;
+    document.getElementById('usr-nama').value = user.nama_lengkap || "";
+    document.getElementById('usr-role').value = user.role || "Penggalang";
+    document.getElementById('usr-status').value = user.status_aktif === "Aktif" ? "Aktif" : "Nonaktif";
+    document.getElementById('usr-id').readOnly = true;
+    document.getElementById('usr-id').style.backgroundColor = '#EEE';
+  } else {
+    document.getElementById('usr-id').value = "";
+    document.getElementById('usr-nama').value = "";
+    document.getElementById('usr-password').value = "";
+    document.getElementById('usr-role').value = "Penggalang";
+    document.getElementById('usr-status').value = "Aktif";
+    document.getElementById('usr-id').readOnly = false;
+    document.getElementById('usr-id').style.backgroundColor = '';
+  }
+}
 function closeUserModal() { document.getElementById('modal-user').style.display = 'none'; }
-function actionSaveUser() { closeUserModal(); showToast("User disimpan."); }
 
-function loadSystemLogs() {}
+function actionSaveUser() {
+  const payload = {
+    user_id: document.getElementById('usr-id').value.trim(),
+    nama_lengkap: document.getElementById('usr-nama').value.trim(),
+    password: document.getElementById('usr-password').value,
+    role: document.getElementById('usr-role').value,
+    status_aktif: document.getElementById('usr-status').value
+  };
+  if (!payload.user_id || !payload.nama_lengkap) {
+    showToast("User ID dan Nama Lengkap wajib diisi!", true);
+    return;
+  }
+  setLoader(true, "Menyimpan data pengguna...");
+  callAPI('saveUserByAdmin', [sessionToken, payload])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        closeUserModal();
+        document.getElementById('usr-password').value = "";
+        loadUsers();
+      } else {
+        showToast(res.message, true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function actionDeleteUser(uid) {
+  if (String(uid).toLowerCase() === String(userId).toLowerCase()) {
+    showToast("Anda tidak dapat menghapus akun Anda sendiri.", true);
+    return;
+  }
+  if (!confirm("Apakah Anda yakin ingin menghapus pengguna " + uid + "? Tindakan ini tidak dapat dibatalkan.")) return;
+  setLoader(true, "Menghapus pengguna...");
+  callAPI('deleteUser', [sessionToken, uid])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      loadUsers();
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function loadSystemLogs() {
+  const tbody = document.getElementById('body-logs');
+  if (!tbody) return;
+  const filter = document.getElementById('filter-log-user') ? document.getElementById('filter-log-user').value.trim() : "";
+
+  callAPI('getSystemLogs', [sessionToken, filter], { cache: false })
+    .then(res => {
+      if (!res.success) { showToast(res.message, true); return; }
+      tbody.innerHTML = "";
+      if (!res.list || res.list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum ada log aktivitas tercatat.</td></tr>`;
+        return;
+      }
+      res.list.forEach(log => {
+        const waktu = formatDateString(log.timestamp);
+        tbody.innerHTML += `
+          <tr>
+            <td style="white-space:nowrap;">${waktu}</td>
+            <td><strong>${escapeHtml(log.user_id)}</strong></td>
+            <td><span class="badge" style="background:#FAF4EE; color:var(--color-primary);">${escapeHtml(log.aksi)}</span></td>
+            <td>${escapeHtml(log.detail)}</td>
+            <td style="font-size:0.78rem;">${escapeHtml(log.ip || "-")}</td>
+          </tr>`;
+      });
+    })
+    .catch(err => { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--color-danger-red);">${escapeHtml(err.message)}</td></tr>`; });
+}
 
 function viewFullImage(src) {
   if (!src) return;
-  const win = window.open('', '_blank');
-  if (win) {
-    win.document.write('<html><head><title>Dokumentasi Foto</title></head><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="' + src + '" style="max-width:100%;max-height:100vh;object-fit:contain;" /></body></html>');
-    win.document.close();
+  const overlay = document.getElementById('lightbox-overlay');
+  const img = document.getElementById('lightbox-img');
+  if (overlay && img) {
+    img.src = src;
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
   }
+}
+function closeLightbox() {
+  const overlay = document.getElementById('lightbox-overlay');
+  if (overlay) overlay.style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 // =========================================================================
@@ -2461,7 +2631,7 @@ function triggerExport(jenis, format) {
         const downloadLink = document.createElement('a');
         downloadLink.href = res.url;
         downloadLink.target = '_blank';
-        downloadLink.setAttribute('download', jenis + '_' + format + '_' + new Date().toISOString().substring(0, 10));
+        downloadLink.setAttribute('download', jenis + '_' + format + '_' + todayLocalInput());
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
