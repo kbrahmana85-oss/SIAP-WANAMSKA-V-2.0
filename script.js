@@ -3,7 +3,7 @@
 // =========================================================================
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
-const API_URL = "https://script.google.com/macros/s/AKfycbyKWdCayLpLpfWTcuiGN4QDEf0rCuyt4uDaQ6j3rhFLjwoVNfIe88qgxKHZdd7aivOixw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
 const APP_VERSION = "2.9.0"; 
 
 // =========================================================================
@@ -478,7 +478,8 @@ function showPage(pageId) {
     if (toggleBtn) toggleBtn.style.display = 'none';
     if (overlayEl) overlayEl.classList.remove('active');
     const sidebar = document.querySelector('.sidebar');
-    if (sidebar) { sidebar.classList.remove('active'); sidebar.classList.remove('collapsed'); }
+    if (sidebar) { sidebar.classList.remove('active'); sidebar.classList.remove('expanded'); }
+    document.body.classList.remove('menu-open');
     return;
   }
   if (pageId === 'dashboard-page') {
@@ -519,13 +520,18 @@ function setLoader(show, text = "Sedang memproses data...") {
 function toggleSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.overlay');
-  if (sidebar) {
-    sidebar.classList.toggle('active');
-    sidebar.classList.toggle('collapsed');
+  if (!sidebar) return;
+
+  if (window.innerWidth <= 768) {
+    // Mobile: dock ikon selalu tampil; klik ☰ membuka panel penuh di bawah header
+    sidebar.classList.toggle('expanded');
+    if (overlay) overlay.classList.toggle('active');
+  } else {
+    // Desktop: perluas / ciutkan (dock ikon <-> panel menu)
+    sidebar.classList.toggle('expanded');
   }
-  if (overlay && window.innerWidth <= 768) {
-    overlay.classList.toggle('active');
-  }
+  // Sinkron: geser konten agar panel terbuka tidak menutup isi halaman
+  document.body.classList.toggle('menu-open', sidebar.classList.contains('expanded'));
 }
 
 function switchSection(sectionId, elementMenu) {
@@ -548,9 +554,12 @@ function switchSection(sectionId, elementMenu) {
 
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.overlay');
-  if (sidebar && overlay) {
+  if (sidebar) {
+    // Setelah memilih modul, ciutkan kembali ke dock agar tidak mengganggu isi
     sidebar.classList.remove('active');
-    if (window.innerWidth <= 768) overlay.classList.remove('active');
+    sidebar.classList.remove('expanded');
+    document.body.classList.remove('menu-open');
+    if (overlay) overlay.classList.remove('active');
   }
 
   if (sectionId !== 'section-absensi') {
@@ -1195,7 +1204,16 @@ function loadKegiatan() {
         kegiatanListCache.forEach((keg, idx) => {
           const authorId = keg.dibuat_oleh || "Admin";
           const tgl = keg.tanggal || keg.tanggal_dibuat || "-";
-          
+          const canEdit = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
+          const canDelete = userRole === "Admin";
+          let actionBtns = "";
+          if (canEdit) {
+            actionBtns += `<span class="badge-reader-btn" style="cursor:pointer;" onclick="event.stopPropagation(); openEditKegiatanModal(${idx})">✏️ Edit</span>`;
+          }
+          if (canDelete) {
+            actionBtns += `<span class="badge-reader-btn" style="cursor:pointer; border-color:var(--color-danger-red); color:var(--color-danger-red);" onclick="event.stopPropagation(); actionDeleteKegiatan('${escapeHtml(keg.id_kegiatan)}')">🗑️ Hapus</span>`;
+          }
+
           container.innerHTML += `
             <div class="kegiatan-detail-item" onclick="openBacaKegiatanModal(${idx})">
               <div style="flex: 1;">
@@ -1207,7 +1225,8 @@ function loadKegiatan() {
                 </div>
                 <div class="kegiatan-brief">${escapeHtml(keg.deskripsi)}</div>
               </div>
-              <div>
+              <div style="display:flex; flex-direction:column; gap:6px; align-items:stretch;">
+                ${actionBtns}
                 <span class="badge-reader-btn">📖 Baca Berita</span>
               </div>
             </div>`;
@@ -1301,6 +1320,41 @@ function openKegiatanModal() {
   document.getElementById('modal-kegiatan').style.display = 'flex';
 }
 
+// EDIT DOKUMENTASI KEGIATAN (isi form dengan data yang dipilih)
+function openEditKegiatanModal(index) {
+  const keg = kegiatanListCache[index];
+  if (!keg) return;
+  document.getElementById('kegiatan-modal-title').innerText = "Edit Dokumentasi Kegiatan";
+  document.getElementById('keg-id').value = keg.id_kegiatan || "";
+  document.getElementById('keg-nama').value = keg.nama_kegiatan || "";
+  document.getElementById('keg-tanggal').value = String(keg.tanggal || "").substring(0, 10);
+  document.getElementById('keg-lokasi').value = keg.lokasi || "";
+  document.getElementById('keg-deskripsi').value = keg.deskripsi || "";
+  // Foto lama tidak dimuat ulang; hanya foto baru jika user pilih berkas baru
+  document.getElementById('keg-foto-1-base64').value = "";
+  document.getElementById('keg-foto-2-base64').value = "";
+  document.getElementById('modal-kegiatan').style.display = 'flex';
+}
+
+// HAPUS DOKUMENTASI KEGIATAN (Admin)
+function actionDeleteKegiatan(idKegiatan) {
+  if (!idKegiatan) return;
+  if (!confirm("Apakah Anda yakin ingin menghapus dokumentasi kegiatan ini?")) return;
+  setLoader(true, "Menghapus dokumentasi kegiatan...");
+  callAPI('deleteKegiatan', [sessionToken, idKegiatan])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        loadKegiatan();
+        loadNotifications(false);
+      } else {
+        showToast(res.message, true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
 function closeKegiatanModal() {
   document.getElementById('modal-kegiatan').style.display = 'none';
 }
@@ -1375,6 +1429,15 @@ function loadInventaris() {
         inventarisListCache.forEach(row => {
           const lokasi = row.locations_simpan || row.lokasi_simpan || "-";
           const stokBadge = row.jumlah > 0 ? `<span class="badge badge-hadir">${row.jumlah} Unit</span>` : `<span class="badge badge-dipinjam">Habis / 0</span>`;
+          const canEdit = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) !== -1;
+          const canDelete = userRole === "Admin";
+          let actionBtns = "-";
+          if (canEdit) {
+            actionBtns = `<button class="btn" style="padding:4px 10px; font-size:0.78rem; margin-right:4px;" onclick="openInventarisModal('${escapeHtml(row.id_barang)}')">Edit</button>`;
+          }
+          if (canDelete) {
+            actionBtns += `<button class="btn btn-danger" style="padding:4px 10px; font-size:0.78rem;" onclick="actionDeleteInventaris('${escapeHtml(row.id_barang)}')">Hapus</button>`;
+          }
           tbody.innerHTML += `
             <tr>
               <td><strong>${escapeHtml(row.id_barang)}</strong></td>
@@ -1383,6 +1446,7 @@ function loadInventaris() {
               <td>${stokBadge}</td>
               <td>${escapeHtml(row.kondisi)}</td>
               <td>${escapeHtml(lokasi)}</td>
+              <td>${actionBtns}</td>
             </tr>`;
         });
       }
@@ -1536,14 +1600,47 @@ function actionKembalikanBarang(idPinjam) {
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
-function openInventarisModal() {
+function openInventarisModal(idBarang) {
+  document.getElementById('inv-modal-title').innerText = "Form Inventaris Barang";
+  if (idBarang) {
+    const item = inventarisListCache.find(b => b.id_barang === idBarang);
+    if (item) {
+      document.getElementById('inv-modal-title').innerText = "Edit Inventaris Barang";
+      document.getElementById('inv-id').value = item.id_barang || "";
+      document.getElementById('inv-nama').value = item.nama_barang || "";
+      document.getElementById('inv-jumlah').value = item.jumlah || "1";
+      if (item.kategori) document.getElementById('inv-kategori').value = item.kategori;
+      if (item.kondisi) document.getElementById('inv-kondisi').value = item.kondisi;
+      document.getElementById('inv-lokasi').value = item.locations_simpan || item.lokasi_simpan || "";
+      document.getElementById('inv-tanggal').value = String(item.tanggal_masuk || "").substring(0, 10);
+      document.getElementById('inv-keterangan').value = item.keterangan || "";
+      document.getElementById('modal-inventaris').style.display = 'flex';
+      return;
+    }
+  }
+  // Mode tambah baru
   document.getElementById('inv-id').value = "";
   document.getElementById('inv-nama').value = "";
   document.getElementById('inv-jumlah').value = "1";
+  document.getElementById('inv-kategori').selectedIndex = 0;
+  document.getElementById('inv-kondisi').selectedIndex = 0;
   document.getElementById('inv-lokasi').value = "";
   document.getElementById('inv-tanggal').value = todayLocalInput();
   document.getElementById('inv-keterangan').value = "";
   document.getElementById('modal-inventaris').style.display = 'flex';
+}
+
+function actionDeleteInventaris(idBarang) {
+  if (!idBarang) return;
+  if (!confirm("Apakah Anda yakin ingin menghapus barang inventaris ini?")) return;
+  setLoader(true, "Menghapus barang inventaris...");
+  callAPI('deleteInventaris', [sessionToken, idBarang])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      if (res.success) loadInventaris();
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
 function closeInventarisModal() {
