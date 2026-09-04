@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.0.0"; 
+const APP_VERSION = "3.1.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -2867,22 +2867,46 @@ function triggerExport(jenis, format) {
 }
 
 // =========================================================================
-// === EXPORT LAPORAN PDF/XLSX PER MODUL + KELOLA DATA LAPORAN (ADMIN)   ===
-// === Data sumber = hasil isian SHEET. Template header & logo dipakai   ===
-// === otomatis pada seluruh export (diatur lewat menu Kelola Laporan).  ===
+
+// =========================================================================
+// === EXPORT LAPORAN PDF/XLSX/DOC PER MODUL + KELOLA DATA LAPORAN (ADMIN)
+// === Data sumber = hasil isian SHEET. Template header/logo DISUSUN PER
+// === MODUL lewat menu Kelola Data Laporan (Admin). Pembina memakai template
+// === modul absensi; DGW202638/DGW202641 memakai template modul kedai.
 // =========================================================================
 
-let laporanLogoBase64 = ""; // penampung logo baru (data URL) sementara
+const LAPORAN_MODUL_OPTIONS = [
+  { key: "__global__",       label: "Global / Default (semua laporan)" },
+  { key: "agenda",           label: "Agenda Kegiatan" },
+  { key: "absensi",          label: "Absensi Mandiri" },
+  { key: "inventaris",       label: "Inventaris Barang" },
+  { key: "peminjaman",       label: "Peminjaman Barang" },
+  { key: "kas",              label: "Kas Pramuka" },
+  { key: "kedai_stok",       label: "Kedai Penggalang - Data Stok" },
+  { key: "kedai_penjualan",  label: "Kedai Penggalang - Riwayat Penjualan" },
+  { key: "kedai_laporan",    label: "Kedai Penggalang - Laporan Hasil Penjualan" }
+];
+
+let laporanTemplateRows = []; // hasil getReportTemplate
+let laporanModulLabels  = {}; // label dari server
+let laporanLogoBase64   = ""; // logo baru (data URL) utk modul yang sedang diedit
+
+function laporanLabel(key) {
+  if (laporanModulLabels && laporanModulLabels[key]) return laporanModulLabels[key];
+  const hit = LAPORAN_MODUL_OPTIONS.find(o => o.key === key);
+  return hit ? hit.label : key;
+}
 
 function triggerExportLaporan(modul, format) {
-  const fmt = format === 'xlsx' ? 'Excel' : 'PDF';
-  setLoader(true, `Menyusun Laporan ${modul} ke ${fmt} (dari data sheet)...`);
+  const fmtName = format === 'xlsx' ? 'Excel' : (format === 'doc' ? 'Word (DOCX)' : 'PDF');
+  setLoader(true, `Menyusun Laporan ${laporanLabel(modul)} ke ${fmtName} (dari data sheet)...`);
   callAPI('exportLaporan', [sessionToken, { modul: modul, format: format }])
     .then(res => {
       setLoader(false);
       if (res.success && res.url) {
-        showToast(`Ekspor ${fmt} berhasil! Membuka unduhan...`);
-        const nama = (res.filename || ('Laporan_' + modul + '_' + todayLocalInput())) + (format === 'xlsx' ? '.xlsx' : '.pdf');
+        showToast(`Ekspor ${fmtName} berhasil! Membuka unduhan...`);
+        const ext = format === 'xlsx' ? '.xlsx' : (format === 'doc' ? '.docx' : '.pdf');
+        const nama = (res.filename || ('Laporan_' + modul + '_' + todayLocalInput())) + ext;
         const a = document.createElement('a');
         a.href = res.url;
         a.target = '_blank';
@@ -2892,13 +2916,17 @@ function triggerExportLaporan(modul, format) {
         a.click();
         document.body.removeChild(a);
       } else {
-        showToast(res.message || `Gagal mengekspor ${fmt}`, true);
+        showToast(res.message || `Gagal mengekspor ${fmtName}`, true);
       }
     })
     .catch(err => { setLoader(false); showToast(err.message || 'Gagal ekspor', true); });
 }
 
-// Visibilitas tombol export tiap modul berdasarkan peran (tidak mengubah rule user)
+// Visibilitas tombol export tiap modul (tidak mengubah rule user)
+// - Admin: semua modul (PDF + Excel + DOC)
+// - Pembina: absensi (PDF + Excel)
+// - Pengelola Kas: kas (PDF + Excel)
+// - Pengelola Kedai DGW202638/641: kedai (PDF + Excel)
 function applyExportActionUI() {
   const isAdm  = userRole === 'Admin';
   const isPem  = userRole === 'Pembina';
@@ -2914,28 +2942,35 @@ function applyExportActionUI() {
   set('export-actions-kas', canKas);
   set('export-actions-kedai', canKed);
 
-  const showAbsen = (isAdm || isPem) && document.getElementById('card-riwayat-absen-global') &&
-                    document.getElementById('card-riwayat-absen-global').style.display !== 'none';
+  // DOC (Word) hanya untuk Admin — tombol ber-kls .doc-export-btn
+  document.querySelectorAll('.doc-export-btn').forEach(btn => {
+    btn.style.display = isAdm ? '' : 'none';
+  });
+
+  // Absensi: export tampil saat kartu global terlihat (Admin & Pembina);
+  // tombol DOC absensi hanya Admin.
+  const globalCard = document.getElementById('card-riwayat-absen-global');
+  const visible = (isAdm || isPem) && globalCard && globalCard.style.display !== 'none';
   const b1 = document.getElementById('btn-export-absen');
   const b2 = document.getElementById('btn-export-absen-xlsx');
-  if (b1) b1.style.display = showAbsen ? 'inline-block' : 'none';
-  if (b2) b2.style.display = showAbsen ? 'inline-block' : 'none';
+  const b3 = document.getElementById('btn-export-absen-doc');
+  if (b1) b1.style.display = visible ? 'inline-block' : 'none';
+  if (b2) b2.style.display = visible ? 'inline-block' : 'none';
+  if (b3) b3.style.display = (visible && isAdm) ? 'inline-block' : 'none';
 }
 
-// ---- KELOLA DATA LAPORAN (ADMIN) ----
+// ---- KELOLA DATA LAPORAN (ADMIN) - PER MODUL ----
 function loadLaporanAdmin() {
   callAPI('getReportTemplate', [sessionToken])
     .then(res => {
-      if (res.success && res.template) {
-        const t = res.template;
-        const j = document.getElementById('laporan-judul');
-        const s = document.getElementById('laporan-subjudul');
-        const k = document.getElementById('laporan-kaki');
-        if (j) j.value = t.judul_laporan || '';
-        if (s) s.value = t.sub_judul_laporan || '';
-        if (k) k.value = t.catatan_kaki || '';
-        laporanLogoBase64 = "";
-        setLaporanLogoPreview(t.logo_url || '');
+      if (res.success) {
+        laporanTemplateRows = res.rows || [];
+        laporanModulLabels  = res.labels || {};
+        fillLaporanModulSelect();
+        renderLaporanModulStatus();
+        const sel = document.getElementById('laporan-modul-select');
+        const cur = (sel && sel.value) ? sel.value : '__global__';
+        loadLaporanModuleForm(cur);
       } else {
         showToast((res && res.message) || 'Gagal memuat template laporan', true);
       }
@@ -2943,18 +2978,44 @@ function loadLaporanAdmin() {
     .catch(err => showToast(err.message || 'Gagal memuat template', true));
 }
 
+function fillLaporanModulSelect() {
+  const sel = document.getElementById('laporan-modul-select');
+  if (!sel) return;
+  sel.innerHTML = '';
+  const keys = Object.keys(laporanModulLabels).length ? Object.keys(laporanModulLabels)
+                                                       : LAPORAN_MODUL_OPTIONS.map(o => o.key);
+  keys.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = laporanLabel(k);
+    sel.appendChild(opt);
+  });
+}
+
+function templateRowFor(modulKey) {
+  return laporanTemplateRows.find(r => r.modul === modulKey) || null;
+}
+
+function loadLaporanModuleForm(modulKey) {
+  const sel = document.getElementById('laporan-modul-select');
+  const key = modulKey || (sel ? sel.value : '__global__');
+  const row = templateRowFor(key) || { judul_laporan: '', sub_judul_laporan: '', logo_url: '', catatan_kaki: '' };
+  const j = document.getElementById('laporan-judul');
+  const s = document.getElementById('laporan-subjudul');
+  const k = document.getElementById('laporan-kaki');
+  if (j) j.value = row.judul_laporan || '';
+  if (s) s.value = row.sub_judul_laporan || '';
+  if (k) k.value = row.catatan_kaki || '';
+  laporanLogoBase64 = '';
+  setLaporanLogoPreview(row.logo_url || '');
+}
+
 function setLaporanLogoPreview(logoValue) {
   const box = document.getElementById('laporan-logo-preview');
   if (!box) return;
-  box.innerHTML = '';
   const v = logoValue || '';
-  if (v && v.indexOf('data:image/') === 0) {
-    const im = document.createElement('img');
-    im.src = v;
-    im.alt = 'Logo';
-    im.style.cssText = 'width:100%;height:100%;object-fit:contain;';
-    box.appendChild(im);
-  } else if (v && v.indexOf('http') === 0) {
+  box.innerHTML = '';
+  if (v) {
     const im = document.createElement('img');
     im.src = v;
     im.alt = 'Logo';
@@ -2985,7 +3046,7 @@ function previewLaporanLogo(event) {
       laporanLogoBase64 = canvas.toDataURL('image/png');
       setLaporanLogoPreview(laporanLogoBase64);
       setLoader(false);
-      showToast('Logo siap disimpan pada template laporan.');
+      showToast('Logo baru siap disimpan untuk modul ini.');
     };
     img.onerror = function() { setLoader(false); showToast('Gagal membaca file logo.', true); };
     img.src = e.target.result;
@@ -2994,8 +3055,61 @@ function previewLaporanLogo(event) {
   reader.readAsDataURL(file);
 }
 
+function renderLaporanModulStatus() {
+  const box = document.getElementById('laporan-modul-status');
+  if (!box) return;
+  const keys = Object.keys(laporanModulLabels).length ? Object.keys(laporanModulLabels)
+                                                       : LAPORAN_MODUL_OPTIONS.map(o => o.key);
+  box.innerHTML = '';
+  keys.forEach(k => {
+    const row = templateRowFor(k) || { judul_laporan: '', logo_url: '' };
+    const useNote = k === 'absensi' ? 'Dipakai export Pembina'
+      : (k === 'kedai_laporan' || k === 'kedai_penjualan' || k === 'kedai_stok' ? 'Dipakai export Admin & DGW202638/641'
+      : (k === 'kas' ? 'Dipakai export Admin & Pengelola Kas' : 'Dipakai export Admin'));
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid #E7D3B5;border-radius:12px;background:#FFFDF8;padding:10px 12px;display:flex;gap:10px;align-items:center;';
+    const logoBox = document.createElement('div');
+    logoBox.style.cssText = 'width:44px;height:44px;border-radius:8px;background:#F0EAE1;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;';
+    if (row.logo_url) {
+      const im = document.createElement('img');
+      im.src = row.logo_url; im.alt='';
+      im.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+      logoBox.appendChild(im);
+    } else {
+      logoBox.innerHTML = '<span style="font-size:0.7rem;color:#8A6D4F;">No<br>logo</span>';
+    }
+    card.appendChild(logoBox);
+    const info = document.createElement('div');
+    info.style.cssText = 'min-width:0;';
+    const t1 = document.createElement('div');
+    t1.style.cssText = 'font-weight:700;color:var(--color-primary-dark);font-size:0.9rem;';
+    t1.textContent = laporanLabel(k);
+    const t2 = document.createElement('div');
+    t2.style.cssText = 'font-size:0.78rem;color:var(--color-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;';
+    t2.textContent = row.judul_laporan || '(memakai pengaturan Global)';
+    const t3 = document.createElement('div');
+    t3.style.cssText = 'font-size:0.72rem;color:#B8860B;margin-top:2px;';
+    t3.textContent = useNote;
+    info.appendChild(t1); info.appendChild(t2); info.appendChild(t3);
+    card.appendChild(info);
+    const ed = document.createElement('button');
+    ed.className = 'btn';
+    ed.textContent = 'Edit';
+    ed.style.cssText = 'margin-left:auto;padding:4px 10px;font-size:0.75rem;flex-shrink:0;';
+    ed.onclick = function() {
+      const sel = document.getElementById('laporan-modul-select');
+      if (sel) sel.value = k;
+      loadLaporanModuleForm(k);
+      if (typeof switchSection === 'function') {} // sudah di halaman ini
+      showToast('Mengedit template: ' + laporanLabel(k));
+    };
+    card.appendChild(ed);
+    box.appendChild(card);
+  });
+}
+
 function resetLaporanTemplateForm() {
-  laporanLogoBase64 = "";
+  laporanLogoBase64 = '';
   const j = document.getElementById('laporan-judul');
   const s = document.getElementById('laporan-subjudul');
   const k = document.getElementById('laporan-kaki');
@@ -3005,23 +3119,26 @@ function resetLaporanTemplateForm() {
   if (k) k.value = '';
   if (f) f.value = '';
   setLaporanLogoPreview('');
-  showToast('Form dikosongkan. Tekan Simpan untuk memakai header bawaan.');
+  showToast('Form modul ini dikosongkan. Simpan untuk memakai pengaturan Global / bawaan.');
 }
 
 function saveLaporanTemplate() {
+  const sel = document.getElementById('laporan-modul-select');
+  const modul = sel ? sel.value : '__global__';
   const j = (document.getElementById('laporan-judul') || {}).value || '';
   const s = (document.getElementById('laporan-subjudul') || {}).value || '';
   const k = (document.getElementById('laporan-kaki') || {}).value || '';
 
-  // Bila admin tidak mengganti logo, tetap kirimkan logo aktif yang sedang ditampilkan
+  // Logo: utamakan logo baru; bila tidak diganti, pakai logo tersimpan modul ini
   let logoValue = laporanLogoBase64;
   if (!logoValue) {
-    const img = document.querySelector('#laporan-logo-preview img');
-    if (img) logoValue = img.src;
+    const row = templateRowFor(modul);
+    if (row && row.logo_url) logoValue = row.logo_url;
   }
 
-  setLoader(true, 'Menyimpan template laporan...');
+  setLoader(true, 'Menyimpan template modul "' + laporanLabel(modul) + '"...');
   callAPI('saveReportTemplate', [sessionToken, {
+    modul: modul,
     judul_laporan: j.trim(),
     sub_judul_laporan: s.trim(),
     catatan_kaki: k.trim(),
@@ -3040,6 +3157,8 @@ function saveLaporanTemplate() {
 }
 
 function previewLaporanPdf() {
-  // Contoh pratinjau: buka laporan Agenda (tersedia utk Admin) sbg uji template
-  triggerExportLaporan('agenda', 'pdf');
+  const sel = document.getElementById('laporan-modul-select');
+  let modul = sel && sel.value ? sel.value : '__global__';
+  if (modul === '__global__') modul = 'agenda'; // contoh utk global
+  triggerExportLaporan(modul, 'pdf');
 }
