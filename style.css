@@ -1252,3 +1252,47 @@ body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--
 
     /* Fokus aksesibilitas */
     .btn:focus, .form-control:focus { outline: none; }
+
+
+/* ================================================================
+   [TAMBAHAN] KEDAI PENGGALANG - INFO PERAN & ANIMASI SMOOTH
+   ================================================================ */
+.kedai-role-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #FDF6EC, #FBF1E3);
+  border: 1px dashed #D9B36C;
+  border-left: 5px solid var(--color-accent-gold, #B8860B);
+  border-radius: var(--rounded-box, 12px);
+  padding: 10px 16px;
+  margin-bottom: 18px;
+  font-size: 0.88rem;
+  color: var(--color-text-dark, #4a2f26);
+  line-height: 1.55;
+  box-shadow: var(--shadow-soft, 0 2px 8px rgba(0, 0, 0, 0.06));
+  animation: kedaiHintIn 0.35s ease both;
+}
+.kedai-hint-ico {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+@keyframes kedaiHintIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Kartu katalog muncul dengan animasi halus & bertahap (stagger) */
+@keyframes kedaiCardIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+.kedai-card {
+  animation: kedaiCardIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kedai-card,
+  .kedai-role-hint {
+    animation: none !important;
+  }
+}
