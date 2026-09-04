@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wanamska-v3';
+const CACHE_NAME = 'wanamska-v2-cache-v7';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
