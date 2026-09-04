@@ -141,6 +141,9 @@
         <div class="menu-item role-restricted" id="menu-exports" onclick="switchSection('section-exports', this)">
           <span class="icon">&#128190;</span><span class="menu-label">Export Data</span>
         </div>
+        <div class="menu-item role-restricted" id="menu-laporan-admin" onclick="switchSection('section-laporan-admin', this)">
+          <span class="icon">&#128221;</span><span class="menu-label">Kelola Data Laporan</span>
+        </div>
         <div class="menu-item role-restricted" id="menu-logs" onclick="switchSection('section-logs', this)">
           <span class="icon">&#128196;</span><span class="menu-label">Log Aktivitas</span>
         </div>
@@ -214,8 +217,13 @@
         <!-- SECTION 2: AGENDA -->
         <section id="section-agenda" class="app-section">
           <div class="section-header">
-            <h1>Agenda Kegiatan</h1>
-            <button class="btn btn-gold" id="btn-tambah-agenda-trigger" onclick="openAgendaModal()">+ Tambah Agenda</button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+              <button class="btn btn-gold" id="btn-tambah-agenda-trigger" onclick="openAgendaModal()">+ Tambah Agenda</button>
+              <span id="export-actions-agenda" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <button class="btn" onclick="triggerExportLaporan('agenda','pdf')" title="Unduh laporan Agenda (PDF)">📄 Export PDF</button>
+                <button class="btn btn-gold" onclick="triggerExportLaporan('agenda','xlsx')" title="Unduh laporan Agenda (Excel)">📊 Export Excel</button>
+              </span>
+            </div>
           </div>
           <div class="card">
             <div class="table-responsive">
@@ -284,7 +292,11 @@
           <div class="card" style="margin-top: 25px; display: none;" id="card-riwayat-absen-global">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
               <h2 style="font-size: 1.2rem; color: var(--color-primary);">Riwayat Absensi Global (Admin/Pembina)</h2>
-              <input type="date" id="filter-absen-date" class="form-control" style="width: 200px;" onchange="loadAbsenHistory()">
+              <span style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <button class="btn" id="btn-export-absen" style="display: none;" onclick="triggerExportLaporan('absensi','pdf')" title="Unduh laporan Absensi (PDF)">📄 Export PDF</button>
+                <button class="btn btn-gold" id="btn-export-absen-xlsx" style="display: none;" onclick="triggerExportLaporan('absensi','xlsx')" title="Unduh laporan Absensi (Excel)">📊 Export Excel</button>
+                <input type="date" id="filter-absen-date" class="form-control" style="width: 200px;" onchange="loadAbsenHistory()">
+              </span>
             </div>
             <div class="table-responsive">
               <table>
@@ -439,11 +451,19 @@
         <section id="section-kedai" class="app-section">
           <div class="section-header">
             <h1>Kedai Penggalang Wanamska</h1>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
               <!-- Tombol Pengelola Kedai: (+) Tambah Stok (Admin & Pengelola DGW202638 / DGW202641) -->
               <button class="btn btn-gold" id="btn-tambah-kedai-trigger" onclick="openTambahKedaiModal()">+ Tambah Stok Barang</button>
               <!-- Tombol Pengelola / Petugas Jual Kedai: (-) Jual/Kurangi Stok -->
               <button class="btn btn-danger" id="btn-kurangi-kedai-trigger" onclick="openKurangiKedaiModal()">- Jual / Kurangi Stok</button>
+              <span id="export-actions-kedai" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <button class="btn" onclick="triggerExportLaporan('kedai_stok','pdf')" title="Unduh laporan Data Stok Kedai (PDF)">📄 Export Stok PDF</button>
+                <button class="btn btn-gold" onclick="triggerExportLaporan('kedai_stok','xlsx')" title="Unduh laporan Data Stok Kedai (Excel)">📊 Export Stok Excel</button>
+                <button class="btn" onclick="triggerExportLaporan('kedai_penjualan','pdf')" title="Unduh laporan Penjualan Kedai (PDF)">📄 Export Penjualan PDF</button>
+                <button class="btn btn-gold" onclick="triggerExportLaporan('kedai_penjualan','xlsx')" title="Unduh laporan Penjualan Kedai (Excel)">📊 Export Penjualan Excel</button>
+                <button class="btn btn-danger" onclick="triggerExportLaporan('kedai_laporan','pdf')" title="Unduh Laporan Hasil Penjualan Kedai (PDF)">📑 Laporan Penjualan PDF</button>
+                <button class="btn btn-gold" onclick="triggerExportLaporan('kedai_laporan','xlsx')" title="Unduh Laporan Hasil Penjualan Kedai (Excel)">📑 Laporan Penjualan Excel</button>
+              </span>
             </div>
           </div>
 
@@ -487,6 +507,12 @@
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <button class="btn btn-gold" id="btn-tambah-peminjaman-trigger" onclick="openPeminjamanModal()">+ Pinjam Barang</button>
               <button class="btn" id="btn-tambah-inventaris-trigger" onclick="openInventarisModal()">+ Tambah Barang</button>
+              <span id="export-actions-inventaris" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <button class="btn" onclick="triggerExportLaporan('inventaris','pdf')" title="Unduh laporan Barang Tersimpan (PDF)">📄 Export PDF</button>
+                <button class="btn btn-gold" onclick="triggerExportLaporan('inventaris','xlsx')" title="Unduh laporan Barang Tersimpan (Excel)">📊 Export Excel</button>
+                <button class="btn" onclick="triggerExportLaporan('peminjaman','pdf')" title="Unduh laporan Peminjaman (PDF)">📄 Export Peminjaman PDF</button>
+                <button class="btn btn-gold" onclick="triggerExportLaporan('peminjaman','xlsx')" title="Unduh laporan Peminjaman (Excel)">📊 Export Peminjaman Excel</button>
+              </span>
             </div>
           </div>
 
@@ -544,8 +570,13 @@
         <!-- SECTION 9: KAS PRAMUKA -->
         <section id="section-kas" class="app-section">
           <div class="section-header">
-            <h1>Arus Kas Pramuka</h1>
-            <button class="btn btn-gold" id="btn-tambah-kas" onclick="openKasModal()">+ Catat Kas Baru</button>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+              <button class="btn btn-gold" id="btn-tambah-kas" onclick="openKasModal()">+ Catat Kas Baru</button>
+              <span id="export-actions-kas" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <button class="btn" onclick="triggerExportLaporan('kas','pdf')" title="Unduh laporan Buku Kas (PDF)">📄 Export PDF</button>
+                <button class="btn btn-gold" onclick="triggerExportLaporan('kas','xlsx')" title="Unduh laporan Buku Kas (Excel)">📊 Export Excel</button>
+              </span>
+            </div>
           </div>
           <div class="grid-dashboard">
             <div class="card-stat">
@@ -697,8 +728,71 @@
           </div>
         </section>
 
-        <!-- SECTION 12: EXPORT DATA -->
-        <section id="section-exports" class="app-section">
+        <!-- SECTION 12: KELOLA DATA LAPORAN (khusus Admin - template header export) -->
+        <section id="section-laporan-admin" class="app-section" style="display:none;">
+          <div class="section-header">
+            <h1>Kelola Data Laporan</h1>
+          </div>
+
+          <div class="card">
+            <h2 style="margin-bottom: 14px; color: var(--color-primary); font-size: 1.2rem;">📑 Format Template Export Laporan</h2>
+            <p style="margin-bottom: 18px; font-size: 0.9rem; color: var(--color-text-muted);">
+              Atur <strong>judul header &amp; logo</strong> di bawah ini. Template akan dipakai otomatis
+              sebagai kop atas seluruh <strong>export PDF &amp; Excel</strong> (Agenda, Absensi, Inventaris,
+              Peminjaman, Kas, dan Kedai Penggalang).
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
+              <div class="form-group">
+                <label>Logo Laporan</label>
+                <div id="laporan-logo-preview" style="width:110px; height:110px; border:2px dashed #D9B36C; background:#FDF8EF; display:flex; align-items:center; justify-content:center; border-radius:14px; margin-bottom:8px; overflow:hidden;">
+                  <span style="color:#8A6D4F; font-size:0.8rem; text-align:center;">Belum ada<br>logo</span>
+                </div>
+                <input type="file" id="laporan-logo-file" class="form-control" accept="image/*" onchange="previewLaporanLogo(event)">
+                <div style="font-size:0.78rem; color:var(--color-text-muted); margin-top:6px;">PNG/JPG. Logo akan diunggah &amp; otomatis dipakai di pojok kiri laporan.</div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                <div class="form-group">
+                  <label>Judul Header Laporan</label>
+                  <input type="text" id="laporan-judul" class="form-control" placeholder="Contoh: SIAP WANAMSKA">
+                </div>
+                <div class="form-group">
+                  <label>Sub Judul / Alamat</label>
+                  <input type="text" id="laporan-subjudul" class="form-control" placeholder="Contoh: Gugus Depan ... Kwarcab ...">
+                </div>
+                <div class="form-group">
+                  <label>Catatan Kaki (Footer)</label>
+                  <input type="text" id="laporan-kaki" class="form-control" placeholder="Contoh: Dokumen resmi SIAP WANAMSKA">
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;">
+              <button class="btn btn-gold" onclick="saveLaporanTemplate()">💾 Simpan Template Laporan</button>
+              <button class="btn" onclick="resetLaporanTemplateForm()">Reset Form</button>
+              <button class="btn" onclick="previewLaporanPdf()" title="Unduh PDF contoh">👁️ Pratinjau PDF (contoh)</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top: 20px;">
+            <h2 style="margin-bottom: 14px; color: var(--color-primary); font-size: 1.2rem;">📤 Lokasi Tombol Export di Setiap Menu</h2>
+            <p style="font-size: 0.9rem; color: var(--color-text-muted); line-height: 1.8;">
+              Setelah menu <strong>Export Data</strong> dihapus dari sidebar, tombol export kini tersedia langsung
+              di setiap modul:
+            </p>
+            <ul style="margin-left: 20px; font-size: 0.9rem; color: var(--color-text-dark); line-height: 2;">
+              <li><strong>Agenda Kegiatan</strong> — 📄 Export PDF &amp; 📊 Export Excel (Admin)</li>
+              <li><strong>Absensi Mandiri</strong> — 📄 Export PDF &amp; 📊 Export Excel pada kartu riwayat global (Admin &amp; Pembina)</li>
+              <li><strong>Inventaris &amp; Peminjaman</strong> — Export PDF/Excel Barang Tersimpan dan Export PDF/Excel Peminjaman (Admin)</li>
+              <li><strong>Kas Pramuka</strong> — Export PDF/Excel Buku Kas (Admin &amp; Pengelola Kas DGW20264/DGW20265)</li>
+              <li><strong>Kedai Penggalang</strong> — Export Stok, Export Penjualan, dan <strong>Laporan Hasil Penjualan</strong> (Admin &amp; Pengelola Kedai DGW202638/DGW202641)</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- SECTION 12B: (backup) halaman lama tetap dipertahankan utk transisi -->
+        <section id="section-exports" class="app-section" style="display:none;">
           <div class="section-header">
             <h1>Export Database Laporan</h1>
           </div>
@@ -706,18 +800,18 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
               <div class="card" style="margin:0;" id="export-absensi-box">
                 <h3 style="color: var(--color-primary); margin-bottom: 12px;">Laporan Absensi</h3>
-                <button class="btn btn-full btn-gold" onclick="triggerExport('absensi', 'excel')">Excel (.xlsx)</button>
-                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('absensi', 'pdf')">PDF</button>
+                <button class="btn btn-full btn-gold" onclick="triggerExportLaporan('absensi','xlsx')">Excel (.xlsx)</button>
+                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExportLaporan('absensi','pdf')">PDF</button>
               </div>
               <div class="card" style="margin:0;" id="export-inventaris-box">
                 <h3 style="color: var(--color-primary); margin-bottom: 12px;">Buku Inventaris</h3>
-                <button class="btn btn-full btn-gold" onclick="triggerExport('inventaris', 'excel')">Excel (.xlsx)</button>
-                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('inventaris', 'pdf')">PDF</button>
+                <button class="btn btn-full btn-gold" onclick="triggerExportLaporan('inventaris','xlsx')">Excel (.xlsx)</button>
+                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExportLaporan('inventaris','pdf')">PDF</button>
               </div>
               <div class="card" style="margin:0;" id="export-kas-box">
                 <h3 style="color: var(--color-primary); margin-bottom: 12px;">Buku Kas Pramuka</h3>
-                <button class="btn btn-full btn-gold" onclick="triggerExport('kas', 'excel')">Excel (.xlsx)</button>
-                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExport('kas', 'pdf')">PDF</button>
+                <button class="btn btn-full btn-gold" onclick="triggerExportLaporan('kas','xlsx')">Excel (.xlsx)</button>
+                <button class="btn btn-full" style="margin-top: 10px;" onclick="triggerExportLaporan('kas','pdf')">PDF</button>
               </div>
             </div>
           </div>
@@ -1278,5 +1372,5 @@
 
   <!-- SCRIPT ENGINE V2.9.0 -->
   <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="script.js?v=2.9.0"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a35a8150ecfaf8e8',t:'MTc4ODQ5ODgwOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a35bf2816ce16017',t:'MTc4ODUxMzkzMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
