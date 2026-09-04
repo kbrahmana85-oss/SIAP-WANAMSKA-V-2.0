@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "2.10.0"; 
+const APP_VERSION = "3.0.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -613,6 +613,7 @@ function switchSection(sectionId, elementMenu) {
   else if (sectionId === 'section-profile') loadProfileDiri();
   else if (sectionId === 'section-users') loadUsers();
   else if (sectionId === 'section-logs') loadSystemLogs();
+  else if (sectionId === 'section-laporan-admin') loadLaporanAdmin();
 }
 
 function initLiveTimer() {
@@ -731,7 +732,16 @@ function setupRBACUI(role) {
   document.getElementById('menu-kas').style.display = 'none';
   document.getElementById('menu-users').style.display = 'none';
   document.getElementById('menu-exports').style.display = 'none';
+  document.getElementById('menu-laporan-admin').style.display = 'none';
   document.getElementById('menu-logs').style.display = 'none';
+  
+  // Grup tombol export per-modul (ditampilkan sesuai hak peran)
+  const expActs = ['export-actions-agenda','export-actions-inventaris','export-actions-kas','export-actions-kedai'];
+  expActs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  const btnAbs = document.getElementById('btn-export-absen');
+  const btnAbsX = document.getElementById('btn-export-absen-xlsx');
+  if (btnAbs) btnAbs.style.display = 'none';
+  if (btnAbsX) btnAbsX.style.display = 'none';
   
   document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'none';
   document.getElementById('btn-tambah-agenda-trigger').style.display = 'none';
@@ -788,7 +798,7 @@ function setupRBACUI(role) {
 
     document.getElementById('menu-kas').style.display = 'flex';
     document.getElementById('menu-users').style.display = 'flex';
-    document.getElementById('menu-exports').style.display = 'flex';
+    document.getElementById('menu-laporan-admin').style.display = 'flex';
     document.getElementById('menu-logs').style.display = 'flex';
     
     document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
@@ -805,13 +815,14 @@ function setupRBACUI(role) {
     document.getElementById('card-riwayat-absen-pribadi').style.display = 'block';
 
     if (role === "Pembina") {
+      // Pembina: kartu pribadi TETAP tampil (tidak ada regresi), ditambah
+      // kartu global + tombol Export PDF/Excel pada modul Absensi.
+      document.getElementById('card-riwayat-absen-global').style.display = 'block';
       document.getElementById('menu-kas').style.display = 'flex';
-      document.getElementById('menu-exports').style.display = 'flex';
       document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
       document.getElementById('btn-tambah-agenda-trigger').style.display = 'inline-block';
       document.getElementById('btn-tambah-inventaris-trigger').style.display = 'inline-block';
       document.getElementById('card-dash-kas').style.display = 'flex';
-      document.getElementById('export-absensi-box').style.display = 'block';
       
     } else if (role === "Dewan Penggalang") {
       document.getElementById('menu-kas').style.display = 'flex';
@@ -823,10 +834,11 @@ function setupRBACUI(role) {
 
     if (isSpecialKas) {
       document.getElementById('menu-kas').style.display = 'flex';
-      document.getElementById('menu-exports').style.display = 'flex';
       document.getElementById('card-dash-kas').style.display = 'flex';
     }
   }
+  // Sinkronkan visibilitas tombol export per modul sesuai hak peran
+  applyExportActionUI();
 }
 
 // =========================================================================
@@ -2852,4 +2864,182 @@ function triggerExport(jenis, format) {
       setLoader(false);
       showToast(err.message, true);
     });
+}
+
+// =========================================================================
+// === EXPORT LAPORAN PDF/XLSX PER MODUL + KELOLA DATA LAPORAN (ADMIN)   ===
+// === Data sumber = hasil isian SHEET. Template header & logo dipakai   ===
+// === otomatis pada seluruh export (diatur lewat menu Kelola Laporan).  ===
+// =========================================================================
+
+let laporanLogoBase64 = ""; // penampung logo baru (data URL) sementara
+
+function triggerExportLaporan(modul, format) {
+  const fmt = format === 'xlsx' ? 'Excel' : 'PDF';
+  setLoader(true, `Menyusun Laporan ${modul} ke ${fmt} (dari data sheet)...`);
+  callAPI('exportLaporan', [sessionToken, { modul: modul, format: format }])
+    .then(res => {
+      setLoader(false);
+      if (res.success && res.url) {
+        showToast(`Ekspor ${fmt} berhasil! Membuka unduhan...`);
+        const nama = (res.filename || ('Laporan_' + modul + '_' + todayLocalInput())) + (format === 'xlsx' ? '.xlsx' : '.pdf');
+        const a = document.createElement('a');
+        a.href = res.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.setAttribute('download', nama);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+        showToast(res.message || `Gagal mengekspor ${fmt}`, true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message || 'Gagal ekspor', true); });
+}
+
+// Visibilitas tombol export tiap modul berdasarkan peran (tidak mengubah rule user)
+function applyExportActionUI() {
+  const isAdm  = userRole === 'Admin';
+  const isPem  = userRole === 'Pembina';
+  const canKas = isAdm || isKasSpecialUser(userId);
+  const canKed = isAdm || isKedaiManager(userId);
+
+  const set = (id, show) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? 'inline-flex' : 'none';
+  };
+  set('export-actions-agenda', isAdm);
+  set('export-actions-inventaris', isAdm);
+  set('export-actions-kas', canKas);
+  set('export-actions-kedai', canKed);
+
+  const showAbsen = (isAdm || isPem) && document.getElementById('card-riwayat-absen-global') &&
+                    document.getElementById('card-riwayat-absen-global').style.display !== 'none';
+  const b1 = document.getElementById('btn-export-absen');
+  const b2 = document.getElementById('btn-export-absen-xlsx');
+  if (b1) b1.style.display = showAbsen ? 'inline-block' : 'none';
+  if (b2) b2.style.display = showAbsen ? 'inline-block' : 'none';
+}
+
+// ---- KELOLA DATA LAPORAN (ADMIN) ----
+function loadLaporanAdmin() {
+  callAPI('getReportTemplate', [sessionToken])
+    .then(res => {
+      if (res.success && res.template) {
+        const t = res.template;
+        const j = document.getElementById('laporan-judul');
+        const s = document.getElementById('laporan-subjudul');
+        const k = document.getElementById('laporan-kaki');
+        if (j) j.value = t.judul_laporan || '';
+        if (s) s.value = t.sub_judul_laporan || '';
+        if (k) k.value = t.catatan_kaki || '';
+        laporanLogoBase64 = "";
+        setLaporanLogoPreview(t.logo_url || '');
+      } else {
+        showToast((res && res.message) || 'Gagal memuat template laporan', true);
+      }
+    })
+    .catch(err => showToast(err.message || 'Gagal memuat template', true));
+}
+
+function setLaporanLogoPreview(logoValue) {
+  const box = document.getElementById('laporan-logo-preview');
+  if (!box) return;
+  box.innerHTML = '';
+  const v = logoValue || '';
+  if (v && v.indexOf('data:image/') === 0) {
+    const im = document.createElement('img');
+    im.src = v;
+    im.alt = 'Logo';
+    im.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+    box.appendChild(im);
+  } else if (v && v.indexOf('http') === 0) {
+    const im = document.createElement('img');
+    im.src = v;
+    im.alt = 'Logo';
+    im.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+    box.appendChild(im);
+  } else {
+    box.innerHTML = '<span style="color:#8A6D4F; font-size:0.8rem; text-align:center;">Belum ada<br>logo</span>';
+  }
+}
+
+function previewLaporanLogo(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  setLoader(true, 'Mengompresi logo laporan...');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const maxDim = 400;
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+        else { w = Math.round((w * maxDim) / h); h = maxDim; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      laporanLogoBase64 = canvas.toDataURL('image/png');
+      setLaporanLogoPreview(laporanLogoBase64);
+      setLoader(false);
+      showToast('Logo siap disimpan pada template laporan.');
+    };
+    img.onerror = function() { setLoader(false); showToast('Gagal membaca file logo.', true); };
+    img.src = e.target.result;
+  };
+  reader.onerror = function() { setLoader(false); showToast('Gagal membaca file.', true); };
+  reader.readAsDataURL(file);
+}
+
+function resetLaporanTemplateForm() {
+  laporanLogoBase64 = "";
+  const j = document.getElementById('laporan-judul');
+  const s = document.getElementById('laporan-subjudul');
+  const k = document.getElementById('laporan-kaki');
+  const f = document.getElementById('laporan-logo-file');
+  if (j) j.value = '';
+  if (s) s.value = '';
+  if (k) k.value = '';
+  if (f) f.value = '';
+  setLaporanLogoPreview('');
+  showToast('Form dikosongkan. Tekan Simpan untuk memakai header bawaan.');
+}
+
+function saveLaporanTemplate() {
+  const j = (document.getElementById('laporan-judul') || {}).value || '';
+  const s = (document.getElementById('laporan-subjudul') || {}).value || '';
+  const k = (document.getElementById('laporan-kaki') || {}).value || '';
+
+  // Bila admin tidak mengganti logo, tetap kirimkan logo aktif yang sedang ditampilkan
+  let logoValue = laporanLogoBase64;
+  if (!logoValue) {
+    const img = document.querySelector('#laporan-logo-preview img');
+    if (img) logoValue = img.src;
+  }
+
+  setLoader(true, 'Menyimpan template laporan...');
+  callAPI('saveReportTemplate', [sessionToken, {
+    judul_laporan: j.trim(),
+    sub_judul_laporan: s.trim(),
+    catatan_kaki: k.trim(),
+    logo_url: logoValue || ''
+  }])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        showToast(res.message);
+        loadLaporanAdmin();
+      } else {
+        showToast(res.message || 'Gagal menyimpan template', true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message || 'Gagal menyimpan template', true); });
+}
+
+function previewLaporanPdf() {
+  // Contoh pratinjau: buka laporan Agenda (tersedia utk Admin) sbg uji template
+  triggerExportLaporan('agenda', 'pdf');
 }
