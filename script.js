@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "2.9.0"; 
+const APP_VERSION = "2.10.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -106,12 +106,32 @@ function isKasSpecialUser(uid) {
   return u === "DGW20264" || u === "DGW20265";
 }
 
-// HELPER: Cek Pengelola Khusus Kedai (Admin, DGW20261, DGW20262, DGW20264, DGW20265)
-function isKedaiSpecialUser(uid) {
+// ============================================================
+// OTORISASI MENU KEDAI PENGGALANG (SISI CLIENT - 2 TIER)
+// TIER 1 - PENGELOLA KEDAI (tampilan & hak SETARA Admin):
+//          + Tambah Stok Barang & - Jual/Kurangi Stok
+//          => Admin (role) + DGW202638 + DGW202641
+// TIER 2 - PETUGAS JUAL KEDAI (hak - Jual/Kurangi Stok saja)
+//          => DGW20261, DGW20262, DGW20264, DGW20265
+// ============================================================
+const KEDAI_MANAGER_IDS = ["DGW202638", "DGW202641"];
+const KEDAI_SELLER_IDS = ["DGW20261", "DGW20262", "DGW20264", "DGW20265"];
+
+function isKedaiManager(uid) {
   if (!uid) return false;
   if (userRole === "Admin") return true;
   const u = String(uid).trim().toUpperCase();
-  return ["DGW20261", "DGW20262", "DGW20264", "DGW20265"].indexOf(u) !== -1;
+  return KEDAI_MANAGER_IDS.indexOf(u) !== -1;
+}
+function isKedaiSeller(uid) {
+  if (!uid) return false;
+  if (isKedaiManager(uid)) return true;
+  const u = String(uid).trim().toUpperCase();
+  return KEDAI_SELLER_IDS.indexOf(u) !== -1;
+}
+// Kompatibilitas pemakaian lama
+function isKedaiSpecialUser(uid) {
+  return isKedaiSeller(uid);
 }
 
 async function callAPI(funcName, params = [], options = {}) {
@@ -701,7 +721,9 @@ function actionLogout() {
 
 function setupRBACUI(role) {
   const isSpecialKas = isKasSpecialUser(userId);
-  const isSpecialKedai = isKedaiSpecialUser(userId);
+  // Hak akses modul Kedai: Pengelola (setara Admin) & Petugas Jual
+  const isKedaiPengelola = isKedaiManager(userId);
+  const isKedaiPetugasJual = isKedaiSeller(userId);
 
   // Sembunyikan elemen terbatas secara default
   document.getElementById('menu-materi').style.display = 'none';
@@ -734,11 +756,13 @@ function setupRBACUI(role) {
   // POIN 1.h: Menu Kedai Penggalang selalu tampil untuk semua peran
   document.getElementById('menu-kedai').style.display = 'flex';
 
-  // Otorisasi Tombol Kedai Penggalang
-  if (role === "Admin") {
+  // Otorisasi Tombol Kedai Penggalang (tampilan & hak akses = Admin)
+  //  - Admin & Pengelola Kedai (DGW202638 / DGW202641): Tambah Stok & Jual/Kurangi
+  //  - Petugas Jual Kedai (DGW20261/62/64/65): Jual/Kurangi Stok
+  if (isKedaiPengelola) {
     document.getElementById('btn-tambah-kedai-trigger').style.display = 'inline-block'; // Poin 1.f
     document.getElementById('btn-kurangi-kedai-trigger').style.display = 'inline-block'; // Poin 1.g
-  } else if (isSpecialKedai) {
+  } else if (isKedaiPetugasJual) {
     document.getElementById('btn-kurangi-kedai-trigger').style.display = 'inline-block'; // Poin 1.g
   }
 
@@ -837,6 +861,8 @@ function loadKedai() {
       setLoader(false);
       if (res.success) {
         kedaiListCache = res.list || [];
+        // Sinkronkan ulang tombol aksi & info peran langsung dari server (dinamis & akurat)
+        syncKedaiRoleUI(res);
         renderKedaiGrid();
       }
     })
@@ -844,6 +870,34 @@ function loadKedai() {
       setLoader(false);
       showToast(err.message, true);
     });
+}
+
+// Sinkronisasi dinamis tombol aksi + keterangan peran pada halaman Kedai.
+// Sumber utama = flag otorisasi dari server (isManager / isSeller);
+// jika server versi lama (belum mengirim flag) => pakai helper lokal.
+function syncKedaiRoleUI(res) {
+  const flagManager = (res && typeof res.isManager === 'boolean') ? res.isManager : isKedaiManager(userId);
+  const flagSeller  = (res && typeof res.isSeller  === 'boolean') ? res.isSeller  : isKedaiSeller(userId);
+  const canTambah   = !!flagManager;
+  const canJual     = !!flagManager || !!flagSeller;
+
+  const btnTambah = document.getElementById('btn-tambah-kedai-trigger');
+  const btnJual   = document.getElementById('btn-kurangi-kedai-trigger');
+  if (btnTambah) btnTambah.style.display = canTambah ? 'inline-block' : 'none';
+  if (btnJual)   btnJual.style.display   = canJual   ? 'inline-block' : 'none';
+
+  const hint = document.getElementById('kedai-role-hint');
+  if (hint) {
+    if (canTambah) {
+      hint.innerHTML = '<span class="kedai-hint-ico">&#128736;&#65039;</span><span><strong>Mode Pengelola Kedai (setara Admin):</strong> Anda dapat menambah / memperbarui stok dan mencatat penjualan atribut kedai.</span>';
+      hint.style.display = 'flex';
+    } else if (canJual) {
+      hint.innerHTML = '<span class="kedai-hint-ico">&#128722;</span><span><strong>Petugas Jual Kedai:</strong> Anda dapat mencatat penjualan / pengurangan stok kedai.</span>';
+      hint.style.display = 'flex';
+    } else {
+      hint.style.display = 'none';
+    }
+  }
 }
 
 function renderKedaiGrid() {
@@ -881,7 +935,7 @@ function renderKedaiGrid() {
     const safeName = escapeHtml(item.nama_barang);
 
     grid.innerHTML += `
-      <div class="kedai-card">
+      <div class="kedai-card" style="animation-delay:${Math.min(index * 70, 560)}ms">
         <div class="kedai-img-wrap">
           <img src="${imgUrl}" alt="${safeName}" loading="lazy">
         </div>
@@ -1016,6 +1070,10 @@ function actionSaveKedaiBarang() {
       if (res.success) {
         showToast(res.message);
         closeTambahKedaiModal();
+        // Otomatis pindah ke tab kategori barang yang baru disimpan agar langsung terlihat
+        if (payload.jenis_atribut && currentKedaiTab !== payload.jenis_atribut) {
+          switchKedaiTab(payload.jenis_atribut);
+        }
         loadKedai();
         loadNotifications(false);
       } else {
@@ -1038,6 +1096,9 @@ function openKurangiKedaiModal() {
   availableItems.forEach(item => {
     selectEl.innerHTML += `<option value="${item.id_barang}">${item.nama_barang} (${item.jenis_atribut} - Sisa: ${item.jumlah})</option>`;
   });
+  if (availableItems.length === 0) {
+    showToast("Belum ada barang dengan stok tersedia untuk dijual.", true);
+  }
 
   document.getElementById('kedai-jual-id').value = "";
   document.getElementById('kedai-jual-harga-display').value = "-";
