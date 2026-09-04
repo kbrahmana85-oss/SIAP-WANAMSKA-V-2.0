@@ -440,12 +440,15 @@
           <div class="section-header">
             <h1>Kedai Penggalang Wanamska</h1>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-              <!-- Tombol Admin (+) Tambah Stok -->
+              <!-- Tombol Pengelola Kedai: (+) Tambah Stok (Admin & Pengelola DGW202638 / DGW202641) -->
               <button class="btn btn-gold" id="btn-tambah-kedai-trigger" onclick="openTambahKedaiModal()">+ Tambah Stok Barang</button>
-              <!-- Tombol (-) Jual/Kurangi Stok untuk Admin & DP Khusus -->
+              <!-- Tombol Pengelola / Petugas Jual Kedai: (-) Jual/Kurangi Stok -->
               <button class="btn btn-danger" id="btn-kurangi-kedai-trigger" onclick="openKurangiKedaiModal()">- Jual / Kurangi Stok</button>
             </div>
           </div>
+
+          <!-- INFO DINAMIS PERAN PENGELOLA / PETUGAS JUAL KEDAI (sembunyi secara default, tampil via JS) -->
+          <div id="kedai-role-hint" class="kedai-role-hint" style="display: none;"></div>
 
           <!-- KOLOM TATA CARA PEMBELIAN (POIN 1.i) -->
           <div class="kedai-info-box">
@@ -1275,5 +1278,5 @@
 
   <!-- SCRIPT ENGINE V2.9.0 -->
   <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="script.js?v=2.9.0"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a35a8150ecfaf8e8',t:'MTc4ODQ5ODgwOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
