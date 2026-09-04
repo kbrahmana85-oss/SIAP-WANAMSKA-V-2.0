@@ -1333,3 +1333,10 @@ body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--
     justify-content: flex-start;
   }
 }
+
+/* ================================================================
+   [TAMBAHAN 3.1] Export DOC + Kelola Laporan per Modul
+   ================================================================ */
+.doc-export-btn { white-space: nowrap; }
+#laporan-modul-select { font-weight: 600; color: var(--color-primary-dark); }
+#laporan-modul-status .btn { cursor: pointer; }
