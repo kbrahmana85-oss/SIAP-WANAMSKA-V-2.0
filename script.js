@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.1.0"; 
+const APP_VERSION = "3.1.1"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -2899,12 +2899,55 @@ function laporanLabel(key) {
 
 function triggerExportLaporan(modul, format) {
   const fmtName = format === 'xlsx' ? 'Excel' : (format === 'doc' ? 'Word (DOCX)' : 'PDF');
-  setLoader(true, `Menyusun Laporan ${laporanLabel(modul)} ke ${fmtName} (dari data sheet)...`);
-  callAPI('exportLaporan', [sessionToken, { modul: modul, format: format }])
+  const payload = { modul: modul, format: format };
+  setLoader(true, `Menyusun Laporan ${laporanLabel(modul)} ke ${fmtName}...`);
+
+  // 1) UNDUH LANGSUNG KE PERANGKAT: server kirim byte file (base64) -> disimpan
+  //    sebagai file nyata di perangkat (bukan sekadar tab/preview).
+  callAPI('exportLaporanDownload', [sessionToken, payload], { cache: false })
+    .then(res => {
+      if (res && res.success && res.base64) {
+        setLoader(false);
+        saveBase64AsDownload(res.base64, res.filename || ('Laporan_' + modul + '_' + todayLocalInput() + (format === 'xlsx' ? '.xlsx' : format === 'doc' ? '.docx' : '.pdf')), res.mime || '');
+        showToast(`✅ ${fmtName} berhasil diunduh ke perangkat Anda.`);
+      } else {
+        // 2) FALLBACK: pakai tautan export (bila backend versi lama / file sangat besar)
+        openExportUrlFallback(modul, format, fmtName, (res && res.message) || '');
+      }
+    })
+    .catch(err => {
+      openExportUrlFallback(modul, format, fmtName, err && err.message);
+    });
+}
+
+// Konversi base64 -> Blob lalu picu unduhan asli di perangkat
+function saveBase64AsDownload(base64, filename, mimeType) {
+  try {
+    const bin = atob(base64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    const blob = new Blob([arr], { type: mimeType || 'application/octet-stream' });
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(objectUrl); if (a.parentNode) a.parentNode.removeChild(a); }, 1500);
+  } catch (e) {
+    showToast('Unduhan gagal di perangkat: ' + (e.message || e), true);
+  }
+}
+
+// Fallback bila pengambilan file langsung tidak tersedia
+function openExportUrlFallback(modul, format, fmtName, reason) {
+  setLoader(true, `Membuka tautan unduhan ${fmtName} (cadangan)...`);
+  callAPI('exportLaporan', [sessionToken, { modul: modul, format: format }], { cache: false })
     .then(res => {
       setLoader(false);
-      if (res.success && res.url) {
-        showToast(`Ekspor ${fmtName} berhasil! Membuka unduhan...`);
+      if (res && res.success && res.url) {
+        showToast(`${fmtName} siap diunduh (tautan cadangan).`, false);
         const ext = format === 'xlsx' ? '.xlsx' : (format === 'doc' ? '.docx' : '.pdf');
         const nama = (res.filename || ('Laporan_' + modul + '_' + todayLocalInput())) + ext;
         const a = document.createElement('a');
@@ -2916,10 +2959,10 @@ function triggerExportLaporan(modul, format) {
         a.click();
         document.body.removeChild(a);
       } else {
-        showToast(res.message || `Gagal mengekspor ${fmtName}`, true);
+        showToast((res && res.message) || `Gagal mengekspor ${fmtName}`, true);
       }
     })
-    .catch(err => { setLoader(false); showToast(err.message || 'Gagal ekspor', true); });
+    .catch(err => { setLoader(false); showToast((err && err.message) || `Gagal mengekspor ${fmtName}`, true); });
 }
 
 // Visibilitas tombol export tiap modul (tidak mengubah rule user)
