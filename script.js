@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.2.0"; 
+const APP_VERSION = "3.3.2"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3207,3 +3207,33 @@ function previewLaporanPdf() {
   if (modul === '__global__') modul = 'agenda'; // contoh utk global
   triggerExportLaporan(modul, 'pdf');
 }
+
+// =========================================================================
+// [ORIENTASI & ROTASI] - memastikan tampilan tetap berjalan & bersih saat
+// perangkat diputar (landscape / portrait). Hanya menambah pendengar acara
+// baru; tidak mengubah fungsi lain yang sudah ada.
+// =========================================================================
+(function () {
+  var rotTimer = null;
+  function handleRotation() {
+    // Tutup drawer/sidebar yang sedang terbuka agar tidak terpotong saat rotasi
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.querySelector('.overlay');
+    var body = document.body;
+    if (sidebar) { sidebar.classList.remove('active'); sidebar.classList.remove('expanded'); }
+    if (overlay) overlay.classList.remove('active');
+    body.classList.remove('menu-open');
+    body.style.overflow = '';
+    // paksa reflow supaya unit dinamis (dvh) terhitung ulang di semua browser
+    var doc = document.documentElement;
+    doc.style.overflowX = 'hidden';
+  }
+  function schedule() {
+    if (rotTimer) clearTimeout(rotTimer);
+    rotTimer = setTimeout(handleRotation, 280);
+  }
+  if (window.addEventListener) {
+    window.addEventListener('orientationchange', schedule, false);
+    window.addEventListener('resize', schedule, false);
+  }
+})();
