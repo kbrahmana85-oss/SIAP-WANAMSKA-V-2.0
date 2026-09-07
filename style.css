@@ -1423,3 +1423,280 @@ body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--
   .kedai-link-card { flex-wrap: wrap; }
   .kedai-link-open { width: 100%; text-align: center; }
 }
+
+/* ================================================================
+
+/* ================================================================
+   [3.3] LOGIN - BACKGROUND PENUH LAYAR + LOGO ICON KECIL ANIMATIF
+   Background mengisi penuh layar perangkat (tanpa terpotong).
+   Ikon memakai icon.png resmi; animasi kecil-kecil & ringan.
+   ================================================================ */
+#login-screen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Lapisan background: mengisi 100%x100% layar TANPA terpotong */
+.login-bg-image {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background-color: #24120B; /* warna dasar bila gambar gagal dimuat */
+  background-image: url('https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/179bb6af313f5b3d8af18c4b68d10320287cc9fb/background.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;   /* penuh & tidak ada bagian terpotong */
+  background-attachment: fixed;  /* tetap utuh saat scroll (desktop) */
+}
+@supports (background-attachment: local) { .login-bg-image { background-attachment: scroll; } }
+
+/* Scrim lembut penuh layar: pertahankan kejelasan kotak login */
+.login-bg-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse at 50% 46%, rgba(28,14,8,0.22) 0%, rgba(28,14,8,0.55) 100%),
+    linear-gradient(160deg, rgba(28,14,8,0.28) 0%, rgba(18,9,5,0.62) 100%);
+}
+
+/* Lapisan ikon kecil mengambang (tidak menangkap klik) */
+.login-float-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: contents;
+}
+
+/* Ikon kecil dari icon.png - animasi hanya transform (ringan/GPU) */
+.lfloat {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  background-image: url('https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/179bb6af313f5b3d8af18c4b68d10320287cc9fb/icon.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: .78;
+  transform: translateZ(0);
+  will-change: transform;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+  animation: lfBobA 7s ease-in-out infinite alternate;
+}
+@keyframes lfBobA {
+  from { transform: translate3d(0,0,0) rotate(-2deg); }
+  to   { transform: translate3d(0,-14px,0) rotate(3deg); }
+}
+@keyframes lfBobB {
+  from { transform: translate3d(0,-10px,0) rotate(2deg); }
+  to   { transform: translate3d(0,8px,0) rotate(-3deg); }
+}
+@keyframes lfSway {
+  from { transform: translate3d(-8px,4px,0) rotate(-4deg); }
+  to   { transform: translate3d(8px,-6px,0) rotate(4deg); }
+}
+
+/* Ukuran & posisi tersebar, durasi/delay bervariasi agar halus */
+.lf-1 { width: 40px;  height: 40px;  top: 6%;  left: 4%;   animation: lfBobA 6.5s ease-in-out infinite alternate; }
+.lf-2 { width: 30px;  height: 30px;  top: 14%; right: 5%;  animation: lfBobB 7.5s ease-in-out infinite alternate; animation-delay: .4s; }
+.lf-3 { width: 52px;  height: 52px;  top: 30%; left: 1.6%; animation: lfSway 9s ease-in-out infinite alternate;    animation-delay: .9s; opacity:.6; }
+.lf-4 { width: 34px;  height: 34px;  bottom: 15%; left: 6%; animation: lfBobA 8s ease-in-out infinite alternate;     animation-delay: 1.3s; }
+.lf-5 { width: 46px;  height: 46px;  bottom: 7%; right: 6%; animation: lfBobB 7s ease-in-out infinite alternate;      animation-delay: .6s; }
+.lf-6 { width: 28px;  height: 28px;  top: 47%; right: 2.4%; animation: lfSway 8.5s ease-in-out infinite alternate;   animation-delay: 1.7s; opacity:.5; }
+.lf-7 { width: 38px;  height: 38px;  top: 66%; left: 3%;    animation: lfBobA 9.5s ease-in-out infinite alternate;   animation-delay: 2.1s; opacity:.65; }
+.lf-8 { width: 30px;  height: 30px;  bottom: 30%; right: 8%; animation: lfBobB 6.8s ease-in-out infinite alternate;  animation-delay: .2s; }
+
+/* Card login di atas semua lapisan */
+#login-screen .login-box {
+  position: relative;
+  z-index: 3;
+}
+
+/* Perangkat dgn preferensi motion-reduced: hentikan semua animasi */
+@media (prefers-reduced-motion: reduce) {
+  .lfloat { animation: none !important; }
+}
+
+/* Layar kecil: kurangi jumlah ikon agar tetap ringan */
+@media (max-width: 640px) {
+  .lf-1 { width: 32px; height: 32px; }
+  .lf-2 { width: 24px; height: 24px; }
+  .lf-3 { width: 40px; height: 40px; }
+  .lf-5 { width: 36px; height: 36px; }
+  .lf-6, .lf-7, .lf-8 { display: none; }
+}
+
+/* ================================================================
+   [3.4] LOGIN - CENTERING PRESISI & UKURAN FIELD RAPI
+   Kotak login selalu tepat di tengah layar; ukuran field seragam;
+   background tetap penuh (100%x100%) di semua ukuran perangkat.
+   ================================================================ */
+#login-screen {
+  min-height: 100vh;
+  min-height: 100dvh;          /* akurat di mobile (toolbar dinamis) */
+}
+
+/* Kotak login: tepat tengah, lebar presisi, aman di layar pendek */
+.login-box {
+  width: min(92vw, 400px) !important;
+  max-width: 400px !important;
+  margin: auto !important;
+  padding: 34px 30px 30px !important;
+  border-radius: 18px !important;
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+#login-screen .login-box {
+  position: relative;
+  z-index: 3;
+}
+
+/* Field login presisi & label rata kiri agar lebih keren */
+#login-screen .form-group {
+  margin-bottom: 14px;
+  text-align: left;
+}
+#login-screen .form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: .84rem;
+  color: #5B4A3F;
+  text-align: left;
+  letter-spacing: .2px;
+}
+#login-screen .form-control {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 9px;
+  font-size: .95rem;
+}
+#login-screen .login-box h1 {
+  font-size: 1.7rem;
+  margin-top: 12px;
+}
+
+/* Telepon lanskap / layar sangat pendek: tetap tengah & bisa discroll */
+@media (max-height: 600px) {
+  #login-screen { align-items: center; }
+  .login-box { max-height: 96dvh; }
+}
+
+/* ================================================================
+   [3.5] ORIENTASI & ROTASI (LANDSCAPE / PORTRAIT) - MOBILE
+   Aplikasi tetap tampil & berfungsi saat perangkat diputar.
+   ================================================================ */
+
+/* -- Normalisasi tinggi dinamis (URL-bar mobile berubah saat rotasi) -- */
+html, body {
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+#app-container {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+/* Semua panel & area scroll ikut tinggi dinamis */
+.sidebar.expanded,
+.sidebar:not(.expanded) {
+  max-height: 100dvh;
+}
+.sidebar.expanded {
+  height: calc(100dvh - var(--header-h, 67px)) !important;
+}
+#login-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: auto;
+}
+/* Modal & lightbox memakai tinggi dinamis agar selalu muat saat rotasi */
+.modal-box {
+  max-height: min(92dvh, 92vh);
+}
+.lightbox-overlay img {
+  max-height: 92dvh;
+}
+main {
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* -- Mode LANDSCAPE pada ponsel (tinggi layar terbatas) -- */
+@media (orientation: landscape) and (max-height: 560px) {
+  :root {
+    --header-h: 54px;
+  }
+  header {
+    padding: 6px 12px;
+  }
+  .header-logo img { height: 30px; }
+  .nav-toggle { width: 32px; height: 32px; font-size: 1.1rem; }
+  .header-title h2 { font-size: 1.0rem; margin: 0; }
+  .header-title p { display: none; }
+  .header-user .info { font-size: 0.8rem; }
+  .header-user .role { font-size: 0.68rem; }
+
+  main { padding: 12px 14px; }
+  .section-header { margin-bottom: 10px; padding-bottom: 6px; }
+  .section-header h1 { font-size: 1.25rem; }
+  .card { padding: 13px; margin-bottom: 14px; }
+  .grid-dashboard {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .card-stat { padding: 12px; }
+  .card-stat h3 { font-size: 0.7rem; }
+  .card-stat .val { font-size: 1.25rem; }
+  .dashboard-widgets {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  /* Sidebar dock ikon ramping agar isi leluasa */
+  .sidebar:not(.expanded) { top: auto; bottom: 8px; transform: none; left: 6px; height: auto; }
+  .sidebar:not(.expanded) .menu-item { padding: 2px 0; }
+  .sidebar:not(.expanded) .menu-item .icon { font-size: 0.8rem; }
+  main { margin-left: 46px; }
+
+  /* Login ringkas di landscape */
+  #login-screen { align-items: center; }
+  .login-box {
+    padding: 14px 20px !important;
+    max-height: 96dvh;
+    width: min(80vw, 360px) !important;
+  }
+  .login-box h1 { font-size: 1.25rem; margin-top: 6px; }
+  #login-screen .login-box img.logo, .login-box .logo { width: 46px; }
+  #login-screen .form-group { margin-bottom: 8px; }
+  #login-screen .form-control { padding: 7px 10px; font-size: .88rem; }
+  #login-screen .form-group label { font-size: .74rem; margin-bottom: 3px; }
+  .login-box p { margin-bottom: 8px; }
+  #login-screen .btn { padding: 8px 10px !important; font-size: .9rem; }
+}
+
+/* -- Mode PORTRAIT ponsel: pastikan grid satu kolom & isi tak meluber -- */
+@media (orientation: portrait) and (max-width: 640px) {
+  .grid-dashboard { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .section-header h1 { font-size: 1.35rem; }
+  .card { padding: 14px; }
+  main { padding: 12px; }
+}
+
+/* Cegah zoom otomatis iOS saat mengetik pada perangkat sentuh */
+@media (hover: none) and (pointer: coarse) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+/* Pastikan animasi bertransisi mulus tanpa lonjakan lebar saat rotasi */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
