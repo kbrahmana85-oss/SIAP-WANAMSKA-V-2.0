@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.1.1"; 
+const APP_VERSION = "3.2.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -756,6 +756,7 @@ function setupRBACUI(role) {
   document.getElementById('btn-kurangi-kedai-trigger').style.display = 'none';
 
   document.getElementById('card-dash-kas').style.display = 'none';
+  document.getElementById('card-dash-kedai-link').style.display = 'none';
   document.getElementById('export-absensi-box').style.display = 'none';
   document.getElementById('export-inventaris-box').style.display = 'none';
   document.getElementById('export-kas-box').style.display = 'none';
@@ -806,6 +807,7 @@ function setupRBACUI(role) {
     document.getElementById('btn-tambah-inventaris-trigger').style.display = 'inline-block';
     
     document.getElementById('card-dash-kas').style.display = 'flex';
+    document.getElementById('card-dash-kedai-link').style.display = 'flex';
     document.getElementById('export-absensi-box').style.display = 'block';
     document.getElementById('export-inventaris-box').style.display = 'block';
     document.getElementById('export-kas-box').style.display = 'block';
