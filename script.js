@@ -3,7 +3,7 @@
 // =========================================================================
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
-const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
+const API_URL = "AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A";
 const APP_VERSION = "3.3.2"; 
 
 // =========================================================================
