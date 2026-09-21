@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.3.2"; 
+const APP_VERSION = "3.5.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -144,7 +144,9 @@ async function callAPI(funcName, params = [], options = {}) {
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 35000);
+  // [FIX-2] Timeout dapat dioverride per-panggilan (upload materi butuh lebih lama)
+  const timeoutMs = (options && options.timeout && Number(options.timeout) > 0) ? Number(options.timeout) : 35000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(API_URL, {
@@ -171,6 +173,50 @@ async function callAPI(funcName, params = [], options = {}) {
 }
 
 function clearAPICache() { API_CACHE.clear(); }
+
+// [FIX-3] Pemanasan Apps Script + cache dashboard instan (tidak mengubah alur lain)
+var __appsScriptWarmed = false;
+function warmupAppsScript() {
+  if (__appsScriptWarmed) return;
+  __appsScriptWarmed = true;
+  try {
+    // GET ringan (no-cors) hanya untuk membangunkan cold-start selagi user mengetik
+    fetch(API_URL, { method: 'GET', mode: 'no-cors', cache: 'no-store', keepalive: true }).catch(function () {});
+  } catch (e) {}
+}
+function getCachedDashboard() {
+  try {
+    var raw = sessionStorage.getItem('dash_cache');
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    if (!obj || !obj.t || (Date.now() - obj.t) > 60000) return null;
+    return obj.data;
+  } catch (e) { return null; }
+}
+function setCachedDashboard(data) {
+  try { sessionStorage.setItem('dash_cache', JSON.stringify({ t: Date.now(), data: data })); } catch (e) {}
+}
+var __skipNextDashboardFetch = false;
+function renderDashboardData(res) {
+  if (!res || !res.success) return false;
+  try {
+    var el1 = document.getElementById('dash-total-anggota');
+    var el2 = document.getElementById('dash-hadir-hari-ini');
+    var el3 = document.getElementById('dash-kegiatan-terbaru');
+    if (el1 && res.total_anggota !== undefined) el1.innerText = res.total_anggota;
+    if (el2 && res.hadir_hari_ini !== undefined) el2.innerText = res.hadir_hari_ini;
+    if (el3 && res.kegiatan_terbaru !== undefined) el3.innerText = res.kegiatan_terbaru;
+    var saldoEl = document.getElementById('dash-saldo-kas');
+    var cardKas = document.getElementById('card-dash-kas');
+    if (res.saldo_kas !== undefined && res.saldo_kas !== null) {
+      if (saldoEl) saldoEl.innerText = "Rp " + Number(res.saldo_kas).toLocaleString('id-ID');
+      if (cardKas && (userRole === "Admin" || userRole === "Pembina" || userRole === "Dewan Penggalang" || isKasSpecialUser(userId))) {
+        cardKas.style.display = 'flex';
+      }
+    }
+    return true;
+  } catch (e) { return false; }
+}
 
 // =========================================================================
 // === INISIALISASI APLIKASI (DOM CONTENT LOADED)                        ===
@@ -199,6 +245,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   requestGPSPermission();
   requestPushNotificationPermission();
+  // [FIX-3] Panaskan backend sejak halaman dibuka agar login pertama tidak kena cold-start penuh
+  try { warmupAppsScript(); } catch (e) {}
 
   sessionToken = sessionStorage.getItem('sessionToken');
   const userData = sessionStorage.getItem('user');
@@ -228,6 +276,8 @@ document.addEventListener('DOMContentLoaded', function () {
   loginFields.forEach(function (fieldId) {
     const input = document.getElementById(fieldId);
     if (!input) return;
+    // [FIX-3] Saat user mulai mengetik, pastikan backend sudah dipanaskan
+    input.addEventListener('focus', function () { try { warmupAppsScript(); } catch (e) {} }, { once: true });
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
@@ -449,8 +499,16 @@ async function handlePasskeyLogin() {
         document.getElementById('user-display-name').innerText = res.user.nama_lengkap;
         document.getElementById('user-display-role').innerText = res.user.role;
 
+        // [FIX-3] Dashboard instan dari respons login biometrik
+        if (res.dashboard && res.dashboard.success) {
+          setCachedDashboard(res.dashboard);
+          __skipNextDashboardFetch = true;
+        }
         setupRBACUI(res.user.role);
         showPage('dashboard-page');
+        try {
+          if (res.dashboard && res.dashboard.success) renderDashboardData(res.dashboard);
+        } catch (e) {}
         showToast("Login Biometrik Berhasil! Selamat datang, " + res.user.nama_lengkap);
       } else {
         showToast(res.message, true);
@@ -696,8 +754,17 @@ function handleLogin() {
         document.getElementById('user-display-name').innerText = res.user.nama_lengkap;
         document.getElementById('user-display-role').innerText = res.user.role;
 
+        // [FIX-3] Dashboard instan dari respons login (hemat 1x round-trip)
+        if (res.dashboard && res.dashboard.success) {
+          setCachedDashboard(res.dashboard);
+          __skipNextDashboardFetch = true;
+          // Render setelah halaman tampil (showPage di bawah memicu loadDashboard)
+        }
         setupRBACUI(res.user.role);
         showPage('dashboard-page');
+        try {
+          if (res.dashboard && res.dashboard.success) renderDashboardData(res.dashboard);
+        } catch (e) {}
         showToast("Selamat Datang, " + res.user.nama_lengkap);
       } else {
         showToast(res.message || 'Login gagal', true);
@@ -736,12 +803,19 @@ function setupRBACUI(role) {
   document.getElementById('menu-logs').style.display = 'none';
   
   // Grup tombol export per-modul (ditampilkan sesuai hak peran)
-  const expActs = ['export-actions-agenda','export-actions-inventaris','export-actions-kas','export-actions-kedai'];
+  const expActs = ['export-actions-agenda','export-actions-inventaris','export-actions-kas','export-actions-kedai','export-actions-absensi'];
   expActs.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
-  const btnAbs = document.getElementById('btn-export-absen');
-  const btnAbsX = document.getElementById('btn-export-absen-xlsx');
-  if (btnAbs) btnAbs.style.display = 'none';
-  if (btnAbsX) btnAbsX.style.display = 'none';
+  // [FIX-5] Struktur lama (tombol terpisah) tetap disembunyikan bila masih ada;
+  // struktur baru memakai wrapper di atas sehingga item menu tidak disembunyikan.
+  const absWrapInit = document.getElementById('export-actions-absensi');
+  if (!absWrapInit) {
+    const btnAbs = document.getElementById('btn-export-absen');
+    const btnAbsX = document.getElementById('btn-export-absen-xlsx');
+    const btnAbsD = document.getElementById('btn-export-absen-doc');
+    if (btnAbs) btnAbs.style.display = 'none';
+    if (btnAbsX) btnAbsX.style.display = 'none';
+    if (btnAbsD) btnAbsD.style.display = 'none';
+  }
   
   document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'none';
   document.getElementById('btn-tambah-agenda-trigger').style.display = 'none';
@@ -1795,6 +1869,18 @@ function processMateriFile(event) {
   const file = event.target.files[0];
   if (!file) return;
 
+  // [FIX-2] Batas aman 25MB (Apps Script) — cegah timeout yang terbaca sebagai error Drive
+  var MAX_MATERI_BYTES = 25 * 1024 * 1024;
+  if (file.size > MAX_MATERI_BYTES) {
+    var mb = (file.size / (1024 * 1024)).toFixed(1);
+    showToast("Ukuran file " + mb + "MB melebihi batas 25MB. Kompres/kecilkan dulu berkasnya.", true);
+    try { event.target.value = ""; } catch (e) {}
+    materiFileBase64 = ""; materiFileName = ""; materiFileMime = "";
+    var h = document.getElementById('mat-file-base64');
+    if (h) h.value = "";
+    return;
+  }
+
   materiFileName = file.name;
   materiFileMime = file.type || "application/pdf";
 
@@ -1804,10 +1890,32 @@ function processMateriFile(event) {
     materiFileBase64 = e.target.result;
     document.getElementById('mat-file-base64').value = materiFileBase64;
     setLoader(false);
-    showToast("Berkas siap: " + materiFileName);
+    var sizeMb = file.size > 1048576 ? (file.size / (1024 * 1024)).toFixed(1) + "MB" : Math.max(Math.round(file.size / 1024), 1) + "KB";
+    showToast("Berkas siap: " + materiFileName + " (" + sizeMb + ")");
+  };
+  reader.onerror = function() {
+    setLoader(false);
+    showToast("Gagal membaca berkas. Silakan pilih ulang file-nya.", true);
   };
   reader.readAsDataURL(file);
 }
+
+// [FIX-2] Verifikasi pasca-upload: pastikan file benar-benar ada di Drive folder tersebut
+function verifyMateriSaved(kategori, fileName) {
+  return callAPI('getMateriFileList', [sessionToken, kategori], { cache: false })
+    .then(function (res) {
+      if (!res || !res.success || !res.list) return false;
+      var target = String(fileName || "").trim().toLowerCase();
+      if (!target) return false;
+      for (var i = 0; i < res.list.length; i++) {
+        var nm = String(res.list[i].name || "").trim().toLowerCase();
+        if (nm === target) return true;
+      }
+      return false;
+    })
+    .catch(function () { return false; });
+}
+var __isSavingMateri = false;
 
 function actionSaveMateri() {
   const judul = document.getElementById('mat-judul').value.trim();
@@ -1817,6 +1925,9 @@ function actionSaveMateri() {
     showToast("Judul dan File Materi wajib diisi / diunggah!", true);
     return;
   }
+  // [FIX-2] Cegah klik ganda yang memicu duplikat & error Drive semu
+  if (__isSavingMateri) return;
+  __isSavingMateri = true;
 
   const payload = {
     judul: judul,
@@ -1827,18 +1938,60 @@ function actionSaveMateri() {
   };
 
   setLoader(true, "Mengunggah materi ke Google Drive...");
-  callAPI('saveMateri', [sessionToken, payload])
+  // [FIX-2] Timeout 120 detik khusus upload materi (file besar butuh waktu)
+  callAPI('saveMateri', [sessionToken, payload], { timeout: 120000 })
     .then(res => {
-      setLoader(false);
       if (res.success) {
+        setLoader(false);
+        __isSavingMateri = false;
         showToast(res.message);
         closeTambahMateriModal();
         loadNotifications(false);
       } else {
-        showToast(res.message, true);
+        // [FIX-2] Bila server mengaku Drive sibuk, verifikasi dulu sebelum vonis gagal
+        var msg = (res && res.message) || "";
+        if (res.driveBusy || /drive|sibuk|busy|timeout|lambat/i.test(msg)) {
+          setLoader(true, "Memverifikasi file tersimpan...");
+          verifyMateriSaved(kategori, materiFileName).then(function (found) {
+            setLoader(false);
+            __isSavingMateri = false;
+            if (found) {
+              showToast("Materi berhasil diunggah ke Google Drive.");
+              closeTambahMateriModal();
+              loadNotifications(false);
+            } else {
+              showToast(msg, true);
+            }
+          });
+        } else {
+          setLoader(false);
+          __isSavingMateri = false;
+          showToast(res.message, true);
+        }
       }
     })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
+    .catch(err => {
+      // [FIX-2] Timeout/jaringan: file mungkin sudah tersimpan — verifikasi dulu
+      var emsg = (err && err.message) || "";
+      if (/lambat|timeout|abort|network|fetch|drive|sibuk|busy/i.test(emsg)) {
+        setLoader(true, "Koneksi terputus sesaat — memverifikasi file...");
+        verifyMateriSaved(kategori, materiFileName).then(function (found) {
+          setLoader(false);
+          __isSavingMateri = false;
+          if (found) {
+            showToast("Materi berhasil diunggah ke Google Drive.");
+            closeTambahMateriModal();
+            loadNotifications(false);
+          } else {
+            showToast(emsg, true);
+          }
+        });
+      } else {
+        setLoader(false);
+        __isSavingMateri = false;
+        showToast(emsg, true);
+      }
+    });
 }
 
 function openMateriFolder(folderKey, folderTitle) {
@@ -2306,21 +2459,21 @@ function loadAbsenHistory() {
 // =========================================================================
 
 function loadDashboard() {
+  // [FIX-3] Tampilkan cache instan dulu (jika ada), lalu segarkan dari server
+  try {
+    var cached = getCachedDashboard();
+    if (cached) renderDashboardData(cached);
+  } catch (e) {}
+  // [FIX-3] Bila login baru saja menyertakan dashboard segar, hemat 1x request
+  if (__skipNextDashboardFetch) {
+    __skipNextDashboardFetch = false;
+    return;
+  }
   callAPI('getDashboardData', [sessionToken])
     .then(res => {
       if (res.success) {
-        document.getElementById('dash-total-anggota').innerText = res.total_anggota;
-        document.getElementById('dash-hadir-hari-ini').innerText = res.hadir_hari_ini;
-        document.getElementById('dash-kegiatan-terbaru').innerText = res.kegiatan_terbaru;
-
-        const saldoEl = document.getElementById('dash-saldo-kas');
-        const cardKas = document.getElementById('card-dash-kas');
-        if (res.saldo_kas !== undefined && res.saldo_kas !== null) {
-          if (saldoEl) saldoEl.innerText = "Rp " + Number(res.saldo_kas).toLocaleString('id-ID');
-          if (cardKas && (userRole === "Admin" || userRole === "Pembina" || userRole === "Dewan Penggalang" || isKasSpecialUser(userId))) {
-            cardKas.style.display = 'flex';
-          }
-        }
+        renderDashboardData(res);
+        setCachedDashboard(res);
       }
     })
     .catch(err => showToast(err.message, true));
@@ -2900,6 +3053,7 @@ function laporanLabel(key) {
 }
 
 function triggerExportLaporan(modul, format) {
+  try { closeAllExportDropdowns(); } catch (e) {}
   const fmtName = format === 'xlsx' ? 'Excel' : (format === 'doc' ? 'Word (DOCX)' : 'PDF');
   const payload = { modul: modul, format: format };
   setLoader(true, `Menyusun Laporan ${laporanLabel(modul)} ke ${fmtName}...`);
@@ -2972,6 +3126,34 @@ function openExportUrlFallback(modul, format, fmtName, reason) {
 // - Pembina: absensi (PDF + Excel)
 // - Pengelola Kas: kas (PDF + Excel)
 // - Pengelola Kedai DGW202638/641: kedai (PDF + Excel)
+// [FIX-5] Dropdown Export: satu tombol Export -> pilihan Excel/PDF/DOC sesuai hak akses
+function toggleExportDropdown(ev, key) {
+  try {
+    if (ev) { ev.stopPropagation(); }
+  } catch (e) {}
+  var menu = document.getElementById('export-menu-' + key);
+  if (!menu) return;
+  var wasOpen = menu.classList.contains('open');
+  closeAllExportDropdowns();
+  if (!wasOpen) {
+    menu.classList.add('open');
+    var btn = menu.parentElement ? menu.parentElement.querySelector('.export-toggle') : null;
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  }
+}
+function closeAllExportDropdowns() {
+  document.querySelectorAll('.export-menu.open').forEach(function (m) {
+    m.classList.remove('open');
+    var btn = m.parentElement ? m.parentElement.querySelector('.export-toggle') : null;
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  });
+}
+// Tutup dropdown saat klik di luar / tekan Escape (tidak menyentuh handler lain)
+document.addEventListener('click', function () { try { closeAllExportDropdowns(); } catch (e) {} });
+document.addEventListener('keydown', function (e) {
+  if (e && e.key === 'Escape') { try { closeAllExportDropdowns(); } catch (err) {} }
+});
+
 function applyExportActionUI() {
   const isAdm  = userRole === 'Admin';
   const isPem  = userRole === 'Pembina';
@@ -2987,21 +3169,30 @@ function applyExportActionUI() {
   set('export-actions-kas', canKas);
   set('export-actions-kedai', canKed);
 
-  // DOC (Word) hanya untuk Admin — tombol ber-kls .doc-export-btn
+  // DOC (Word) hanya untuk Admin — item ber-kls .doc-export-btn
   document.querySelectorAll('.doc-export-btn').forEach(btn => {
     btn.style.display = isAdm ? '' : 'none';
   });
 
   // Absensi: export tampil saat kartu global terlihat (Admin & Pembina);
-  // tombol DOC absensi hanya Admin.
+  // item DOC absensi hanya Admin. Mendukung struktur baru (dropdown) & lama (tombol).
   const globalCard = document.getElementById('card-riwayat-absen-global');
   const visible = (isAdm || isPem) && globalCard && globalCard.style.display !== 'none';
-  const b1 = document.getElementById('btn-export-absen');
-  const b2 = document.getElementById('btn-export-absen-xlsx');
-  const b3 = document.getElementById('btn-export-absen-doc');
-  if (b1) b1.style.display = visible ? 'inline-block' : 'none';
-  if (b2) b2.style.display = visible ? 'inline-block' : 'none';
-  if (b3) b3.style.display = (visible && isAdm) ? 'inline-block' : 'none';
+  const absWrap = document.getElementById('export-actions-absensi');
+  if (absWrap) {
+    // Struktur baru: satu dropdown; DOC diatur via .doc-export-btn di atas
+    absWrap.style.display = visible ? 'inline-flex' : 'none';
+    var bDoc = document.getElementById('btn-export-absen-doc');
+    if (bDoc) bDoc.style.display = (visible && isAdm) ? '' : 'none';
+  } else {
+    // Kompatibilitas struktur lama
+    const b1 = document.getElementById('btn-export-absen');
+    const b2 = document.getElementById('btn-export-absen-xlsx');
+    const b3 = document.getElementById('btn-export-absen-doc');
+    if (b1) b1.style.display = visible ? 'inline-block' : 'none';
+    if (b2) b2.style.display = visible ? 'inline-block' : 'none';
+    if (b3) b3.style.display = (visible && isAdm) ? 'inline-block' : 'none';
+  }
 }
 
 // ---- KELOLA DATA LAPORAN (ADMIN) - PER MODUL ----
@@ -3089,7 +3280,7 @@ function previewLaporanLogo(event) {
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       laporanLogoBase64 = canvas.toDataURL('image/png');
-      setLaporanLogoPreview(laporanLogoBase64);
+      setLaporanLogoPanLogoPreview(laporanLogoBase64);
       setLoader(false);
       showToast('Logo baru siap disimpan untuk modul ini.');
     };
