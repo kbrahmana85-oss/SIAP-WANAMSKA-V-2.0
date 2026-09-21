@@ -97,7 +97,7 @@ const READ_ONLY_FUNCS = new Set([
 ]);
 
 function isWriteFunc(name) {
-  return /^(save|add|submit|delete|change|logout|export|initialize|kembalikan|register|kurangi)/.test(name);
+  return /^(save|add|submit|delete|change|logout|export|initialize|kembalikan|register|kurangi|repair)/.test(name);
 }
 
 function isKasSpecialUser(uid) {
@@ -1426,7 +1426,7 @@ function openBacaKegiatanModal(index) {
     photos.forEach((photoUrl, pIdx) => {
       gallery.innerHTML += `
         <div style="display:flex; flex-direction:column; align-items:center;">
-          <img src="${photoUrl}" alt="Lampiran Foto ${pIdx+1}" onclick="viewFullImage('${photoUrl}')" title="Klik untuk memperbesar tampilan">
+          <img src="${photoUrl}" alt="Lampiran Foto ${pIdx+1}" onclick="viewFullImage('${photoUrl}')" title="Klik untuk memperbesar tampilan" onerror="this.onerror=null;this.src='logo_pwa.png';this.style.objectFit='contain';">
           <span style="font-size:0.75rem; color:var(--color-text-muted); margin-top:4px;">Lampiran Foto ${pIdx+1}</span>
         </div>`;
     });
