@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.5.0"; 
+const APP_VERSION = "3.5.1"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -1405,6 +1405,49 @@ function loadKegiatan() {
     .catch(err => showToast(err.message, true));
 }
 
+// [FIX-GALERI] Samakan dengan backend: ubah SEMUA format URL Drive ke format
+// semat paling andal untuk <img> (thumbnail?id=...). Menangani respons API
+// lama/cached yang masih berisi format URL lain.
+function normalisasiUrlFotoDrive(url) {
+  var s = url ? String(url).trim() : "";
+  if (!s || s.indexOf("data:image/") === 0) return "";
+  if (s.indexOf("drive.google.com") === -1 && s.indexOf("googleusercontent.com") === -1) return s;
+  var m = s.match(/\/d\/([-\w]+)/) || s.match(/[?&]id=([-\w]+)/);
+  if (m && m[1]) return "https://drive.google.com/thumbnail?id=" + m[1] + "&sz=w1600";
+  return s;
+}
+
+// [FIX-GALERI] FUNGSI PEMUNCUL GALERI BACA BERITA — dipanggil setiap
+// "Baca Berita" diklik. Menormalkan URL foto, membangun grid gambar,
+// menulis hitungan foto pada judul galeri, dan memberi citra cadangan
+// (logo aplikasi) bila sebuah URL gagal dimuat.
+function renderGaleriBeritaKegiatan(galleryEl, fotoList) {
+  if (!galleryEl) return 0;
+  galleryEl.innerHTML = "";
+
+  const photos = (fotoList || [])
+    .map(normalisasiUrlFotoDrive)
+    .filter(f => f && String(f).trim() !== "");
+
+  const heading = document.querySelector("#modal-baca-kegiatan h4");
+  if (heading) {
+    heading.innerHTML = `📸 Galeri Lampiran Foto Kegiatan: <span style="font-weight:600; font-size:0.85em;">(${photos.length} foto)</span>`;
+  }
+
+  if (photos.length === 0) {
+    galleryEl.innerHTML = `<p style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic; grid-column: 1/-1;">Tidak ada lampiran foto untuk dokumentasi berita ini.</p>`;
+  } else {
+    photos.forEach((photoUrl, pIdx) => {
+      galleryEl.innerHTML += `
+        <div style="display:flex; flex-direction:column; align-items:center;">
+          <img src="${photoUrl}" alt="Lampiran Foto ${pIdx+1}" onclick="viewFullImage('${photoUrl}')" title="Klik untuk memperbesar tampilan" onerror="this.onerror=null;this.src='logo_pwa.png';this.style.objectFit='contain';">
+          <span style="font-size:0.75rem; color:var(--color-text-muted); margin-top:4px;">Lampiran Foto ${pIdx+1}</span>
+        </div>`;
+    });
+  }
+  return photos.length;
+}
+
 function openBacaKegiatanModal(index) {
   const keg = kegiatanListCache[index];
   if (!keg) return;
@@ -1415,22 +1458,10 @@ function openBacaKegiatanModal(index) {
   document.getElementById('reader-author').innerText = keg.dibuat_oleh || "Admin";
   document.getElementById('reader-description').innerText = keg.deskripsi || "-";
 
-  const gallery = document.getElementById('reader-gallery-container');
-  gallery.innerHTML = "";
-  
-  const photos = [keg.foto1, keg.foto2, keg.foto3, keg.foto4].filter(f => f && String(f).trim() !== "");
-  
-  if (photos.length === 0) {
-    gallery.innerHTML = `<p style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic; grid-column: 1/-1;">Tidak ada lampiran foto untuk dokumentasi berita ini.</p>`;
-  } else {
-    photos.forEach((photoUrl, pIdx) => {
-      gallery.innerHTML += `
-        <div style="display:flex; flex-direction:column; align-items:center;">
-          <img src="${photoUrl}" alt="Lampiran Foto ${pIdx+1}" onclick="viewFullImage('${photoUrl}')" title="Klik untuk memperbesar tampilan" onerror="this.onerror=null;this.src='logo_pwa.png';this.style.objectFit='contain';">
-          <span style="font-size:0.75rem; color:var(--color-text-muted); margin-top:4px;">Lampiran Foto ${pIdx+1}</span>
-        </div>`;
-    });
-  }
+  renderGaleriBeritaKegiatan(
+    document.getElementById('reader-gallery-container'),
+    [keg.foto1, keg.foto2, keg.foto3, keg.foto4]
+  );
 
   document.getElementById('modal-baca-kegiatan').style.display = 'flex';
 }
