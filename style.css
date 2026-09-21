@@ -1437,19 +1437,21 @@ body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--
   isolation: isolate;
 }
 
-/* Lapisan background: mengisi 100%x100% layar TANPA terpotong */
+/* Lapisan background: SELURUH gambar selalu tampil utuh TANPA terpotong
+   (contain = tidak crop + tidak melar) di portrait maupun landscape.
+   Sisa ruang diisi gradasi senada tema sehingga tampak menyatu. */
 .login-bg-image {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: -3;
   background-color: #24120B; /* warna dasar bila gambar gagal dimuat */
-  background-image: url('https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/179bb6af313f5b3d8af18c4b68d10320287cc9fb/background.png');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 100% 100%;   /* penuh & tidak ada bagian terpotong */
-  background-attachment: fixed;  /* tetap utuh saat scroll (desktop) */
+  background-image: url('https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/179bb6af313f5b3d8af18c4b68d10320287cc9fb/background.png'),
+    radial-gradient(circle at 50% 30%, rgba(226, 167, 69, 0.16), transparent 60%),
+    linear-gradient(160deg, #3A2417 0%, #24120B 48%, #150B06 100%);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-position: center, center, center;
+  background-size: contain, cover, cover;
 }
-@supports (background-attachment: local) { .login-bg-image { background-attachment: scroll; } }
 
 /* Scrim lembut penuh layar: pertahankan kejelasan kotak login */
 .login-bg-scrim {
@@ -1699,4 +1701,247 @@ main {
 /* Pastikan animasi bertransisi mulus tanpa lonjakan lebar saat rotasi */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ================================================================
+   [FIX-4] LOGIN: tombol Login + ikon sidik jari berdampingan
+   Hanya mengatur area login-actions; gaya .btn lain tidak diubah.
+   ================================================================ */
+.login-actions {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 2px;
+}
+.login-actions #loginBtn {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 12px;
+  font-weight: 700;
+}
+/* Ikon sidik jari: ukuran presisi 52x48, selaras tinggi tombol Login */
+#btn-login-passkey.btn-biometric-icon {
+  flex: 0 0 52px;
+  width: 52px;
+  min-width: 52px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+#btn-login-passkey.btn-biometric-icon svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+#btn-login-passkey.btn-biometric-icon:hover {
+  transform: translateY(-2px);
+}
+#btn-login-passkey.btn-biometric-icon:active {
+  transform: translateY(0);
+}
+/* Landscape pendek: samakan tinggi ringkas tombol login */
+@media (orientation: landscape) and (max-height: 560px) {
+  #btn-login-passkey.btn-biometric-icon {
+    min-height: 38px;
+  }
+  #btn-login-passkey.btn-biometric-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ================================================================
+   [FIX-5] DROPDOWN EXPORT (satu tombol Export -> Excel/PDF/Word)
+   Hak akses tetap diatur JS (applyExportActionUI); CSS hanya tampilan.
+   ================================================================ */
+.export-actions {
+  align-items: center;
+}
+.export-dropdown {
+  position: relative;
+  display: inline-block;
+}
+.export-dropdown .export-toggle {
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.export-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1500;
+  min-width: 220px;
+  max-width: min(300px, 80vw);
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+  background: #FFFFFF;
+  border: 1px solid rgba(215, 204, 200, 0.7);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(62, 39, 35, 0.22);
+  padding: 6px;
+}
+.export-menu.open {
+  display: block;
+  animation: exportMenuIn 0.16s ease both;
+}
+@keyframes exportMenuIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+.export-menu .export-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-dark, #3E2723);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.export-menu .export-item:hover {
+  background: #FAF4EE;
+  color: var(--color-primary, #6F4E37);
+}
+.export-menu .export-group-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--color-text-muted, #795548);
+  padding: 8px 10px 4px;
+  border-top: 1px dashed var(--color-light-brown, #D7CCC8);
+  margin-top: 4px;
+}
+.export-menu .export-group-label:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .export-menu.open { animation: none; }
+}
+
+/* ================================================================
+   KOLOM KEPEMILIKAN APLIKASI (halaman login, di bawah sambutan)
+   Kotak gradasi dinamis + kilau bergerak + emblem perisai.
+   ================================================================ */
+.login-credit {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(120deg, #3E2723 0%, #5D4037 40%, #8B5E3C 75%, #A8763E 100%);
+  box-shadow: 0 6px 16px rgba(62, 39, 35, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.login-credit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(62, 39, 35, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+/* Kilau cahaya menyapu kolom (kesan dinamis, hanya animasi posisi) */
+.login-credit::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -80px;
+  width: 70px;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  animation: creditSheen 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes creditSheen {
+  0% { left: -80px; }
+  55%, 100% { left: 110%; }
+}
+.login-credit-shield {
+  flex-shrink: 0;
+  color: #F7CE8E;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+.login-credit-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.35;
+}
+.login-credit-by {
+  font-size: 0.72rem;
+  letter-spacing: 0.3px;
+  color: #FFF7E6;
+  margin: 0;
+}
+.login-credit-by strong {
+  font-weight: 700;
+  color: #F7CE8E;
+}
+.login-credit-year {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #F7CE8E;
+  margin: 1px 0 0;
+  opacity: 0.9;
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-credit::after { animation: none; }
+  .login-credit:hover { transform: none; }
+}
+
+/* ================================================================
+   [3.6] LANDSCAPE PENUH (login -> seluruh isi aplikasi)
+   Perangkat boleh diputar; background tidak dipotong (contain),
+   panel pendek otomatis memadat & dapat digulir.
+   ================================================================ */
+/* Lanskap pendek (HP diputar): semua panel tetap muat & bisa gulir */
+@media (orientation: landscape) and (max-height: 640px) {
+  .login-box {
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+  }
+  .modal-box {
+    max-height: 96dvh;
+  }
+  .card {
+    padding: 13px;
+  }
+  .table-responsive {
+    max-height: 62vh;
+    overflow-y: auto;
+  }
+  .kedai-img-wrap {
+    height: 130px;
+  }
+  .dev-about {
+    flex-direction: row;
+    text-align: left;
+  }
+}
+/* Lanskap umum: manfaatkan lebar layar */
+@media (orientation: landscape) {
+  .dashboard-widgets {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  main {
+    -webkit-overflow-scrolling: touch;
+  }
 }
