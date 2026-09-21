@@ -1439,20 +1439,34 @@ body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--
   isolation: isolate;
 }
 
-/* Lapisan background: SELURUH gambar selalu tampil utuh TANPA terpotong
-   (contain = tidak crop + tidak melar) di portrait maupun landscape.
-   Sisa ruang diisi gradasi senada tema sehingga tampak menyatu. */
+/* Lapisan PENGISI FULLSCREEN: gambar yang sama dibentangkan menutup SELURUH
+   layar (cover) lalu diburamkan — menjadi bingkai hidup senada gambar sehingga
+   TIDAK ADA ruang kosong di portrait maupun landscape. Efek buram menyamarkan
+   bagian yang terpotong pada lapisan ini (hanya lapisan bingkai). */
+.login-bg-fill {
+  position: fixed;
+  inset: 0;
+  z-index: -4;
+  background-color: #24120B; /* warna dasar bila gambar gagal dimuat */
+  background-image: url('https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/179bb6af313f5b3d8af18c4b68d10320287cc9fb/background.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  filter: blur(28px) brightness(.72) saturate(1.25);
+  transform: scale(1.08); /* tutup tepi transparan akibat buram */
+}
+
+/* Lapisan gambar TAJAM: SELURUH gambar tampil utuh TANPA terpotong dan tanpa
+   melar (contain) di atas lapisan pengisi — gambar asli selalu lengkap. */
 .login-bg-image {
   position: fixed;
   inset: 0;
   z-index: -3;
-  background-color: #24120B; /* warna dasar bila gambar gagal dimuat */
-  background-image: url('https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/179bb6af313f5b3d8af18c4b68d10320287cc9fb/background.png'),
-    radial-gradient(circle at 50% 30%, rgba(226, 167, 69, 0.16), transparent 60%),
-    linear-gradient(160deg, #3A2417 0%, #24120B 48%, #150B06 100%);
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-position: center, center, center;
-  background-size: contain, cover, cover;
+  background-color: transparent;
+  background-image: url('https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/179bb6af313f5b3d8af18c4b68d10320287cc9fb/background.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 /* Scrim lembut penuh layar: pertahankan kejelasan kotak login */
