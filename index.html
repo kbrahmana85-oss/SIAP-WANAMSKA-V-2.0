@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=2.9.0">
+    <link rel="stylesheet" href="style.css?v=3.5.0">
 </head>
 <body>
 
@@ -74,17 +74,35 @@
         </div>
       </div>
       
-      <button type="button" id="loginBtn" class="btn btn-full btn-gold" onclick="handleLogin()" style="padding: 12px; font-weight: 700;">Login</button>
-
-      <!-- TOMBOL BIOMETRIK / PASSKEY LOGIN -->
-      <div class="login-divider">ATAU</div>
-      <button type="button" id="btn-login-passkey" class="btn btn-full btn-biometric" onclick="handlePasskeyLogin()" style="padding: 11px; font-weight: 600;">
-        🔐 Login dengan Sidik Jari / Passkey
-      </button>
+      <!-- [FIX-4] Login + ikon sidik jari berdampingan (ID & fungsi tetap sama) -->
+      <div class="login-actions">
+        <button type="button" id="loginBtn" class="btn btn-gold" onclick="handleLogin()">Login</button>
+        <button type="button" id="btn-login-passkey" class="btn btn-biometric btn-biometric-icon" onclick="handlePasskeyLogin()" title="Login dengan Sidik Jari / Passkey" aria-label="Login dengan Sidik Jari">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false">
+            <path d="M5 12a7 7 0 0 1 14 0v5c0 1.7-.4 3.3-1 4.8"/>
+            <path d="M5 12v4.5c0 1.9.4 3.7 1.2 5.3"/>
+            <path d="M7.8 12a4.2 4.2 0 0 1 8.4 0v4.2c0 1.4-.3 2.7-.8 3.9"/>
+            <path d="M7.8 12v3.6c0 1.5.3 3 1 4.3"/>
+            <path d="M10.6 12a1.4 1.4 0 0 1 2.8 0v2.6c0 1-.2 2-.6 2.9"/>
+          </svg>
+        </button>
+      </div>
 
       <div style="text-align:center; margin-top: 20px;">
         <h3 style="font-size: 0.95rem; color: var(--color-primary);">SELAMAT DATANG</h3>
         <p style="font-size: 0.8rem; color:#666;">MARI MENJADI PENGGALANG YANG SIAP BERDIGITALISASI</p>
+      </div>
+
+      <!-- KOLOM KEPEMILIKAN APLIKASI -->
+      <div class="login-credit">
+        <svg class="login-credit-shield" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M12 2.5 20 6v6c0 5-3.4 8.3-8 9.5C7.4 20.3 4 17 4 12V6l8-3.5z"/>
+          <path d="M8.8 12l2.3 2.3 4.2-4.6"/>
+        </svg>
+        <span class="login-credit-text">
+          <span class="login-credit-by">Produced by <strong>Arif Nuur Iswahyudi</strong></span>
+          <span class="login-credit-year">© 2026</span>
+        </span>
       </div>
     </div>
   </div>
@@ -249,10 +267,16 @@
           <div class="section-header">
             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
               <button class="btn btn-gold" id="btn-tambah-agenda-trigger" onclick="openAgendaModal()">+ Tambah Agenda</button>
-              <span id="export-actions-agenda" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <button class="btn" onclick="triggerExportLaporan('agenda','pdf')" title="Unduh laporan Agenda (PDF)">📄 Export PDF</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('agenda','xlsx')" title="Unduh laporan Agenda (Excel)">📊 Export Excel</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('agenda','doc')" title="Unduh laporan Agenda (Word .docx)">📝 Export DOC</button>
+              <!-- [FIX-5] Export Agenda: satu tombol -> dropdown Excel/PDF/Word -->
+              <span id="export-actions-agenda" class="export-actions" style="display: none;">
+                <span class="export-dropdown">
+                  <button type="button" class="btn btn-gold export-toggle" onclick="toggleExportDropdown(event,'agenda')" aria-haspopup="true" aria-expanded="false" title="Unduh laporan Agenda">📤 Export ▾</button>
+                  <span class="export-menu" id="export-menu-agenda" role="menu">
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('agenda','xlsx')" title="Unduh laporan Agenda (Excel)">📊 Excel (.xlsx)</button>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('agenda','pdf')" title="Unduh laporan Agenda (PDF)">📄 PDF</button>
+                    <button type="button" class="export-item doc-export-btn" onclick="triggerExportLaporan('agenda','doc')" title="Unduh laporan Agenda (Word .docx)">📝 Word (.docx)</button>
+                  </span>
+                </span>
               </span>
             </div>
           </div>
@@ -324,9 +348,17 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
               <h2 style="font-size: 1.2rem; color: var(--color-primary);">Riwayat Absensi Global (Admin/Pembina)</h2>
               <span style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <button class="btn" id="btn-export-absen" style="display: none;" onclick="triggerExportLaporan('absensi','pdf')" title="Unduh laporan Absensi (PDF)">📄 Export PDF</button>
-                <button class="btn btn-gold" id="btn-export-absen-xlsx" style="display: none;" onclick="triggerExportLaporan('absensi','xlsx')" title="Unduh laporan Absensi (Excel)">📊 Export Excel</button>
-                <button class="btn btn-gold" id="btn-export-absen-doc" style="display: none;" onclick="triggerExportLaporan('absensi','doc')" title="Unduh laporan Absensi (Word .docx)">📝 Export DOC</button>
+                <!-- [FIX-5] Export Absensi: satu tombol -> dropdown (ID item dipertahankan) -->
+                <span id="export-actions-absensi" class="export-actions" style="display: none;">
+                  <span class="export-dropdown">
+                    <button type="button" class="btn btn-gold export-toggle" onclick="toggleExportDropdown(event,'absensi')" aria-haspopup="true" aria-expanded="false" title="Unduh laporan Absensi">📤 Export ▾</button>
+                    <span class="export-menu" id="export-menu-absensi" role="menu">
+                      <button type="button" class="export-item" id="btn-export-absen-xlsx" onclick="triggerExportLaporan('absensi','xlsx')" title="Unduh laporan Absensi (Excel)">📊 Excel (.xlsx)</button>
+                      <button type="button" class="export-item" id="btn-export-absen" onclick="triggerExportLaporan('absensi','pdf')" title="Unduh laporan Absensi (PDF)">📄 PDF</button>
+                      <button type="button" class="export-item doc-export-btn" id="btn-export-absen-doc" onclick="triggerExportLaporan('absensi','doc')" title="Unduh laporan Absensi (Word .docx)">📝 Word (.docx)</button>
+                    </span>
+                  </span>
+                </span>
                 <input type="date" id="filter-absen-date" class="form-control" style="width: 200px;" onchange="loadAbsenHistory()">
               </span>
             </div>
@@ -488,16 +520,25 @@
               <button class="btn btn-gold" id="btn-tambah-kedai-trigger" onclick="openTambahKedaiModal()">+ Tambah Stok Barang</button>
               <!-- Tombol Pengelola / Petugas Jual Kedai: (-) Jual/Kurangi Stok -->
               <button class="btn btn-danger" id="btn-kurangi-kedai-trigger" onclick="openKurangiKedaiModal()">- Jual / Kurangi Stok</button>
-              <span id="export-actions-kedai" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <button class="btn" onclick="triggerExportLaporan('kedai_stok','pdf')" title="Unduh laporan Data Stok Kedai (PDF)">📄 Export Stok PDF</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('kedai_stok','xlsx')" title="Unduh laporan Data Stok Kedai (Excel)">📊 Export Stok Excel</button>
-                <button class="btn btn-gold doc-export-btn" onclick="triggerExportLaporan('kedai_stok','doc')" title="Unduh laporan Data Stok (Word .docx)">📝 Stok DOC</button>
-                <button class="btn" onclick="triggerExportLaporan('kedai_penjualan','pdf')" title="Unduh laporan Penjualan Kedai (PDF)">📄 Export Penjualan PDF</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('kedai_penjualan','xlsx')" title="Unduh laporan Penjualan Kedai (Excel)">📊 Export Penjualan Excel</button>
-                <button class="btn btn-gold doc-export-btn" onclick="triggerExportLaporan('kedai_penjualan','doc')" title="Unduh laporan Penjualan (Word .docx)">📝 Penjualan DOC</button>
-                <button class="btn btn-danger" onclick="triggerExportLaporan('kedai_laporan','pdf')" title="Unduh Laporan Hasil Penjualan Kedai (PDF)">📑 Laporan Penjualan PDF</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('kedai_laporan','xlsx')" title="Unduh Laporan Hasil Penjualan Kedai (Excel)">📑 Laporan Penjualan Excel</button>
-                <button class="btn btn-danger doc-export-btn" onclick="triggerExportLaporan('kedai_laporan','doc')" title="Unduh Laporan Hasil Penjualan Kedai (Word .docx)">📑 Laporan Penjualan DOC</button>
+              <!-- [FIX-5] Export Kedai: satu tombol -> dropdown 3 kelompok laporan -->
+              <span id="export-actions-kedai" class="export-actions" style="display: none;">
+                <span class="export-dropdown">
+                  <button type="button" class="btn btn-gold export-toggle" onclick="toggleExportDropdown(event,'kedai')" aria-haspopup="true" aria-expanded="false" title="Unduh laporan Kedai Penggalang">📤 Export ▾</button>
+                  <span class="export-menu" id="export-menu-kedai" role="menu">
+                    <span class="export-group-label">📦 Data Stok</span>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('kedai_stok','xlsx')" title="Unduh laporan Data Stok Kedai (Excel)">📊 Excel (.xlsx)</button>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('kedai_stok','pdf')" title="Unduh laporan Data Stok Kedai (PDF)">📄 PDF</button>
+                    <button type="button" class="export-item doc-export-btn" onclick="triggerExportLaporan('kedai_stok','doc')" title="Unduh laporan Data Stok (Word .docx)">📝 Word (.docx)</button>
+                    <span class="export-group-label">🧾 Riwayat Penjualan</span>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('kedai_penjualan','xlsx')" title="Unduh laporan Penjualan Kedai (Excel)">📊 Excel (.xlsx)</button>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('kedai_penjualan','pdf')" title="Unduh laporan Penjualan Kedai (PDF)">📄 PDF</button>
+                    <button type="button" class="export-item doc-export-btn" onclick="triggerExportLaporan('kedai_penjualan','doc')" title="Unduh laporan Penjualan (Word .docx)">📝 Word (.docx)</button>
+                    <span class="export-group-label">📑 Laporan Hasil Penjualan</span>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('kedai_laporan','xlsx')" title="Unduh Laporan Hasil Penjualan Kedai (Excel)">📊 Excel (.xlsx)</button>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('kedai_laporan','pdf')" title="Unduh Laporan Hasil Penjualan Kedai (PDF)">📄 PDF</button>
+                    <button type="button" class="export-item doc-export-btn" onclick="triggerExportLaporan('kedai_laporan','doc')" title="Unduh Laporan Hasil Penjualan Kedai (Word .docx)">📝 Word (.docx)</button>
+                  </span>
+                </span>
               </span>
             </div>
           </div>
@@ -542,13 +583,21 @@
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <button class="btn btn-gold" id="btn-tambah-peminjaman-trigger" onclick="openPeminjamanModal()">+ Pinjam Barang</button>
               <button class="btn" id="btn-tambah-inventaris-trigger" onclick="openInventarisModal()">+ Tambah Barang</button>
-              <span id="export-actions-inventaris" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <button class="btn" onclick="triggerExportLaporan('inventaris','pdf')" title="Unduh laporan Barang Tersimpan (PDF)">📄 Export PDF</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('inventaris','xlsx')" title="Unduh laporan Barang Tersimpan (Excel)">📊 Export Excel</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('inventaris','doc')" title="Unduh laporan Barang Tersimpan (Word .docx)">📝 Export DOC</button>
-                <button class="btn" onclick="triggerExportLaporan('peminjaman','pdf')" title="Unduh laporan Peminjaman (PDF)">📄 Export Peminjaman PDF</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('peminjaman','xlsx')" title="Unduh laporan Peminjaman (Excel)">📊 Export Peminjaman Excel</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('peminjaman','doc')" title="Unduh laporan Peminjaman (Word .docx)">📝 Export Peminjaman DOC</button>
+              <!-- [FIX-5] Export Inventaris: satu tombol -> dropdown 2 kelompok laporan -->
+              <span id="export-actions-inventaris" class="export-actions" style="display: none;">
+                <span class="export-dropdown">
+                  <button type="button" class="btn btn-gold export-toggle" onclick="toggleExportDropdown(event,'inventaris')" aria-haspopup="true" aria-expanded="false" title="Unduh laporan Inventaris">📤 Export ▾</button>
+                  <span class="export-menu" id="export-menu-inventaris" role="menu">
+                    <span class="export-group-label">📦 Barang Tersimpan</span>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('inventaris','xlsx')" title="Unduh laporan Barang Tersimpan (Excel)">📊 Excel (.xlsx)</button>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('inventaris','pdf')" title="Unduh laporan Barang Tersimpan (PDF)">📄 PDF</button>
+                    <button type="button" class="export-item doc-export-btn" onclick="triggerExportLaporan('inventaris','doc')" title="Unduh laporan Barang Tersimpan (Word .docx)">📝 Word (.docx)</button>
+                    <span class="export-group-label">📋 Peminjaman</span>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('peminjaman','xlsx')" title="Unduh laporan Peminjaman (Excel)">📊 Excel (.xlsx)</button>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('peminjaman','pdf')" title="Unduh laporan Peminjaman (PDF)">📄 PDF</button>
+                    <button type="button" class="export-item doc-export-btn" onclick="triggerExportLaporan('peminjaman','doc')" title="Unduh laporan Peminjaman (Word .docx)">📝 Word (.docx)</button>
+                  </span>
+                </span>
               </span>
             </div>
           </div>
@@ -609,10 +658,16 @@
           <div class="section-header">
             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
               <button class="btn btn-gold" id="btn-tambah-kas" onclick="openKasModal()">+ Catat Kas Baru</button>
-              <span id="export-actions-kas" style="display: none; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <button class="btn" onclick="triggerExportLaporan('kas','pdf')" title="Unduh laporan Buku Kas (PDF)">📄 Export PDF</button>
-                <button class="btn btn-gold" onclick="triggerExportLaporan('kas','xlsx')" title="Unduh laporan Buku Kas (Excel)">📊 Export Excel</button>
-                <button class="btn btn-gold doc-export-btn" onclick="triggerExportLaporan('kas','doc')" title="Unduh laporan Buku Kas (Word .docx)">📝 Export DOC</button>
+              <!-- [FIX-5] Export Kas: satu tombol -> dropdown Excel/PDF/Word -->
+              <span id="export-actions-kas" class="export-actions" style="display: none;">
+                <span class="export-dropdown">
+                  <button type="button" class="btn btn-gold export-toggle" onclick="toggleExportDropdown(event,'kas')" aria-haspopup="true" aria-expanded="false" title="Unduh laporan Buku Kas">📤 Export ▾</button>
+                  <span class="export-menu" id="export-menu-kas" role="menu">
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('kas','xlsx')" title="Unduh laporan Buku Kas (Excel)">📊 Excel (.xlsx)</button>
+                    <button type="button" class="export-item" onclick="triggerExportLaporan('kas','pdf')" title="Unduh laporan Buku Kas (PDF)">📄 PDF</button>
+                    <button type="button" class="export-item doc-export-btn" onclick="triggerExportLaporan('kas','doc')" title="Unduh laporan Buku Kas (Word .docx)">📝 Word (.docx)</button>
+                  </span>
+                </span>
               </span>
             </div>
           </div>
@@ -1410,6 +1465,6 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="script.js?v=2.9.0"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="script.js?v=3.5.0"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3e50739df0532e2',t:'MTc4OTk1MTMyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
