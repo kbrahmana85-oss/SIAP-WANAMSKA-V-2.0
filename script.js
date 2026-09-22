@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.5.2"; 
+const APP_VERSION = "3.6.3"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -93,7 +93,9 @@ const READ_ONLY_FUNCS = new Set([
   'getDashboardData', 'getAbsenHistory', 'getKegiatanList', 'getAgendaList',
   'getInventarisList', 'getPeminjamanList', 'getKasData', 'getUserProfile', 'getUserList',
   'getNotificationList', 'getSystemLogs', 'getMateriFileList', 'getPotensiList',
-  'getKedaiList', 'getKedaiNextId', 'getHasilKedaiList'
+  'getKedaiList', 'getKedaiNextId', 'getHasilKedaiList',
+  'getPotensiGameProgres', 'getPotensiMateriList', 'getPotensiPapanSkor',
+  'getPotensiFolderStatus'
 ]);
 
 function isWriteFunc(name) {
@@ -664,7 +666,7 @@ function switchSection(sectionId, elementMenu) {
   else if (sectionId === 'section-kegiatan') loadKegiatan();
   else if (sectionId === 'section-agenda') loadAgenda();
   else if (sectionId === 'section-materi') closeMateriFilesContainer();
-  else if (sectionId === 'section-potensi') loadPotensi();
+  else if (sectionId === 'section-potensi') { loadPotensi(); if (typeof PotensiGame !== 'undefined') PotensiGame.init(); }
   else if (sectionId === 'section-kedai') loadKedai(); // POIN 1.h
   else if (sectionId === 'section-inventaris') loadInventaris();
   else if (sectionId === 'section-kas') loadKas();
