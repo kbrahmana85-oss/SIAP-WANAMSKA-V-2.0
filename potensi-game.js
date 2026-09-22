@@ -91,7 +91,7 @@ const POTENSI_BEKAL = {
     "Motto: <b>\u201CSatyaku Kudarmakan, Darmaku Kubaktikan\u201D</b>. Merah = keberanian, putih = kemurnian sikap, ucapan, dan perbuatan."
   ],
   "ramu-2": [
-    "<b>Dasa Dharma</b> = 10 janji sikap hidup pramuka. Nomor 1: Takwa kepada Tuhan Yang Maha Esa; nomor 10: Sucikan pikiran, perkataan, perbuatan.",
+    "<b>Dasa Dharma</b> = 10 janji sikap hidup pramuka. Nomor 1: Takwa kepada Tuhan Yang Maha Esa; nomor 9: Suci pikiran, perkataan, perbuatan.",
     "<b>Trisatya</b> = tiga janji Penggalang yang diucapkan saat pelantikan: menyanggupi Dasasila & Kode Kehormatan, memelihara Dasa Dharma, melaksanakan Tridarma.",
     "DD no. 5: <b>Rajin, terampil, dan gembira</b>. DD no. 8: <b>Amanah pada tanggung jawab dan dapat dipercaya</b>.",
     "Satu <b>regu</b> berisi 6–8 Penggalang, dipimpin Pimpinan Regu (PR) dan Wakil PR; beberapa regu membentuk <b>pasukan</b>."
@@ -140,12 +140,12 @@ const POTENSI_BEKAL = {
   ]
 };
 
-// [GAME-POTENSI] PANGKAT game — gelar kepramukaan sesuai total poin (0–450)
+// [GAME-POTENSI] PANGKAT game — gelar kepramukaan sesuai total poin (0–1000)
 const POTENSI_PANGKAT = [
-  { min: 350, nama: "Penggalang Garuda", ikon: "🦅" },
-  { min: 250, nama: "Penggalang Terap",  ikon: "⛰️" },
-  { min: 150, nama: "Penggalang Rakit",  ikon: "🧭" },
-  { min: 50,  nama: "Penggalang Ramu",   ikon: "🏕️" },
+  { min: 1000, nama: "Penggalang Hebat", ikon: "🌟" },
+  { min: 750, nama: "Penggalang Terap",  ikon: "⛰️" },
+  { min: 500, nama: "Penggalang Rakit",  ikon: "🧭" },
+  { min: 250, nama: "Penggalang Ramu",   ikon: "🏕️" },
   { min: 0,   nama: "Tamu Penggalang",   ikon: "🌱" }
 ];
 
@@ -228,7 +228,10 @@ const PotensiGame = (() => {
       const r = jw[q];
       if (r) { dijawab++; poin += (r.p || 0); if (r.b === 1) benar++; }
     });
-    return { total: all.length, dijawab, benar, poin, nilai: pct(poin, all.length * 10) };
+    // [v3.7.0] agregat arena soal tak terbatas (poin terus bertambah)
+    const A = jw._arena;
+    if (A) { poin += (A.poin || 0); benar += (A.benar || 0); dijawab += (A.dijawab || 0); }
+    return { total: all.length, dijawab, benar, poin, nilai: Math.min(100, pct(poin, all.length * 10)) };
   }
 
   function levelSelesai(g, L) {
@@ -269,9 +272,11 @@ const PotensiGame = (() => {
       if (grid) grid.innerHTML = `<p class="pg-error">Gagal memuat progres game: ${escapeHtml(err.message)}</p>`;
       return;
     }
-    // [v3.6.2] Tombol pantauan hanya untuk Admin
+    // [v3.6.2] Tombol pantauan & [v3.8.0] bank soal hanya untuk Admin
     const btnPantau = $('pg-btn-pantau');
     if (btnPantau && typeof userRole !== 'undefined' && userRole === 'Admin') btnPantau.style.display = 'inline-block';
+    const btnBank = $('pg-btn-bank');
+    if (btnBank && typeof userRole !== 'undefined' && userRole === 'Admin') btnBank.style.display = 'inline-block';
     renderLauncher();
   }
 
@@ -419,6 +424,9 @@ const PotensiGame = (() => {
       </div>
       <div class="pg-peta-aksi">
         <button class="btn pg-btn-secondary" onclick="PotensiGame.bukaMateri()">📖 Materi ${info.label}</button>
+        ${POTENSI_LEVELS[g].every(L => levelSelesai(g, L))
+          ? '<button class="btn pg-btn-main" style="width:auto;" onclick="PotensiGame.mulaiArena(&quot;&quot;)">♾️ Arena Soal Tak Terbatas — Soal Baru!</button>'
+          : `<small style="opacity:.8;">♾️ Arena soal tak terbatas terbuka setelah ke-3 level selesai</small>`}
       </div>
       <p class="pg-catatan">🔒 Anti-curang: jawaban diperiksa di server. 💾 Progres otomatis tersimpan — layar tertutup/terkunci pun bisa dilanjutkan kapan saja.</p>`;
   }
@@ -548,12 +556,83 @@ const PotensiGame = (() => {
         <p class="pg-pangkat-menuju">${pk.ikon} Pangkatmu: <b>${pk.nama}</b> (${tp} poin) • ${infoPk}</p>
         <div class="pg-hasil-aksi">
           <button class="btn pg-btn-secondary" onclick="PotensiGame.kembaliPeta()">🗺️ Peta Level</button>
+          <button class="btn pg-btn-secondary" onclick="PotensiGame.mulaiArena('${L.id}')">♾️ Main Ulang Level Ini — Soal Baru</button>
           ${next ? `<button class="btn pg-btn-main" onclick="PotensiGame.mulaiLevel('${next.id}')">▶ Level Berikut: ${next.judul}</button>` : '<button class="btn pg-btn-main" onclick="PotensiGame.kembaliPeta()">🏁 Golongan ini tuntas!</button>'}
         </div>
       </div>`;
   }
 
   function kembaliPeta() { renderPetaLevel(); }
+
+  // ---------------- ARENA SOAL TAK TERBATAS [v3.7.0] ----------------
+  let arena = null; // { ke }
+
+  async function mulaiArena(levelId) {
+    arena = { ke: 0, level: String(levelId || "") };
+    await muatArenaSoal();
+  }
+
+  async function muatArenaSoal() {
+    const g = golAktif;
+    const body = $('pg-body');
+    body.innerHTML = `<p class="pg-memeriksa">⏳ Menyiapkan soal baru dari server...</p>`;
+    try {
+      const s = await callAPI('getPotensiSoalAcak', [sessionToken, g, arena.level], { cache: false });
+      arena.ke++;
+      renderArenaSoal(s);
+    } catch (err) {
+      body.innerHTML = `<p class="pg-error">${escapeHtml(err.message)}</p><br><div style="text-align:center;"><button class="btn pg-btn-secondary" onclick="PotensiGame.kembaliPeta()">🗺️ Kembali</button> <button class="btn pg-btn-main" style="width:auto;" onclick="PotensiGame.mulaiArena(PotensiGame.levelArenaAktif())">↻ Coba Lagi</button></div>`;
+    }
+  }
+
+  function renderArenaSoal(s) {
+    const g = golAktif;
+    $('pg-topbar-judul').textContent = `♾️ Arena Tak Terbatas — Penggalang ${POTENSI_GOLONGAN[g].label}`;
+    $('pg-body').innerHTML = `
+      <div class="pg-quiz-progress">${arena.level ? `♾️ Arena Level ${arena.level} — ` : '♾️ Arena Golongan — '}Soal ke-${arena.ke} <span id="pg-streak" class="pg-streak">${streak >= 2 ? `🔥 ${streak}x beruntun!` : ''}</span><span class="pg-quiz-poin">+10 poin • kejar 1000!</span></div>
+      <div class="pg-bar"><div class="pg-bar-fill" style="width:100%;"></div></div>
+      <div class="pg-kartu-soal">
+        <p class="pg-soal-teks">${escapeHtml(s.t)}</p>
+        <div class="pg-opsi-wrap">
+          ${['a', 'b', 'c', 'd'].map(k => `<button class="pg-opsi" data-key="${k}" onclick="PotensiGame.jawabArena('${s.qid}','${k}')">${escapeHtml(s.o[k])}</button>`).join("")}
+        </div>
+        <div id="pg-umpan-balik"></div>
+      </div>
+      <p class="pg-catatan">♾️ Setiap soal selalu baru — jawab terus untuk menaikkan poin &amp; pangkat. <button class="pg-topbar-btn" onclick="PotensiGame.kembaliPeta()">🏁 Berhenti &amp; Kembali</button></p>`;
+  }
+
+  async function jawabArena(qid, pilihKey) {
+    const g = golAktif;
+    const tombol = document.querySelectorAll('.pg-opsi');
+    tombol.forEach(b => { b.disabled = true; if (b.dataset.key === pilihKey) b.classList.add('pg-dipilih'); });
+    const fb = $('pg-umpan-balik');
+    fb.innerHTML = `<p class="pg-memeriksa">⏳ Memeriksa jawaban...</p>`;
+    try {
+      const res = await callAPI('savePotensiJawab', [sessionToken, g, qid, pilihKey], { cache: false });
+      if (!progres[g]) progres[g] = {};
+      const A = progres[g]._arena || (progres[g]._arena = { dijawab: 0, benar: 0, poin: 0 });
+      A.dijawab++; if (res.benar) A.benar++; A.poin += (res.poin_didapat || 0);
+      if (res.benar) { streak++; bunyiBenar(); } else { streak = 0; bunyiSalah(); }
+      const st = $('pg-streak');
+      if (st) st.textContent = streak >= 2 ? `🔥 ${streak}x beruntun!` : '';
+      tombol.forEach(b => {
+        if (b.dataset.key === res.kunci) b.classList.add('pg-benar');
+        else if (b.dataset.key === pilihKey && !res.benar) b.classList.add('pg-salah');
+      });
+      const tp = totalPoin(); const pk = pangkatSekarang();
+      const bx = POTENSI_PANGKAT.find(x => x.min > tp);
+      fb.innerHTML = `
+        <div class="pg-verdik ${res.benar ? 'pg-verdik-benar' : 'pg-verdik-salah'}">${res.benar ? `✅ Benar! +${res.poin_didapat} poin` : '❌ Belum tepat — coba soal berikutnya!'}</div>
+        <div class="pg-pembahasan"><b>📖 Pembahasan:</b> ${escapeHtml(res.pembahasan || '-')}</div>
+        <div class="pg-pangkat-menuju" style="text-align:center; margin-bottom:10px;">${pk.ikon} Total <b>${tp}</b> poin • ${bx ? `${bx.min - tp} poin lagi menuju <b>${bx.nama}</b>` : 'Pangkat tertinggi tercapai!'}</div>
+        <button class="btn pg-btn-main" onclick="PotensiGame.soalBerikutnya()">Soal Berikutnya ▶</button>`;
+    } catch (err) {
+      fb.innerHTML = `<p class="pg-error">${escapeHtml(err.message)}</p>`;
+      tombol.forEach(b => { b.disabled = false; b.classList.remove('pg-dipilih'); });
+    }
+  }
+
+  function soalBerikutnya() { muatArenaSoal(); }
 
   // ---------------- MATERI DRIVE ----------------
   async function bukaMateri() {
@@ -637,6 +716,67 @@ const PotensiGame = (() => {
 
   function tutupPantau() { $('pg-modal-pantau').style.display = 'none'; }
 
+  // ---------------- BANK SOAL ADMIN (sheet "potensi_soal") [v3.8.0] ----------------
+  async function bukaBank() {
+    $('pg-modal-bank').style.display = 'flex';
+    await muatBankList();
+  }
+  function tutupBank() { $('pg-modal-bank').style.display = 'none'; }
+
+  async function muatBankList() {
+    const box = $('pgs-daftar');
+    box.innerHTML = `<p class="pg-memeriksa">⏳ Memuat bank soal...</p>`;
+    try {
+      const res = await callAPI('getPotensiSoalKelola', [sessionToken]);
+      const daftar = (res && res.list) || [];
+      const jml = $('pgs-jumlah');
+      if (jml) jml.textContent = daftar.length + ' soal di bank';
+      if (daftar.length === 0) { box.innerHTML = `<p class="pg-catatan" style="text-align:left;">Bank soal masih kosong — tambahkan soal pertama lewat formulir di atas. Soal bank otomatis dipakai arena (diprioritaskan sebelum soal generator).</p>`; return; }
+      box.innerHTML = daftar.map(d => `
+        <div class="pgs-item">
+          <div><b>${escapeHtml(d.pertanyaan)}</b><br>
+          <small>${escapeHtml(d.golongan)} • ${escapeHtml(d.level)} • kunci ${escapeHtml(d.kunci.toUpperCase())} — A: ${escapeHtml(d.opsi_a)} | B: ${escapeHtml(d.opsi_b)} | C: ${escapeHtml(d.opsi_c)} | D: ${escapeHtml(d.opsi_d)}</small></div>
+          <button class="pg-topbar-btn pg-topbar-tutup" onclick="PotensiGame.hapusBankSoal('${d.id_soal}')">🗑️</button>
+        </div>`).join("");
+    } catch (err) {
+      box.innerHTML = `<p class="pg-error">${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  async function simpanBankSoal() {
+    const payload = {
+      golongan: $('pgs-golongan').value,
+      level: $('pgs-level').value,
+      pertanyaan: $('pgs-tanya').value.trim(),
+      opsi_a: $('pgs-a').value.trim(),
+      opsi_b: $('pgs-b').value.trim(),
+      opsi_c: $('pgs-c').value.trim(),
+      opsi_d: $('pgs-d').value.trim(),
+      kunci: $('pgs-kunci').value,
+      pembahasan: $('pgs-bahas').value.trim()
+    };
+    if (!payload.pertanyaan || !payload.opsi_a || !payload.opsi_b || !payload.opsi_c || !payload.opsi_d) {
+      alert("Pertanyaan dan keempat opsi wajib diisi."); return;
+    }
+    try {
+      const res = await callAPI('savePotensiSoal', [sessionToken, payload], { cache: false });
+      showToast(res.message || "Soal tersimpan.");
+      ['pgs-tanya', 'pgs-a', 'pgs-b', 'pgs-c', 'pgs-d', 'pgs-bahas'].forEach(id => { $(id).value = ''; });
+      await muatBankList();
+    } catch (err) { alert(err.message); }
+  }
+
+  async function hapusBankSoal(id) {
+    if (!confirm("Hapus soal ini dari bank soal?")) return;
+    try {
+      const res = await callAPI('deletePotensiSoal', [sessionToken, id], { cache: false });
+      showToast(res.message || "Soal dihapus.");
+      await muatBankList();
+    } catch (err) { alert(err.message); }
+  }
+
+  function levelArenaAktif() { return arena ? arena.level : ""; }
+
   // Pulihkan setelah HP terkunci / berpindah aplikasi
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && quiz && $('pg-overlay').style.display !== 'none') {
@@ -647,7 +787,7 @@ const PotensiGame = (() => {
     }
   });
 
-  return { init, buka, tutup, mulaiLevel, jawab, lanjut, selesaiLevel, kembaliPeta, bukaMateri, tutupMateri, bukaPapanSkor, tutupPapanSkor, mulaiKuisDariBekal, toggleSuara, bukaPantau, tutupPantau, aktifkanLewatFolder };
+  return { init, buka, tutup, mulaiLevel, jawab, lanjut, selesaiLevel, kembaliPeta, bukaMateri, tutupMateri, bukaPapanSkor, tutupPapanSkor, mulaiKuisDariBekal, toggleSuara, bukaPantau, tutupPantau, aktifkanLewatFolder, mulaiArena, jawabArena, soalBerikutnya, bukaBank, tutupBank, simpanBankSoal, hapusBankSoal, levelArenaAktif };
 })();
 
 // [v3.6.4] pgToggleArsip dihapus bersama fitur penugasan.
