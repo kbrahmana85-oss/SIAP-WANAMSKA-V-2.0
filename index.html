@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.6.4">
+    <link rel="stylesheet" href="style.css?v=3.8.0">
 </head>
 <body>
 
@@ -231,6 +231,10 @@
           </div>
 
           <div class="dashboard-widgets">
+            <div class="widget-box" id="widget-leaderboard-potensi" style="display:none;">
+              <h3 style="color: var(--color-primary); border-bottom: 2px solid var(--color-light-brown); padding-bottom: 5px; font-size: 1rem;">🏆 Leaderboard Kenali Potensimu</h3>
+              <div id="dash-potensi-board"><p class="pg-memeriksa">⏳ Memuat...</p></div>
+            </div>
             <div class="widget-box">
               <h3 style="color: var(--color-primary); border-bottom: 2px solid var(--color-light-brown); padding-bottom: 5px; font-size: 1rem;">Waktu Saat Ini</h3>
               <div class="live-timer" id="widget-timer">00:00:00</div>
@@ -514,6 +518,7 @@
             <div class="pg-launcher-actions">
               <button class="btn pg-btn-secondary" id="pg-btn-papan" onclick="PotensiGame.bukaPapanSkor()">🏆 Papan Skor</button>
               <button class="btn pg-btn-secondary" id="pg-btn-pantau" onclick="PotensiGame.bukaPantau()" style="display:none;">📊 Pantauan Siswa</button>
+              <button class="btn pg-btn-secondary" id="pg-btn-bank" onclick="PotensiGame.bukaBank()" style="display:none;">➕ Bank Soal</button>
             </div>
           </div>
 
@@ -542,6 +547,34 @@
             <div class="modal-box" style="max-width: 640px;">
               <div class="modal-header"><h3 style="color: var(--color-primary);">🏆 Papan Skor Kenali Potensimu</h3><span class="modal-close" onclick="PotensiGame.tutupPapanSkor()">&times;</span></div>
               <div class="modal-body" id="pg-papan-isi"></div>
+            </div>
+          </div>
+          <div id="pg-modal-bank" class="modal-overlay">
+            <div class="modal-box" style="max-width: 760px;">
+              <div class="modal-header"><h3 style="color: var(--color-primary);">➕ Bank Soal Game Kenali Potensimu <small id="pgs-jumlah" style="font-size:.75em; color:var(--color-text-muted);"></small></h3><span class="modal-close" onclick="PotensiGame.tutupBank()">&times;</span></div>
+              <div class="modal-body">
+                <p class="pg-catatan" style="text-align:left; margin-top:0;">Soal di sini otomatis dipakai <b>♾️ Arena</b> sesuai golongan &amp; level (diprioritaskan sebelum soal generator; tiap siswa hanya menjawab sekali).</p>
+                <div class="form-group"><label>Golongan</label>
+                  <select id="pgs-golongan" class="form-control"><option value="ramu">Ramu</option><option value="rakit">Rakit</option><option value="terap">Terap</option></select></div>
+                <div class="form-group"><label>Level</label>
+                  <select id="pgs-level" class="form-control">
+                    <option value="semua">Semua level golongan ini</option>
+                    <option value="ramu-1">Ramu — Level 1</option><option value="ramu-2">Ramu — Level 2</option><option value="ramu-3">Ramu — Level 3</option>
+                    <option value="rakit-1">Rakit — Level 1</option><option value="rakit-2">Rakit — Level 2</option><option value="rakit-3">Rakit — Level 3</option>
+                    <option value="terap-1">Terap — Level 1</option><option value="terap-2">Terap — Level 2</option><option value="terap-3">Terap — Level 3</option>
+                  </select></div>
+                <div class="form-group"><label>Pertanyaan</label><textarea id="pgs-tanya" class="form-control" rows="2" placeholder="Tulis pertanyaan di sini"></textarea></div>
+                <div class="form-group"><label>Opsi A</label><input id="pgs-a" class="form-control" placeholder="Teks opsi A"></div>
+                <div class="form-group"><label>Opsi B</label><input id="pgs-b" class="form-control" placeholder="Teks opsi B"></div>
+                <div class="form-group"><label>Opsi C</label><input id="pgs-c" class="form-control" placeholder="Teks opsi C"></div>
+                <div class="form-group"><label>Opsi D</label><input id="pgs-d" class="form-control" placeholder="Teks opsi D"></div>
+                <div class="form-group"><label>Kunci Jawaban</label>
+                  <select id="pgs-kunci" class="form-control"><option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option></select></div>
+                <div class="form-group"><label>Pembahasan (opsional — tampil setelah dijawab)</label><textarea id="pgs-bahas" class="form-control" rows="2" placeholder="Penjelasan materi untuk siswa"></textarea></div>
+                <button class="btn btn-gold btn-full" onclick="PotensiGame.simpanBankSoal()" style="padding:12px; font-weight:700;">SIMPAN KE BANK SOAL</button>
+                <h4 style="margin:18px 0 8px; color:var(--color-primary);">Daftar Soal</h4>
+                <div id="pgs-daftar"></div>
+              </div>
             </div>
           </div>
           <div id="pg-modal-pantau" class="modal-overlay">
@@ -1474,6 +1507,6 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.6.4"></script><script src="script.js?v=3.6.4"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3ef062c7a7d87dd',t:'MTc5MDA1NjE0Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.8.0"></script><script src="script.js?v=3.8.0"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3ef30ab2d578813',t:'MTc5MDA1Nzg4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
