@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.5.2">
+    <link rel="stylesheet" href="style.css?v=3.6.2">
 </head>
 <body>
 
@@ -503,12 +503,60 @@
             <button class="btn btn-gold" id="btn-tambah-potensi-trigger" onclick="openPotensiModal()">+ Tambah Penugasan</button>
           </div>
 
-          <div id="potensi-container">
+          <!-- [GAME-POTENSI] Game gamifikasi Kenali Potensimu (SKU Penggalang) -->
+          <div id="potensi-game-root">
+            <div class="pg-hero">
+              <h2>🎮 Game Kenali Potensimu</h2>
+              <p>Belajar SKU Penggalang lewat permainan berjenjang: <b>Ramu • Rakit • Terap</b>. Pilih golonganmu, kumpulkan poin, dan raih nilai terbaik!</p>
+            </div>
+            <div class="pg-golongan-grid" id="pg-golongan-grid">
+              <p class="pg-memeriksa">⏳ Memuat game...</p>
+            </div>
+            <div class="pg-launcher-actions">
+              <button class="btn pg-btn-secondary" id="pg-btn-papan" onclick="PotensiGame.bukaPapanSkor()">🏆 Papan Skor</button>
+              <button class="btn pg-btn-secondary" id="pg-btn-pantau" onclick="PotensiGame.bukaPantau()" style="display:none;">📊 Pantauan Siswa</button>
+              <button class="btn pg-btn-secondary" id="pg-btn-arsip" onclick="pgToggleArsip()">📚 Arsip Penugasan</button>
+            </div>
+          </div>
+
+          <div id="potensi-container" style="display:none;">
             <div class="potensi-empty-box" id="potensi-empty-state">
               <div class="potensi-empty-title">=Segera=</div>
               <p style="color: var(--color-text-muted); font-size: 0.95rem;">Modul Asesmen &amp; Pemetaan Potensi Anggota Pramuka Penggalang Wanamska sedang dipersiapkan.</p>
             </div>
             <div class="potensi-grid" id="potensi-grid-list" style="display: none;"></div>
+          </div>
+
+          <!-- [GAME-POTENSI] Overlay game (layar penuh) + modal materi & papan skor -->
+          <div id="pg-overlay">
+            <div class="pg-topbar">
+              <span class="pg-topbar-brand">🎮 Kenali Potensimu</span>
+              <span id="pg-topbar-judul" class="pg-topbar-judul"></span>
+              <span class="pg-topbar-aksi">
+                <button class="pg-topbar-btn" id="pg-btn-suara" onclick="PotensiGame.toggleSuara()" title="Bunyi aktif/nonaktif">🔊</button>
+                <button class="pg-topbar-btn" onclick="PotensiGame.bukaMateri()">📖 Materi</button>
+                <button class="pg-topbar-btn pg-topbar-tutup" onclick="PotensiGame.tutup()" title="Keluar dari game">✕</button>
+              </span>
+            </div>
+            <div class="pg-body" id="pg-body"></div>
+          </div>
+          <div id="pg-modal-materi" class="modal-overlay">
+            <div class="modal-box" style="max-width: 560px;">
+              <div class="modal-header"><h3 style="color: var(--color-primary);" id="pg-materi-judul">Materi</h3><span class="modal-close" onclick="PotensiGame.tutupMateri()">&times;</span></div>
+              <div class="modal-body" id="pg-materi-isi"></div>
+            </div>
+          </div>
+          <div id="pg-modal-papan" class="modal-overlay">
+            <div class="modal-box" style="max-width: 640px;">
+              <div class="modal-header"><h3 style="color: var(--color-primary);">🏆 Papan Skor Kenali Potensimu</h3><span class="modal-close" onclick="PotensiGame.tutupPapanSkor()">&times;</span></div>
+              <div class="modal-body" id="pg-papan-isi"></div>
+            </div>
+          </div>
+          <div id="pg-modal-pantau" class="modal-overlay">
+            <div class="modal-box" style="max-width: 900px;">
+              <div class="modal-header"><h3 style="color: var(--color-primary);">📊 Pantauan Kemampuan Siswa — Game Kenali Potensimu</h3><span class="modal-close" onclick="PotensiGame.tutupPantau()">&times;</span></div>
+              <div class="modal-body" id="pg-pantau-isi"></div>
+            </div>
           </div>
         </section>
 
@@ -1466,6 +1514,6 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="script.js?v=3.5.2"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3e546f9cd42f8d2',t:'MTc4OTk1MzkzOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.6.2"></script><script src="script.js?v=3.6.2"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3eeb0cfc91a8988',t:'MTc5MDA1MjY0Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
