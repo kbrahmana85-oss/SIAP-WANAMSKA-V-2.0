@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.6.4"; 
+const APP_VERSION = "3.8.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -95,7 +95,7 @@ const READ_ONLY_FUNCS = new Set([
   'getNotificationList', 'getSystemLogs', 'getMateriFileList', 'getPotensiList',
   'getKedaiList', 'getKedaiNextId', 'getHasilKedaiList',
   'getPotensiGameProgres', 'getPotensiMateriList', 'getPotensiPapanSkor',
-  'getPotensiFolderStatus'
+  'getPotensiFolderStatus', 'getPotensiSoalKelola'
 ]);
 
 function isWriteFunc(name) {
@@ -2394,7 +2394,34 @@ function loadAbsenHistory() {
 // === DASBOR & AGENDA                                                   ===
 // =========================================================================
 
+// [v3.7.0] Leaderboard Game Kenali Potensimu di Dashboard — hanya Penggalang
+// & Dewan Penggalang yang melihatnya (Admin memakai Pantauan Siswa di modul game).
+function muatLeaderboardPotensi() {
+  const w = document.getElementById('widget-leaderboard-potensi');
+  if (!w) return;
+  if (userRole !== 'Penggalang' && userRole !== 'Dewan Penggalang') { w.style.display = 'none'; return; }
+  w.style.display = 'block';
+  const box = document.getElementById('dash-potensi-board');
+  if (!box) return;
+  box.innerHTML = '<p class="pg-memeriksa">⏳ Memuat papan skor...</p>';
+  callAPI('getPotensiPapanSkor', [sessionToken])
+    .then(daftar => {
+      if (!daftar || daftar.length === 0) {
+        box.innerHTML = '<p style="font-size:.85rem; color:var(--color-text-muted);">Belum ada yang bermain. Buka menu <b>Kenali Potensimu</b> dan jadilah yang pertama! 🎮</p>';
+        return;
+      }
+      const medali = ['🥇', '🥈', '🥉'];
+      box.innerHTML = '<table class="pg-papan-tabel"><thead><tr><th>#</th><th>Nama</th><th>Poin</th><th>Benar</th></tr></thead><tbody>' +
+        daftar.slice(0, 10).map((d, i) =>
+          `<tr class="${d.user_id === userId ? 'pg-baris-aku' : ''}"><td>${medali[i] || (i + 1)}</td><td>${escapeHtml(d.nama)}</td><td><b>${d.total_skor}</b></td><td>${d.jumlah_benar}/${d.jumlah_soal}</td></tr>`
+        ).join("") + '</tbody></table>' +
+        '<p style="font-size:.72rem; color:var(--color-text-muted); margin:6px 0 0;">Kumpulkan poin di menu Kenali Potensimu → kejar pangkat 🌟 Penggalang Hebat (1000 poin)!</p>';
+    })
+    .catch(() => { box.innerHTML = '<p style="font-size:.85rem; color:var(--color-text-muted);">Papan skor belum tersedia saat ini.</p>'; });
+}
+
 function loadDashboard() {
+  try { muatLeaderboardPotensi(); } catch (e) {} // [v3.7.0] leaderboard game (Penggalang & Dewan)
   // [FIX-3] Tampilkan cache instan dulu (jika ada), lalu segarkan dari server
   try {
     var cached = getCachedDashboard();
