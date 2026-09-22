@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.6.3"; 
+const APP_VERSION = "3.6.4"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -666,7 +666,7 @@ function switchSection(sectionId, elementMenu) {
   else if (sectionId === 'section-kegiatan') loadKegiatan();
   else if (sectionId === 'section-agenda') loadAgenda();
   else if (sectionId === 'section-materi') closeMateriFilesContainer();
-  else if (sectionId === 'section-potensi') { loadPotensi(); if (typeof PotensiGame !== 'undefined') PotensiGame.init(); }
+  else if (sectionId === 'section-potensi') { if (typeof PotensiGame !== 'undefined') PotensiGame.init(); }
   else if (sectionId === 'section-kedai') loadKedai(); // POIN 1.h
   else if (sectionId === 'section-inventaris') loadInventaris();
   else if (sectionId === 'section-kas') loadKas();
@@ -822,7 +822,6 @@ function setupRBACUI(role) {
   document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'none';
   document.getElementById('btn-tambah-agenda-trigger').style.display = 'none';
   document.getElementById('btn-tambah-materi-trigger').style.display = 'none';
-  document.getElementById('btn-tambah-potensi-trigger').style.display = 'none';
   document.getElementById('btn-tambah-kas').style.display = 'none';
   document.getElementById('btn-tambah-inventaris-trigger').style.display = 'none';
   document.getElementById('btn-tambah-peminjaman-trigger').style.display = 'none';
@@ -861,7 +860,6 @@ function setupRBACUI(role) {
 
   if (role === "Admin" || role === "Pembina") {
     document.getElementById('btn-tambah-materi-trigger').style.display = 'inline-block';
-    document.getElementById('btn-tambah-potensi-trigger').style.display = 'inline-block';
   }
 
   if (role === "Admin" || isSpecialKas) {
@@ -2103,103 +2101,8 @@ function actionDownloadMateri(downloadUrl, viewUrl, fileName) {
 // === MODUL KENALI POTENSIMU                                            ===
 // =========================================================================
 
-function loadPotensi() {
-  const emptyState = document.getElementById('potensi-empty-state');
-  const grid = document.getElementById('potensi-grid-list');
-  if (!grid || !emptyState) return;
-
-  callAPI('getPotensiList', [sessionToken])
-    .then(res => {
-      if (res.success) {
-        if (!res.list || res.list.length === 0) {
-          emptyState.style.display = 'block';
-          grid.style.display = 'none';
-          return;
-        }
-
-        emptyState.style.display = 'none';
-        grid.style.display = 'grid';
-        grid.innerHTML = "";
-
-        const canManage = (userRole === "Admin" || userRole === "Pembina");
-
-        res.list.forEach(item => {
-          let deleteBtn = canManage ? `<button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem;" onclick="actionDeletePotensi('${item.id_potensi}')">Hapus</button>` : "";
-          
-          grid.innerHTML += `
-            <div class="potensi-card">
-              <div>
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                  <span class="badge badge-hadir">${escapeHtml(item.kategori)}</span>
-                  <span style="font-size:0.75rem; color:var(--color-text-muted);">${escapeHtml(item.id_potensi)}</span>
-                </div>
-                <h3 style="font-size:1.1rem; color:var(--color-primary); margin-bottom:8px;">${escapeHtml(item.judul)}</h3>
-                <p style="font-size:0.8rem; color:var(--color-text-muted); margin-bottom:15px;">Dibuat: ${formatDateString(item.created_at)}</p>
-              </div>
-              <div style="display:flex; gap:8px; justify-content:space-between; align-items:center;">
-                <a href="${escapeHtml(item.link_url)}" target="_blank" rel="noopener" class="btn btn-gold" style="flex:1; padding:8px 12px; font-size:0.85rem; text-decoration:none;">
-                  🚀 Buka Asesmen
-                </a>
-                ${deleteBtn}
-              </div>
-            </div>`;
-        });
-      }
-    })
-    .catch(err => showToast(err.message, true));
-}
-
-function openPotensiModal() {
-  document.getElementById('pot-id').value = "";
-  document.getElementById('pot-judul').value = "";
-  document.getElementById('pot-link-url').value = "";
-  document.getElementById('modal-potensi').style.display = 'flex';
-}
-
-function closePotensiModal() {
-  document.getElementById('modal-potensi').style.display = 'none';
-}
-
-function actionSavePotensi() {
-  const payload = {
-    id_potensi: document.getElementById('pot-id').value,
-    judul: document.getElementById('pot-judul').value.trim(),
-    kategori: document.getElementById('pot-kategori').value,
-    link_url: document.getElementById('pot-link-url').value.trim()
-  };
-
-  if (!payload.judul || !payload.link_url) {
-    showToast("Judul dan Link URL Asesmen wajib diisi!", true);
-    return;
-  }
-
-  setLoader(true, "Menyimpan penugasan asesmen...");
-  callAPI('savePotensi', [sessionToken, payload])
-    .then(res => {
-      setLoader(false);
-      if (res.success) {
-        showToast(res.message);
-        closePotensiModal();
-        loadPotensi();
-        loadNotifications(false);
-      } else {
-        showToast(res.message, true);
-      }
-    })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
-}
-
-function actionDeletePotensi(idPotensi) {
-  if (!confirm("Apakah Anda yakin ingin menghapus penugasan asesmen ini?")) return;
-  setLoader(true, "Menghapus penugasan...");
-  callAPI('deletePotensi', [sessionToken, idPotensi])
-    .then(res => {
-      setLoader(false);
-      showToast(res.message);
-      loadPotensi();
-    })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
-}
+// [v3.6.4] Fungsi penugasan potensi (loadPotensi/openPotensiModal/closePotensiModal/
+// actionSavePotensi/actionDeletePotensi) dihapus bersama fiturnya.
 
 // =========================================================================
 // === KAMERA (SELFIE ABSENSI) ANTI-MIRRORING                            ===
