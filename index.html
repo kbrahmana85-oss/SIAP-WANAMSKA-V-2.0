@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.6.3">
+    <link rel="stylesheet" href="style.css?v=3.6.4">
 </head>
 <body>
 
@@ -500,7 +500,6 @@
         <section id="section-potensi" class="app-section">
           <div class="section-header">
             <h1>Kenali Potensimu</h1>
-            <button class="btn btn-gold" id="btn-tambah-potensi-trigger" onclick="openPotensiModal()">+ Tambah Penugasan</button>
           </div>
 
           <!-- [GAME-POTENSI] Game gamifikasi Kenali Potensimu (SKU Penggalang) -->
@@ -515,17 +514,10 @@
             <div class="pg-launcher-actions">
               <button class="btn pg-btn-secondary" id="pg-btn-papan" onclick="PotensiGame.bukaPapanSkor()">🏆 Papan Skor</button>
               <button class="btn pg-btn-secondary" id="pg-btn-pantau" onclick="PotensiGame.bukaPantau()" style="display:none;">📊 Pantauan Siswa</button>
-              <button class="btn pg-btn-secondary" id="pg-btn-arsip" onclick="pgToggleArsip()">📚 Arsip Penugasan</button>
             </div>
           </div>
 
-          <div id="potensi-container" style="display:none;">
-            <div class="potensi-empty-box" id="potensi-empty-state">
-              <div class="potensi-empty-title">=Segera=</div>
-              <p style="color: var(--color-text-muted); font-size: 0.95rem;">Modul Asesmen &amp; Pemetaan Potensi Anggota Pramuka Penggalang Wanamska sedang dipersiapkan.</p>
-            </div>
-            <div class="potensi-grid" id="potensi-grid-list" style="display: none;"></div>
-          </div>
+          <!-- [v3.6.4] Fitur penugasan dihapus — modul murni game gamifikasi -->
 
           <!-- [GAME-POTENSI] Overlay game (layar penuh) + modal materi & papan skor -->
           <div id="pg-overlay">
@@ -1242,39 +1234,7 @@
   </div>
 
   <!-- MODAL PENUGASAN KENALI POTENSIMU -->
-  <div id="modal-potensi" class="modal-overlay">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 id="potensi-modal-title" style="color: var(--color-primary);">Form Penugasan Asesmen Potensi</h3>
-        <span class="modal-close" onclick="closePotensiModal()">&times;</span>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="pot-id">
-        <div class="form-group">
-          <label>ID Penugasan (Otomatis)</label>
-          <input type="text" id="pot-id-display" class="form-control" value="[Otomatis]" readonly style="background-color: #EEE;">
-        </div>
-        <div class="form-group">
-          <label>Judul Asesmen / Penugasan</label>
-          <input type="text" id="pot-judul" class="form-control" placeholder="Contoh: Tes Minat Kepemimpinan Penggalang" required>
-        </div>
-        <div class="form-group">
-          <label>Kategori Sasaran</label>
-          <select id="pot-kategori" class="form-control" required>
-            <option value="Penggalang">Penggalang</option>
-            <option value="Dewan Penggalang">Dewan Penggalang</option>
-            <option value="Penggalang dan Dewan Penggalang">Penggalang dan Dewan Penggalang</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Link URL Asesmen (Web App / Google Form / dsb)</label>
-          <input type="url" id="pot-link-url" class="form-control" placeholder="https://..." required>
-        </div>
-        <button class="btn btn-gold btn-full" onclick="actionSavePotensi()" style="padding: 12px; font-weight: 700;">SIMPAN PENUGASAN</button>
-      </div>
-    </div>
-  </div>
-
+    <!-- [v3.6.4] Modal form penugasan dihapus -->
   <!-- MODAL FORM TAMBAH DOKUMENTASI KEGIATAN -->
   <div id="modal-kegiatan" class="modal-overlay">
     <div class="modal-box">
@@ -1514,6 +1474,6 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.6.3"></script><script src="script.js?v=3.6.3"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3eebc0058f4ce79',t:'MTc5MDA1MzEwNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.6.4"></script><script src="script.js?v=3.6.4"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3ef062c7a7d87dd',t:'MTc5MDA1NjE0Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
