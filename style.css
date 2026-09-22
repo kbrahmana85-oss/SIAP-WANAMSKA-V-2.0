@@ -2173,3 +2173,10 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
 .pg-gerbang .pg-btn-main { max-width: 360px; margin: 0 auto; }
 .pg-gerbang-tunggu { border-style: solid; opacity: .95; }
 .pg-link-folder { color: var(--color-primary); word-break: break-all; font-size: .8rem; }
+
+/* [3.11] Bank soal admin (v3.8.0) */
+.pgs-item {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  border: 1px solid rgba(128,128,128,.25); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
+}
+.pgs-item small { color: var(--color-text-muted); line-height: 1.5; }
