@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.9.1">
+    <link rel="stylesheet" href="style.css?v=3.10.0">
 </head>
 <body>
 
@@ -234,6 +234,33 @@
             <div class="card-stat danger" id="card-dash-kas" style="display: none;">
               <h3>Saldo Kas</h3>
               <div class="val" style="font-size: 1.3rem;" id="dash-saldo-kas">Rp 0</div>
+            </div>
+          </div>
+
+          <!-- [v3.10.0] STATISTIK PENGGUNA (KHUSUS ADMIN - tampil lewat setupRBACUI) -->
+          <div class="widget-box" id="card-dash-statistik" style="display: none;">
+            <h3 style="color: var(--color-primary); border-bottom: 2px solid var(--color-light-brown); padding-bottom: 5px; font-size: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+              <span>📈 Statistik Pengguna</span>
+              <span id="stat-diperbarui" style="font-size: 0.62rem; color: #8A6D4F; font-weight: 400;"></span>
+            </h3>
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+              <div style="text-align: center; min-width: 92px;">
+                <div id="stat-total-pengguna" style="font-size: 2rem; font-weight: 800; color: var(--color-primary); line-height: 1.1;">0</div>
+                <div style="font-size: 0.7rem; color: #8A6D4F;">Pengguna Pernah Login</div>
+              </div>
+              <div style="flex: 1; min-width: 150px;">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;">
+                  <span style="background: #FAF4EE; border: 1px solid var(--color-light-brown); border-radius: 20px; padding: 2px 10px; font-size: 0.68rem; font-weight: 700; color: var(--color-primary);">🔑 Total Login: <span id="stat-total-login">0</span></span>
+                  <span style="background: #FAF4EE; border: 1px solid var(--color-light-brown); border-radius: 20px; padding: 2px 10px; font-size: 0.68rem; font-weight: 700; color: var(--color-primary);">📅 Hari Ini: <span id="stat-hari-ini">0</span></span>
+                  <span style="background: #FAF4EE; border: 1px solid var(--color-light-brown); border-radius: 20px; padding: 2px 10px; font-size: 0.68rem; font-weight: 700; color: var(--color-primary);">⚡ Aktif 7 Hari: <span id="stat-aktif-7">0</span></span>
+                </div>
+                <div style="font-size: 0.66rem; color: #8A6D4F;">Kumulatif pengguna non-Admin yang pernah login &mdash; dibaca langsung dari Log Aktivitas, pembaruan otomatis tiap 60 detik.</div>
+              </div>
+            </div>
+            <canvas id="canvas-statistik" style="width: 100%; height: 160px; margin-top: 8px;"></canvas>
+            <div style="display: flex; gap: 14px; justify-content: center; font-size: 0.66rem; color: #8A6D4F; margin-top: 2px;">
+              <span><span style="display: inline-block; width: 10px; height: 10px; background: #E2A745; border-radius: 2px; margin-right: 4px;"></span>Login per hari</span>
+              <span><span style="display: inline-block; width: 14px; height: 3px; background: #5D4037; border-radius: 2px; margin-right: 4px; vertical-align: middle;"></span>Pengguna kumulatif</span>
             </div>
           </div>
 
@@ -1517,6 +1544,6 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.9.1"></script><script src="script.js?v=3.9.1"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3fdab636bf8ce49',t:'MTc5MDIwOTcxMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.10.0"></script><script src="script.js?v=3.10.0"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4005f0f5ad22d50',t:'MTc5MDIzODA0MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
