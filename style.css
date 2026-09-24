@@ -2180,3 +2180,27 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
   border: 1px solid rgba(128,128,128,.25); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
 }
 .pgs-item small { color: var(--color-text-muted); line-height: 1.5; }
+
+/* [3.12] Banner ulang tahun (v3.9.0) — muncul hanya di hari H, berkedip lembut */
+.ultah-banner {
+  background: linear-gradient(135deg, #ffd982, #e2a745);
+  border: 2px solid #c98a2b;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  color: #24120B;
+  box-shadow: 0 6px 18px rgba(226,167,69,.45);
+  animation: ultahKedip 1.4s ease-in-out infinite;
+}
+@keyframes ultahKedip {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(226,167,69,.35); filter: brightness(1); }
+  50%      { box-shadow: 0 0 22px 6px rgba(226,167,69,.85); filter: brightness(1.07); }
+}
+.ultah-judul { font-weight: 900; font-size: 1.05rem; text-align: center; letter-spacing: .5px; }
+.ultah-item { font-size: .98rem; margin-top: 10px; line-height: 1.6; text-align: center; }
+.ultah-kelas { font-size: .85rem; opacity: .85; }
+.ultah-motivasi {
+  margin-top: 12px; text-align: center; font-style: italic; font-weight: 700;
+  font-size: .9rem; border-top: 1px dashed rgba(36,18,11,.4); padding-top: 10px;
+}
+@media (prefers-reduced-motion: reduce) { .ultah-banner { animation: none; } }
