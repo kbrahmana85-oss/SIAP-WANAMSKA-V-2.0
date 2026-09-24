@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.9.1"; 
+const APP_VERSION = "3.10.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -661,6 +661,10 @@ function switchSection(sectionId, elementMenu) {
     try { stopCamera(); } catch (e) {}
   }
 
+  // [v3.10.0] timer statistik pengguna hanya hidup saat Dashboard aktif
+  if (sectionId === 'section-dashboard') { try { mulaiTimerStatistik(); } catch (e) {} }
+  else { try { hentikanTimerStatistik(); } catch (e) {} }
+
   if (sectionId === 'section-dashboard') loadDashboard();
   else if (sectionId === 'section-absensi') loadAbsenHistory();
   else if (sectionId === 'section-kegiatan') loadKegiatan();
@@ -782,6 +786,7 @@ function actionLogout() {
   if (!confirm("Apakah Anda yakin ingin keluar dari sistem?")) return;
   callAPI('logoutUser', [sessionToken]).catch(() => {});
   sessionStorage.clear();
+  try { hentikanTimerStatistik(); } catch (e) {} // [v3.10.0]
   sessionToken = ""; userRole = ""; userId = ""; currentUser = null;
   
   document.getElementById('btn-lonceng').style.display = 'none';
@@ -832,6 +837,7 @@ function setupRBACUI(role) {
 
   document.getElementById('card-dash-kas').style.display = 'none';
   document.getElementById('card-dash-kedai-link').style.display = 'none';
+  document.getElementById('card-dash-statistik').style.display = 'none'; // [v3.10.0]
   document.getElementById('export-absensi-box').style.display = 'none';
   document.getElementById('export-inventaris-box').style.display = 'none';
   document.getElementById('export-kas-box').style.display = 'none';
@@ -882,6 +888,9 @@ function setupRBACUI(role) {
     
     document.getElementById('card-dash-kas').style.display = 'flex';
     document.getElementById('card-dash-kedai-link').style.display = 'flex';
+    // [v3.10.0] Statistik Pengguna: kartu + grafik realtime khusus Admin
+    document.getElementById('card-dash-statistik').style.display = 'block';
+    try { muatStatistikPengguna(); mulaiTimerStatistik(); } catch (e) {}
     document.getElementById('export-absensi-box').style.display = 'block';
     document.getElementById('export-inventaris-box').style.display = 'block';
     document.getElementById('export-kas-box').style.display = 'block';
@@ -2423,6 +2432,7 @@ function muatLeaderboardPotensi() {
 function loadDashboard() {
   try { muatLeaderboardPotensi(); } catch (e) {} // [v3.7.0] leaderboard game (Penggalang & Dewan)
   try { muatUcapanUlangTahun(); } catch (e) {}   // [v3.9.0] ucapan ulang tahun (semua user)
+  try { if (userRole === "Admin") muatStatistikPengguna(); } catch (e) {} // [v3.10.0] statistik pengguna (Admin)
   // [FIX-3] Tampilkan cache instan dulu (jika ada), lalu segarkan dari server
   try {
     var cached = getCachedDashboard();
@@ -2441,6 +2451,101 @@ function loadDashboard() {
       }
     })
     .catch(err => showToast(err.message, true));
+}
+
+// =========================================================================
+// === [v3.10.0] STATISTIK PENGGUNA (DASHBOARD ADMIN - REALTIME)         ===
+// === Sumber: sheet log (aksi LOGIN / LOGIN_BIOMETRIC, tanpa Admin).    ===
+// =========================================================================
+var __statTimer = null;
+
+function muatStatistikPengguna() {
+  if (userRole !== "Admin") return;
+  callAPI('getStatistikPengguna', [sessionToken], { cache: false })
+    .then(res => { if (res && res.success) renderStatistikPengguna(res); })
+    .catch(() => {});
+}
+
+function renderStatistikPengguna(res) {
+  const card = document.getElementById('card-dash-statistik');
+  if (!card) return;
+  const el = id => document.getElementById(id);
+  el('stat-total-pengguna').innerText = res.totalPengguna || 0;
+  el('stat-total-login').innerText = res.totalLogin || 0;
+  el('stat-hari-ini').innerText = res.hariIni || 0;
+  el('stat-aktif-7').innerText = res.aktif7Hari || 0;
+  const up = el('stat-diperbarui');
+  if (up) {
+    const kini = new Date();
+    up.innerText = "Diperbarui " + kini.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  gambarGrafikStatistik(res.perHari || [], res.kumulatif || []);
+}
+
+function gambarGrafikStatistik(perHari, kumulatif) {
+  const cv = document.getElementById('canvas-statistik');
+  if (!cv || !cv.clientWidth) return;
+  const ratio = window.devicePixelRatio || 1;
+  const W = cv.clientWidth, H = 160;
+  cv.width = Math.round(W * ratio); cv.height = Math.round(H * ratio);
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const padL = 26, padR = 8, padT = 10, padB = 20;
+  const gw = W - padL - padR, gh = H - padT - padB;
+  const n = perHari.length || 14;
+  const maxKum = Math.max(1, ...kumulatif.map(d => d.total), ...perHari.map(d => d.jumlah));
+  ctx.strokeStyle = "#EFE6DA"; ctx.lineWidth = 1;
+  ctx.font = "9px sans-serif";
+  for (let g = 0; g <= 2; g++) {
+    const y = padT + gh * g / 2;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = "#8A6D4F";
+    ctx.fillText(String(Math.round(maxKum * (1 - g / 2))), 2, y + 3);
+  }
+  const bw = gw / n;
+  perHari.forEach((d, i) => {
+    const h = gh * (d.jumlah / maxKum);
+    const x = padL + i * bw + bw * 0.18, bwd = Math.max(2, bw * 0.64);
+    const y = padT + gh - h, r = Math.min(3, bwd / 2);
+    ctx.fillStyle = "#E2A745";
+    ctx.beginPath();
+    ctx.moveTo(x, padT + gh);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.lineTo(x + bwd - r, y); ctx.quadraticCurveTo(x + bwd, y, x + bwd, y + r);
+    ctx.lineTo(x + bwd, padT + gh); ctx.closePath(); ctx.fill();
+    if (i % 2 === 0 || n <= 8) {
+      ctx.fillStyle = "#8A6D4F"; ctx.font = "8px sans-serif";
+      ctx.fillText(d.tanggal.slice(8, 10) + "/" + d.tanggal.slice(5, 7), padL + i * bw + bw / 2 - 8, H - 6);
+    }
+  });
+  if (kumulatif.length) {
+    ctx.strokeStyle = "#5D4037"; ctx.lineWidth = 2; ctx.beginPath();
+    kumulatif.forEach((d, i) => {
+      const x = padL + i * bw + bw / 2;
+      const y = padT + gh - gh * (d.total / maxKum);
+      if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+    kumulatif.forEach((d, i) => {
+      const x = padL + i * bw + bw / 2;
+      const y = padT + gh - gh * (d.total / maxKum);
+      ctx.fillStyle = "#5D4037"; ctx.beginPath();
+      ctx.arc(x, y, 2.2, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+}
+
+function mulaiTimerStatistik() {
+  if (__statTimer) return;
+  __statTimer = setInterval(() => {
+    const sec = document.getElementById('section-dashboard');
+    if (sec && sec.classList.contains('active')) muatStatistikPengguna();
+  }, 60000);
+}
+
+function hentikanTimerStatistik() {
+  if (__statTimer) { clearInterval(__statTimer); __statTimer = null; }
 }
 
 function loadAgenda() {
