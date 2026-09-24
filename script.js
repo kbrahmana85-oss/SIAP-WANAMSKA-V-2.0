@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.8.0"; 
+const APP_VERSION = "3.9.1"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -95,7 +95,7 @@ const READ_ONLY_FUNCS = new Set([
   'getNotificationList', 'getSystemLogs', 'getMateriFileList', 'getPotensiList',
   'getKedaiList', 'getKedaiNextId', 'getHasilKedaiList',
   'getPotensiGameProgres', 'getPotensiMateriList', 'getPotensiPapanSkor',
-  'getPotensiFolderStatus', 'getPotensiSoalKelola'
+  'getPotensiFolderStatus', 'getPotensiSoalKelola', 'getUcapanUlangTahun'
 ]);
 
 function isWriteFunc(name) {
@@ -2422,6 +2422,7 @@ function muatLeaderboardPotensi() {
 
 function loadDashboard() {
   try { muatLeaderboardPotensi(); } catch (e) {} // [v3.7.0] leaderboard game (Penggalang & Dewan)
+  try { muatUcapanUlangTahun(); } catch (e) {}   // [v3.9.0] ucapan ulang tahun (semua user)
   // [FIX-3] Tampilkan cache instan dulu (jika ada), lalu segarkan dari server
   try {
     var cached = getCachedDashboard();
@@ -2725,7 +2726,75 @@ function actionSaveKas() {
 // === MANAJEMEN PROFIL & USER                                           ===
 // =========================================================================
 
+// [v3.9.0] Banner ucapan ulang tahun di Dashboard — tampil untuk SELURUH user
+// hanya pada hari ulang tahun yang bersangkutan (sumber: profile kolom E).
+function muatUcapanUlangTahun() {
+  const banner = document.getElementById('ultah-banner');
+  if (!banner) return;
+  callAPI('getUcapanUlangTahun', [sessionToken])
+    .then(res => {
+      const daftar = (res && res.daftar) || [];
+      const kotak = document.getElementById('ultah-daftar');
+      if (!kotak) return;
+      if (daftar.length === 0) { banner.style.display = 'none'; kotak.innerHTML = ''; return; }
+      kotak.innerHTML = daftar.map(d =>
+        `<div class="ultah-item">🎉 Selamat Ulang Tahun ke-<b>${d.umur}</b>, <b>${escapeHtml(d.nama)}</b>, <span class="ultah-kelas">${escapeHtml(d.kelas)}</span>, Regu <span class="ultah-kelas">${escapeHtml(d.regu)}</span></div>`
+      ).join("");
+      banner.style.display = 'block';
+    })
+    .catch(() => { banner.style.display = 'none'; });
+}
+
+// [v3.9.0] KUNCI PROFIL — status dari server; Admin dapat membuka/kunci ulang
+let profilTerbuka = null; // null = belum diketahui
+
+function muatStatusKunciProfil() {
+  callAPI('getStatusKunciProfil', [sessionToken], { cache: false })
+    .then(res => terapkanKunciProfil(!!(res && res.terbuka), !!(res && res.admin)))
+    .catch(() => {});
+}
+
+function terapkanKunciProfil(terbuka, isAdmin) {
+  profilTerbuka = terbuka;
+  const bolehEdit = terbuka || isAdmin;
+  ['prof-nta', 'prof-nama', 'prof-tempat-lahir', 'prof-tanggal-lahir', 'prof-jk',
+   'prof-golongan', 'prof-regu', 'prof-alamat', 'prof-hp'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !bolehEdit;
+  });
+  const file = document.getElementById('prof-file');
+  if (file) file.disabled = !bolehEdit;
+  const simpan = document.getElementById('btn-simpan-profil');
+  if (simpan) simpan.style.display = bolehEdit ? 'inline-block' : 'none';
+  const catatan = document.getElementById('prof-kunci-catatan');
+  if (catatan) catatan.style.display = bolehEdit ? 'none' : 'block';
+  const btn = document.getElementById('btn-kunci-profil');
+  if (btn) {
+    if (isAdmin) {
+      btn.style.display = 'inline-block';
+      btn.textContent = terbuka ? '🔒 Kunci Profil' : '🔓 Buka Profil';
+    } else {
+      btn.style.display = 'none'; // hanya Admin yang melihat tombol ini
+    }
+  }
+}
+
+function toggleKunciProfil() {
+  if (profilTerbuka === null) return;
+  const jadi = !profilTerbuka;
+  if (!confirm(jadi ? "Buka profil agar pengguna dapat mengedit data diri?" : "Kunci profil seluruh pengguna?")) return;
+  setLoader(true, "Menyimpan status kunci profil...");
+  callAPI('setStatusKunciProfil', [sessionToken, jadi], { cache: false })
+    .then(res => {
+      setLoader(false);
+      showToast(res.message || "Status kunci profil diperbarui.");
+      terapkanKunciProfil(res.terbuka, true);
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
 function loadProfileDiri() {
+  muatStatusKunciProfil(); // [v3.9.0] terapkan kunci profil setiap halaman profil dibuka
   callAPI('getUserProfile', [sessionToken, userId])
     .then(res => {
       if (res.success) {
