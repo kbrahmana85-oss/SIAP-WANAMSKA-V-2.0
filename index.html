@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.8.0">
+    <link rel="stylesheet" href="style.css?v=3.9.1">
 </head>
 <body>
 
@@ -197,6 +197,13 @@
         <section id="section-dashboard" class="app-section active">
           <div class="section-header">
             <h1>Dashboard Ringkasan</h1>
+          </div>
+
+          <!-- [v3.9.0] UCAPAN ULANG TAHUN (muncul hanya pada hari ulang tahun) -->
+          <div id="ultah-banner" class="ultah-banner" style="display:none;">
+            <div class="ultah-judul">🎂🎉 SELAMAT ULANG TAHUN! 🎉🎂</div>
+            <div id="ultah-daftar"></div>
+            <div class="ultah-motivasi">&ldquo;Jadilah Penggalang Pembelajar, Berkarakter dan Rendah Hati&rdquo;</div>
           </div>
 
           <!-- LINK TERHUBUNG KEDAI PENGGALANG (KHUSUS ADMIN - tampil lewat setupRBACUI) -->
@@ -791,7 +798,9 @@
           </div>
           <div class="absensi-layout">
             <div class="card">
-              <h3 style="margin-bottom: 18px; color: var(--color-primary);">Data Anggota</h3>
+              <h3 style="margin-bottom: 18px; color: var(--color-primary);">Data Anggota
+                <button class="btn pg-btn-secondary" id="btn-kunci-profil" onclick="toggleKunciProfil()" style="display:none; float:right; padding:5px 12px; font-size:0.8rem;">🔓 Buka Profil</button>
+              </h3>
               <input type="hidden" id="prof-user-id">
               <div class="form-group">
                 <label>Nomor Tanda Anggota (NTA)</label>
@@ -832,7 +841,8 @@
                 <label>No. HP (WhatsApp)</label>
                 <input type="text" id="prof-hp" class="form-control">
               </div>
-              <button class="btn btn-gold btn-full" onclick="actionSaveProfile()">SIMPAN PROFIL</button>
+              <button class="btn btn-gold btn-full" id="btn-simpan-profil" onclick="actionSaveProfile()">SIMPAN PROFIL</button>
+              <p id="prof-kunci-catatan" style="display:none; font-size:0.8rem; color:var(--color-text-muted); text-align:center; margin:8px 0 0;">🔒 Data profil dikunci oleh Admin.</p>
             </div>
 
             <div>
@@ -1507,6 +1517,6 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.8.0"></script><script src="script.js?v=3.8.0"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3ef30ab2d578813',t:'MTc5MDA1Nzg4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.9.1"></script><script src="script.js?v=3.9.1"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3fdab636bf8ce49',t:'MTc5MDIwOTcxMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
