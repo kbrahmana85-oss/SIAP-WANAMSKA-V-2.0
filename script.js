@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.10.0"; 
+const APP_VERSION = "3.10.1"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -1444,7 +1444,7 @@ function renderGaleriBeritaKegiatan(galleryEl, fotoList) {
   }
 
   if (photos.length === 0) {
-    galleryEl.innerHTML = `<p style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic; grid-column: 1/-1;">Tidak ada lampiran foto untuk dokumentasi berita ini.</p>`;
+    galleryEl.innerHTML = `<p style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic; grid-column: 1/-1;">Tidak ada lampiran foto untuk dokumentasi berita ini.<br>Bila Anda pernah mengunggah foto pada berita lama, buka tombol Edit lalu unggah ulang foto tersebut agar tampil di galeri.</p>`;
   } else {
     photos.forEach((photoUrl, pIdx) => {
       galleryEl.innerHTML += `
@@ -1588,6 +1588,13 @@ function actionSaveKegiatan() {
   callAPI('saveKegiatan', [sessionToken, payload])
     .then(res => {
       setLoader(false);
+      // [v3.10.1] Bila simpan gagal (mis. unggah foto ke Drive bermasalah),
+      // tampilkan pesan kesalahan dan BIARKAN form terbuka agar pengguna
+      // dapat mencoba lagi tanpa mengisi ulang seluruh data.
+      if (res && res.success === false) {
+        showToast(res.message || "Gagal menyimpan dokumentasi kegiatan.", true);
+        return;
+      }
       showToast(res.message);
       closeKegiatanModal();
       loadKegiatan();
