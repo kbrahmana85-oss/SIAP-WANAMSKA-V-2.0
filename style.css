@@ -838,12 +838,13 @@ body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--
     }
     .reader-gallery img {
       width: 100%;
-      height: 200px;
-      object-fit: cover;
+      height: auto;
+      object-fit: contain;
       border-radius: 8px;
       border: 2px solid var(--color-light-brown);
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
+      background-color: #FAF4EE;
     }
     .reader-gallery img:hover {
       transform: scale(1.03);
@@ -1978,8 +1979,8 @@ main {
 }
 .reader-gallery img {
   width: 100%;
-  height: 200px;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   border-radius: 8px;
   border: 2px solid var(--color-light-brown);
   cursor: pointer;
@@ -1993,7 +1994,7 @@ main {
     margin-top: 14px;
   }
   .reader-gallery img {
-    height: 130px;
+    height: auto;
   }
 }
 
