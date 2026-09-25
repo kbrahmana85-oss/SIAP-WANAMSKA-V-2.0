@@ -4,7 +4,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.10.1"; 
+const APP_VERSION = "3.10.2"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -1430,6 +1430,27 @@ function normalisasiUrlFotoDrive(url) {
 // "Baca Berita" diklik. Menormalkan URL foto, membangun grid gambar,
 // menulis hitungan foto pada judul galeri, dan memberi citra cadangan
 // (logo aplikasi) bila sebuah URL gagal dimuat.
+// [v3.10.2] Util URL foto Drive: pratinjau pas-bingkai & versi asli lightbox.
+// urlFotoUkuran = thumbnail Drive pada lebar tertentu (proporsi asli dijaga).
+function urlFotoUkuran(url, lebar) {
+  var s = url ? String(url) : "";
+  if (s.indexOf("drive.google.com/thumbnail") === -1) return s;
+  var sz = "sz=w" + lebar;
+  var t2 = s.replace(/([?&])sz=w\d+/, "$1" + sz);
+  if (t2 === s && s.indexOf("sz=") === -1) t2 = s + (s.indexOf("?") === -1 ? "?" : "&") + sz;
+  return t2;
+}
+
+// urlFotoAsli = alamat berkas asli resolusi penuh untuk tampilan perbesar.
+function urlFotoAsli(url) {
+  var s = url ? String(url) : "";
+  var m = s.match(/[?&]id=([-\w]+)/) || s.match(/\/d\/([-\w]+)/);
+  if (m && m[1] && (s.indexOf("drive.google.com") !== -1 || s.indexOf("googleusercontent.com") !== -1)) {
+    return "https://drive.google.com/uc?export=view&id=" + m[1];
+  }
+  return s;
+}
+
 function renderGaleriBeritaKegiatan(galleryEl, fotoList) {
   if (!galleryEl) return 0;
   galleryEl.innerHTML = "";
@@ -1447,9 +1468,13 @@ function renderGaleriBeritaKegiatan(galleryEl, fotoList) {
     galleryEl.innerHTML = `<p style="font-size: 0.85rem; color: var(--color-text-muted); font-style: italic; grid-column: 1/-1;">Tidak ada lampiran foto untuk dokumentasi berita ini.<br>Bila Anda pernah mengunggah foto pada berita lama, buka tombol Edit lalu unggah ulang foto tersebut agar tampil di galeri.</p>`;
   } else {
     photos.forEach((photoUrl, pIdx) => {
+      // [v3.10.2] Pratinjau = foto asli utuh (tanpa potongan), pas selebar
+      // bingkai; klik = buka versi resolusi asli yang lebih jelas.
+      const srcBingkai = urlFotoUkuran(photoUrl, 700);
+      const srcAsli = urlFotoAsli(photoUrl);
       galleryEl.innerHTML += `
         <div style="display:flex; flex-direction:column; align-items:center;">
-          <img src="${photoUrl}" alt="Lampiran Foto ${pIdx+1}" onclick="viewFullImage('${photoUrl}')" title="Klik untuk memperbesar tampilan" onerror="this.onerror=null;this.src='logo_pwa.png';this.style.objectFit='contain';">
+          <img src="${srcBingkai}" alt="Lampiran Foto ${pIdx+1}" onclick="viewFullImage('${srcAsli}', '${srcBingkai}')" title="Klik untuk melihat foto lebih jelas" onerror="this.onerror=null;this.src='logo_pwa.png';this.style.objectFit='contain';">
           <span style="font-size:0.75rem; color:var(--color-text-muted); margin-top:4px;">Lampiran Foto ${pIdx+1}</span>
         </div>`;
     });
@@ -3116,11 +3141,18 @@ function loadSystemLogs() {
     .catch(err => { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--color-danger-red);">${escapeHtml(err.message)}</td></tr>`; });
 }
 
-function viewFullImage(src) {
+// [v3.10.2] src = foto resolusi asli; cadangan = dipakai otomatis bila versi
+// asli gagal dimuat (mis. jaringan tertentu), agar lightbox selalu menampilkan
+// foto — tidak pernah kosong.
+function viewFullImage(src, cadangan) {
   if (!src) return;
   const overlay = document.getElementById('lightbox-overlay');
   const img = document.getElementById('lightbox-img');
   if (overlay && img) {
+    img.onerror = function () {
+      img.onerror = null;
+      if (cadangan && cadangan !== src) img.src = cadangan;
+    };
     img.src = src;
     overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
