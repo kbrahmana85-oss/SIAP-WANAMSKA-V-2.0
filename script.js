@@ -1,10 +1,18 @@
+// ============================================================
+// [KUNCI] SIAP WANAMSKA v3.10.2 - TERKUNCI (2026-09-25)
+// Berkas  : script.js
+// Fungsi  : Logika frontend: modul, RBAC, API, game hook
+// Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
+//           Integritas berkas tercatat di KUNCI_SCRIPT_v3.10.2.md
+//           (verifikasi: verifikasi_kunci.py)
+// ============================================================
 // =========================================================================
 // === KONFIGURASI SISTEM & API APPS SCRIPT                               ===
 // =========================================================================
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.10.2"; 
+const APP_VERSION = "3.11.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -95,6 +103,7 @@ const READ_ONLY_FUNCS = new Set([
   'getNotificationList', 'getSystemLogs', 'getMateriFileList', 'getPotensiList',
   'getKedaiList', 'getKedaiNextId', 'getHasilKedaiList',
   'getPotensiGameProgres', 'getPotensiMateriList', 'getPotensiPapanSkor',
+  'getDashboardBundle', 'getPotensiAwal',
   'getPotensiFolderStatus', 'getPotensiSoalKelola', 'getUcapanUlangTahun'
 ]);
 
@@ -2446,8 +2455,19 @@ function muatLeaderboardPotensi() {
   if (!box) return;
   box.innerHTML = '<p class="pg-memeriksa">⏳ Memuat papan skor...</p>';
   callAPI('getPotensiPapanSkor', [sessionToken])
-    .then(daftar => {
-      if (!daftar || daftar.length === 0) {
+    .then(daftar => renderLeaderboardPotensi(daftar))
+    .catch(() => {});
+}
+
+// [v3.11.0] renderer dipisah agar dapat dipakai hasil bundel dashboard
+function renderLeaderboardPotensi(daftar) {
+  const w = document.getElementById('widget-leaderboard-potensi');
+  if (!w) return;
+  if (userRole !== 'Penggalang' && userRole !== 'Dewan Penggalang') { w.style.display = 'none'; return; }
+  w.style.display = 'block';
+  const box = document.getElementById('dash-potensi-board');
+  if (!box) return;
+  if (!daftar || daftar.length === 0) {
         box.innerHTML = '<p style="font-size:.85rem; color:var(--color-text-muted);">Belum ada yang bermain. Buka menu <b>Kenali Potensimu</b> dan jadilah yang pertama! 🎮</p>';
         return;
       }
@@ -2457,24 +2477,44 @@ function muatLeaderboardPotensi() {
           `<tr class="${d.user_id === userId ? 'pg-baris-aku' : ''}"><td>${medali[i] || (i + 1)}</td><td>${escapeHtml(d.nama)}</td><td><b>${d.total_skor}</b></td><td>${d.jumlah_benar}/${d.jumlah_soal}</td></tr>`
         ).join("") + '</tbody></table>' +
         '<p style="font-size:.72rem; color:var(--color-text-muted); margin:6px 0 0;">Kumpulkan poin di menu Kenali Potensimu → kejar pangkat 🌟 Penggalang Hebat (1000 poin)!</p>';
-    })
-    .catch(() => { box.innerHTML = '<p style="font-size:.85rem; color:var(--color-text-muted);">Papan skor belum tersedia saat ini.</p>'; });
 }
 
 function loadDashboard() {
-  try { muatLeaderboardPotensi(); } catch (e) {} // [v3.7.0] leaderboard game (Penggalang & Dewan)
-  try { muatUcapanUlangTahun(); } catch (e) {}   // [v3.9.0] ucapan ulang tahun (semua user)
-  try { if (userRole === "Admin") muatStatistikPengguna(); } catch (e) {} // [v3.10.0] statistik pengguna (Admin)
   // [FIX-3] Tampilkan cache instan dulu (jika ada), lalu segarkan dari server
   try {
     var cached = getCachedDashboard();
     if (cached) renderDashboardData(cached);
   } catch (e) {}
-  // [FIX-3] Bila login baru saja menyertakan dashboard segar, hemat 1x request
+  // [FIX-3] Bila login baru saja menyertakan dashboard segar, hemat 1x request.
+  // [v3.11.0] Widget sisa (ultah/leaderboard) tetap dimuat — bukan bagian
+  // respons login; statistik tidak dipanggil di sini (sudah oleh setupRBACUI).
   if (__skipNextDashboardFetch) {
     __skipNextDashboardFetch = false;
+    try { muatUcapanUlangTahun(); } catch (e) {}
+    try { muatLeaderboardPotensi(); } catch (e) {}
     return;
   }
+  // [v3.11.0] statistik Admin dimuat terpisah & non-blocking (ringan)
+  try { if (userRole === "Admin") muatStatistikPengguna(); } catch (e) {}
+  // [v3.11.0] SATU eksekusi utk dashboard + ultah + leaderboard (hemat 2-3x)
+  callAPI('getDashboardBundle', [sessionToken])
+    .then(b => {
+      if (b && b.dashboard && b.dashboard.success) {
+        renderDashboardData(b.dashboard);
+        setCachedDashboard(b.dashboard);
+        if (b.ultah) renderUcapanUlangTahun(b.ultah); else renderUcapanUlangTahun(null);
+        if (b.papanSkor) renderLeaderboardPotensi(b.papanSkor);
+      } else {
+        muatDashboardLembut();
+      }
+    })
+    .catch(() => muatDashboardLembut());
+}
+
+// [v3.11.0] jalur cadangan kompatibel backend lama (per bagian)
+function muatDashboardLembut() {
+  try { muatLeaderboardPotensi(); } catch (e) {}
+  try { muatUcapanUlangTahun(); } catch (e) {}
   callAPI('getDashboardData', [sessionToken])
     .then(res => {
       if (res.success) {
@@ -2866,20 +2906,23 @@ function actionSaveKas() {
 // [v3.9.0] Banner ucapan ulang tahun di Dashboard — tampil untuk SELURUH user
 // hanya pada hari ulang tahun yang bersangkutan (sumber: profile kolom E).
 function muatUcapanUlangTahun() {
+  callAPI('getUcapanUlangTahun', [sessionToken])
+    .then(res => renderUcapanUlangTahun(res))
+    .catch(() => renderUcapanUlangTahun(null));
+}
+
+// [v3.11.0] renderer dipisah agar dapat dipakai hasil bundel dashboard
+function renderUcapanUlangTahun(res) {
   const banner = document.getElementById('ultah-banner');
   if (!banner) return;
-  callAPI('getUcapanUlangTahun', [sessionToken])
-    .then(res => {
-      const daftar = (res && res.daftar) || [];
-      const kotak = document.getElementById('ultah-daftar');
-      if (!kotak) return;
-      if (daftar.length === 0) { banner.style.display = 'none'; kotak.innerHTML = ''; return; }
-      kotak.innerHTML = daftar.map(d =>
-        `<div class="ultah-item">🎉 Selamat Ulang Tahun ke-<b>${d.umur}</b>, <b>${escapeHtml(d.nama)}</b>, <span class="ultah-kelas">${escapeHtml(d.kelas)}</span>, Regu <span class="ultah-kelas">${escapeHtml(d.regu)}</span></div>`
-      ).join("");
-      banner.style.display = 'block';
-    })
-    .catch(() => { banner.style.display = 'none'; });
+  const daftar = (res && res.daftar) || [];
+  const kotak = document.getElementById('ultah-daftar');
+  if (!kotak) return;
+  if (daftar.length === 0) { banner.style.display = 'none'; kotak.innerHTML = ''; return; }
+  kotak.innerHTML = daftar.map(d =>
+    `<div class="ultah-item">🎉 Selamat Ulang Tahun ke-<b>${d.umur}</b>, <b>${escapeHtml(d.nama)}</b>, <span class="ultah-kelas">${escapeHtml(d.kelas)}</span>, Regu <span class="ultah-kelas">${escapeHtml(d.regu)}</span></div>`
+  ).join("");
+  banner.style.display = 'block';
 }
 
 // [v3.9.0] KUNCI PROFIL — status dari server; Admin dapat membuka/kunci ulang
@@ -2931,10 +2974,12 @@ function toggleKunciProfil() {
 }
 
 function loadProfileDiri() {
-  muatStatusKunciProfil(); // [v3.9.0] terapkan kunci profil setiap halaman profil dibuka
   callAPI('getUserProfile', [sessionToken, userId])
     .then(res => {
       if (res.success) {
+        // [v3.11.0] status kunci disertakan respons -> tanpa eksekusi ke-2
+        if (res.kunci) terapkanKunciProfil(!!res.kunci.terbuka, !!res.kunci.admin);
+        else muatStatusKunciProfil(); // kompatibel backend lama
         const p = res.profile;
         document.getElementById('prof-user-id').value = p.user_id;
         document.getElementById('prof-nama').value = p.nama_lengkap || "";
