@@ -1,11 +1,11 @@
 {
-  "versi": "3.10.2",
-  "tanggal_kunci": "2026-09-25",
+  "versi": "3.11.1",
+  "tanggal_kunci": "2026-09-28",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
       "ukuran_byte": 87338,
-      "sha256": "6a5195ee364a7c4f9af2c1739c63710a162f3bc39b974c800c3d31824d1aa2d6",
+      "sha256": "70176a8834408d9ef1f97cfb907d081adc38040e9788a462db08e8754679dc4d",
       "jumlah_fungsi": 1,
       "fungsi": [
         "c"
@@ -20,9 +20,9 @@
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 147318,
-      "sha256": "fbec834dd5b10ef5ba3d127b5798a2f75e7d0bccf0b5bfad613f3ffb952a6094",
-      "jumlah_fungsi": 157,
+      "ukuran_byte": 148740,
+      "sha256": "896919f3d3a564f1d0605279479796003f462cee9f05bf73f3aa0671cda121a2",
+      "jumlah_fungsi": 160,
       "fungsi": [
         "actionDeleteAgenda",
         "actionDeleteInventaris",
@@ -107,6 +107,7 @@
         "loadSystemLogs",
         "loadUsers",
         "localDateStr",
+        "muatDashboardLembut",
         "muatLeaderboardPotensi",
         "muatStatistikPengguna",
         "muatStatusKunciProfil",
@@ -142,7 +143,9 @@
         "renderGaleriBeritaKegiatan",
         "renderKedaiGrid",
         "renderLaporanModulStatus",
+        "renderLeaderboardPotensi",
         "renderStatistikPengguna",
+        "renderUcapanUlangTahun",
         "requestGPSPermission",
         "requestPushNotificationPermission",
         "resetLaporanTemplateForm",
@@ -185,9 +188,9 @@
     },
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
-      "ukuran_byte": 49232,
-      "sha256": "bcad90f71ffc60eb67d0dcf775a6045c1c318943f2d4366b1c9135b99e48dbd2",
-      "jumlah_fungsi": 51,
+      "ukuran_byte": 50856,
+      "sha256": "1d2de88b2a39b71602b8dc4d9269bcde217f66bdf659b32742c74955939878bd",
+      "jumlah_fungsi": 52,
       "fungsi": [
         "$",
         "aktifkanLewatFolder",
@@ -223,6 +226,7 @@
         "pct",
         "renderArenaSoal",
         "renderBekal",
+        "renderGagalPeriksa",
         "renderGerbangAktivasi",
         "renderHasil",
         "renderLauncher",
@@ -245,15 +249,15 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v16)",
       "ukuran_byte": 2971,
-      "sha256": "d3dbd6c4a319045e55415dc32063e01e5d70765f6baece3b518f5de8ac94f46f",
+      "sha256": "c95fe6cdb06d2ae597ee0ab159ef85fa594501416e3c4c945b82b20232d07183",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 185289,
-      "sha256": "078a4f6be64951d899957a25811f77d7254df67d526525cdccba7753ef4d186c",
-      "jumlah_fungsi": 117,
+      "ukuran_byte": 187402,
+      "sha256": "f1c63d5f3c05da0e7587e2777540d40e8c6f3f837d17ef07291d88c86233841f",
+      "jumlah_fungsi": 119,
       "fungsi": [
         "_allowedExportModuls",
         "_buildDashboardForSession",
@@ -306,6 +310,7 @@
         "exportToPDF",
         "getAbsenHistory",
         "getAgendaList",
+        "getDashboardBundle",
         "getDashboardData",
         "getDistance",
         "getHasilKedaiList",
@@ -318,6 +323,7 @@
         "getMateriFileList",
         "getNotificationList",
         "getPeminjamanList",
+        "getPotensiAwal",
         "getPotensiFolderStatus",
         "getPotensiGameProgres",
         "getPotensiMateriList",
