@@ -260,34 +260,58 @@ const PotensiGame = (() => {
   }
 
   // ---------------- LAUNCHER ----------------
+  // [v3.11.1] Layar gagal yang ramah: pesan tenang + tombol Coba Lagi,
+  // sehingga gangguan sesaat tidak mengharuskan keluar-masuk menu.
+  function renderGagalPeriksa(err) {
+    const grid = $('pg-golongan-grid');
+    if (!grid) return;
+    grid.innerHTML = `<p class="pg-error">⚠️ ${escapeHtml((err && err.message) || "Koneksi bermasalah")}</p>
+      <button class="btn pg-btn-secondary" onclick="PotensiGame.init()">↻ Coba Lagi</button>`;
+  }
+
   async function init() {
     if (!sessionToken) return;
     const grid = $('pg-golongan-grid');
     // [v3.6.3] Gerbang aktivasi: game baru berjalan setelah Admin membuka folder
-    // [v3.11.0] SATU eksekusi utk status gerbang + progres (hemat 1x);
-    //           cache:false dipertahankan agar game LANGSUNG muncul setelah aktivasi
-    try {
-      const awal = await callAPI('getPotensiAwal', [sessionToken], { cache: false });
-      statusFolder = (awal && awal.folderStatus) ? awal.folderStatus : null;
+    // [v3.11.1] TAHAN GANGGUAN: 1x percobaan ulang otomatis untuk koneksi lambat
+    // sesaat; bila fungsi bundel belum ada (backend lama), langsung jalur cadangan.
+    let awal = null, errBundel = null;
+    for (let coba = 0; coba < 2 && !awal; coba++) {
+      try {
+        awal = await callAPI('getPotensiAwal', [sessionToken], { cache: false });
+      } catch (e) {
+        errBundel = e;
+        if (/tidak dikenal|tidak dikenali|tidak ditemukan/i.test(String(e && e.message))) break; // backend lama
+        if (coba === 0) await new Promise(r => setTimeout(r, 800)); // jeda singkat lalu ulang
+      }
+    }
+    if (awal && awal.folderStatus) {
+      statusFolder = awal.folderStatus;
       if (!statusFolder || !statusFolder.aktif) { renderGerbangAktivasi(); return; }
       const rp = awal && awal.progresData;
       progres = (rp && rp.progres) || {};
       dimuat = true;
-    } catch (err) {
+    } else {
       // [v3.11.0] jalur cadangan kompatibel backend lama (2 panggilan terpisah)
-      try {
-        statusFolder = await callAPI('getPotensiFolderStatus', [sessionToken], { cache: false });
-      } catch (err2) {
-        if (grid) grid.innerHTML = `<p class="pg-error">Gagal memeriksa status game: ${escapeHtml(err2.message)}</p>`;
-        return;
+      let statusCadangan = null, errCadangan = null;
+      for (let coba2 = 0; coba2 < 2 && !statusCadangan; coba2++) {
+        try {
+          statusCadangan = await callAPI('getPotensiFolderStatus', [sessionToken], { cache: false });
+        } catch (e2) {
+          errCadangan = e2;
+          if (/tidak dikenal|tidak dikenali|tidak ditemukan/i.test(String(e2 && e2.message))) break;
+          if (coba2 === 0) await new Promise(r => setTimeout(r, 800));
+        }
       }
+      if (!statusCadangan) { renderGagalPeriksa(errCadangan || errBundel); return; }
+      statusFolder = statusCadangan;
       if (!statusFolder || !statusFolder.aktif) { renderGerbangAktivasi(); return; }
       try {
         const res = await callAPI('getPotensiGameProgres', [sessionToken]);
         progres = (res && res.progres) || {};
         dimuat = true;
       } catch (err3) {
-        if (grid) grid.innerHTML = `<p class="pg-error">Gagal memuat progres game: ${escapeHtml(err3.message)}</p>`;
+        renderGagalPeriksa(err3);
         return;
       }
     }
