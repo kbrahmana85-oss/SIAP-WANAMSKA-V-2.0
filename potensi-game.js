@@ -1,3 +1,11 @@
+// ============================================================
+// [KUNCI] SIAP WANAMSKA v3.10.2 - TERKUNCI (2026-09-25)
+// Berkas  : potensi-game.js
+// Fungsi  : Mesin game Kenali Potensimu (berjenjang + arena)
+// Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
+//           Integritas berkas tercatat di KUNCI_SCRIPT_v3.10.2.md
+//           (verifikasi: verifikasi_kunci.py)
+// ============================================================
 // =========================================================================
 // [GAME-POTENSI] GAME GAMIFIKASI "KENALI POTENSIMU" — SKU PENGGALANG
 // -------------------------------------------------------------------------
@@ -256,21 +264,32 @@ const PotensiGame = (() => {
     if (!sessionToken) return;
     const grid = $('pg-golongan-grid');
     // [v3.6.3] Gerbang aktivasi: game baru berjalan setelah Admin membuka folder
-    // [v3.6.4] cache:false -> status selalu segar; game LANGSUNG muncul setelah aktivasi
+    // [v3.11.0] SATU eksekusi utk status gerbang + progres (hemat 1x);
+    //           cache:false dipertahankan agar game LANGSUNG muncul setelah aktivasi
     try {
-      statusFolder = await callAPI('getPotensiFolderStatus', [sessionToken], { cache: false });
-    } catch (err) {
-      if (grid) grid.innerHTML = `<p class="pg-error">Gagal memeriksa status game: ${escapeHtml(err.message)}</p>`;
-      return;
-    }
-    if (!statusFolder || !statusFolder.aktif) { renderGerbangAktivasi(); return; }
-    try {
-      const res = await callAPI('getPotensiGameProgres', [sessionToken]);
-      progres = (res && res.progres) || {};
+      const awal = await callAPI('getPotensiAwal', [sessionToken], { cache: false });
+      statusFolder = (awal && awal.folderStatus) ? awal.folderStatus : null;
+      if (!statusFolder || !statusFolder.aktif) { renderGerbangAktivasi(); return; }
+      const rp = awal && awal.progresData;
+      progres = (rp && rp.progres) || {};
       dimuat = true;
     } catch (err) {
-      if (grid) grid.innerHTML = `<p class="pg-error">Gagal memuat progres game: ${escapeHtml(err.message)}</p>`;
-      return;
+      // [v3.11.0] jalur cadangan kompatibel backend lama (2 panggilan terpisah)
+      try {
+        statusFolder = await callAPI('getPotensiFolderStatus', [sessionToken], { cache: false });
+      } catch (err2) {
+        if (grid) grid.innerHTML = `<p class="pg-error">Gagal memeriksa status game: ${escapeHtml(err2.message)}</p>`;
+        return;
+      }
+      if (!statusFolder || !statusFolder.aktif) { renderGerbangAktivasi(); return; }
+      try {
+        const res = await callAPI('getPotensiGameProgres', [sessionToken]);
+        progres = (res && res.progres) || {};
+        dimuat = true;
+      } catch (err3) {
+        if (grid) grid.innerHTML = `<p class="pg-error">Gagal memuat progres game: ${escapeHtml(err3.message)}</p>`;
+        return;
+      }
     }
     // [v3.6.2] Tombol pantauan & [v3.8.0] bank soal hanya untuk Admin
     const btnPantau = $('pg-btn-pantau');
