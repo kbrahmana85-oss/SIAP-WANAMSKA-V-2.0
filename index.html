@@ -355,18 +355,51 @@
         <section id="section-absensi" class="app-section">
           <div class="absensi-layout">
             <div class="card">
-              <h2 style="margin-bottom: 18px; font-size: 1.3rem; color: var(--color-primary);">Presensi Mandiri</h2>
-              
-              <div class="form-group">
-                <label>Status Kehadiran</label>
-                <select id="absen-status" class="form-control">
-                  <option value="Hadir">Hadir</option>
-                  <option value="Izin">Izin</option>
-                  <option value="Sakit">Sakit</option>
-                </select>
+              <!-- [v3.12.0] Tab mode absensi: Mandiri / Bantu Absen (Admin/Pembina/Dewan) -->
+              <div id="absen-mode-tabs" style="display: none; gap: 8px; margin-bottom: 16px;">
+                <button type="button" id="tab-absen-mandiri" class="btn btn-gold" style="flex:1; padding:9px;" onclick="switchAbsenMode('mandiri')">🙋 Mandiri</button>
+                <button type="button" id="tab-absen-bantu" class="btn" style="flex:1; padding:9px;" onclick="switchAbsenMode('bantu')">🤝 Bantu Absen</button>
               </div>
 
-              <div style="background-color: #FAF4EE; padding: 14px; border-radius: var(--rounded-btn); border-left: 4px solid var(--color-accent-gold); margin-bottom: 20px; font-size: 0.85rem;">
+              <h2 id="absen-judul" style="margin-bottom: 18px; font-size: 1.3rem; color: var(--color-primary);">Presensi Mandiri</h2>
+
+              <!-- [v3.12.0] Panel Bantu Absen -->
+              <div id="absen-bantu-panel" style="display: none;">
+                <div class="form-group">
+                  <label>Kategori Anggota yang Dibantu</label>
+                  <select id="absen-bantu-kategori" class="form-control">
+                    <option value="Penggalang">Penggalang</option>
+                    <option value="Dewan Penggalang">Dewan Penggalang</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>User ID Anggota (contoh: DGW20263)</label>
+                  <input type="text" id="absen-bantu-userid" class="form-control" placeholder="Masukkan User ID anggota" autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label>Status Kehadiran Anggota</label>
+                  <select id="absen-bantu-status" class="form-control">
+                    <option value="Hadir">Hadir</option>
+                    <option value="Sakit">Sakit</option>
+                    <option value="Izin">Izin</option>
+                    <option value="Alpa">Alpa</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Panel Mandiri (mode asli, tidak berubah) -->
+              <div id="absen-mandiri-panel">
+                <div class="form-group">
+                  <label>Status Kehadiran</label>
+                  <select id="absen-status" class="form-control">
+                    <option value="Hadir">Hadir</option>
+                    <option value="Izin">Izin</option>
+                    <option value="Sakit">Sakit</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="absen-petunjuk" style="background-color: #FAF4EE; padding: 14px; border-radius: var(--rounded-btn); border-left: 4px solid var(--color-accent-gold); margin-bottom: 20px; font-size: 0.85rem;">
                 <strong>Petunjuk Presensi:</strong><br>
                 1. Aktifkan kamera dan pastikan wajah terlihat jelas.<br>
                 2. Klik tombol <strong>Ambil Foto</strong>.<br>
@@ -674,7 +707,7 @@
               <li>Penggalang dapat langsung datang ke <strong>Sanggar Pramuka di gedung lama sebelah timur (belakang ruang perpustakaan)</strong>.</li>
             </ol>
             <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 10px; font-style: italic; border-top: 1px dashed var(--color-light-brown); padding-top: 6px;">
-              📌 Info lebih lanjut hubungi: <strong>Kak Rekyan (9D)</strong>, <strong>Kak Atifa (9B)</strong>, <strong>Kak Ashya (9D)</strong>, <strong>Kak Mareta (9D)</strong>dan <strong>Kak Silvia (9D)</strong>.
+              📌 Info lebih lanjut hubungi: <strong>Kak Rekyan (9D)</strong>, <strong>Kak Atifa (9B)</strong>, <strong>Kak Ashya (9D)</strong>, dan <strong>Kak Silvia (9D)</strong>.
             </p>
           </div>
 
@@ -1554,6 +1587,6 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.11.1"></script><script src="script.js?v=3.11.0"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4271ce829289d18',t:'MTc5MDY0NDI3Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.11.1"></script><script src="script.js?v=3.12.0"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43ade3e8ab0f884',t:'MTc5MDg1MTQyNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
