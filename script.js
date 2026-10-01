@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.11.0"; 
+const APP_VERSION = "3.12.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -856,6 +856,14 @@ function setupRBACUI(role) {
 
   // POIN 1.h: Menu Kedai Penggalang selalu tampil untuk semua peran
   document.getElementById('menu-kedai').style.display = 'flex';
+
+  // [v3.12.0] Tab Bantu Absen hanya untuk Admin/Pembina/Dewan Penggalang
+  const tabsAbsen = document.getElementById('absen-mode-tabs');
+  if (tabsAbsen) {
+    const bolehBantu = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(role) !== -1;
+    tabsAbsen.style.display = bolehBantu ? 'flex' : 'none';
+    if (!bolehBantu) switchAbsenMode('mandiri');
+  }
 
   // Otorisasi Tombol Kedai Penggalang (tampilan & hak akses = Admin)
   //  - Admin & Pengelola Kedai (DGW202638 / DGW202641): Tambah Stok & Jual/Kurangi
@@ -2339,7 +2347,97 @@ function captureSnapshot() {
 // === ABSENSI MANDIRI                                                   ===
 // =========================================================================
 
+// =========================================================================
+// === [v3.12.0] ABSENSI BANTU (Admin/Pembina/Dewan Penggalang)          ===
+// =========================================================================
+var absenMode = "mandiri"; // "mandiri" | "bantu"
+
+function switchAbsenMode(mode) {
+  if ((mode === "bantu") && ["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) === -1) {
+    showToast("Fitur Bantu Absen hanya untuk Admin/Pembina/Dewan Penggalang.", true);
+    return;
+  }
+  absenMode = (mode === "bantu") ? "bantu" : "mandiri";
+  const bantu = document.getElementById('absen-bantu-panel');
+  const mandiri = document.getElementById('absen-mandiri-panel');
+  const judul = document.getElementById('absen-judul');
+  const petunjuk = document.getElementById('absen-petunjuk');
+  const tabM = document.getElementById('tab-absen-mandiri');
+  const tabB = document.getElementById('tab-absen-bantu');
+  if (!bantu || !mandiri) return;
+  if (absenMode === "bantu") {
+    bantu.style.display = "block"; mandiri.style.display = "none";
+    judul.innerText = "Bantu Absen Anggota";
+    tabM.classList.remove("btn-gold"); tabB.classList.add("btn-gold");
+    petunjuk.innerHTML = "<strong>Bantu Absen Anggota:</strong><br>" +
+      "1. Pilih kategori &amp; isi <strong>User ID</strong> anggota.<br>" +
+      "2. Pilih status: <strong>Hadir / Sakit / Izin / Alpa</strong>.<br>" +
+      "3. Status <strong>Hadir</strong>: aktifkan kamera → Ambil Foto (wajib).<br>" +
+      "4. Status Sakit/Izin/Alpa: foto boleh dilewati.<br>" +
+      "5. Tekan <strong>KIRIM ABSENSI</strong> — riwayat tercatat di akun anggota.";
+  } else {
+    bantu.style.display = "none"; mandiri.style.display = "block";
+    judul.innerText = "Presensi Mandiri";
+    tabM.classList.add("btn-gold"); tabB.classList.remove("btn-gold");
+    petunjuk.innerHTML = "<strong>Petunjuk Presensi:</strong><br>" +
+      "1. Aktifkan kamera dan pastikan wajah terlihat jelas.<br>" +
+      "2. Klik tombol <strong>Ambil Foto</strong>.<br>" +
+      "3. Klik tombol <strong>KIRIM ABSENSI</strong> untuk mencatat kehadiran.";
+  }
+}
+
 function actionSubmitAbsen() {
+  // ---- Mode Bantu Absen (Admin/Pembina/Dewan) ----
+  if (absenMode === "bantu") {
+    if (["Admin", "Pembina", "Dewan Penggalang"].indexOf(userRole) === -1) {
+      showToast("Fitur Bantu Absen hanya untuk Admin/Pembina/Dewan Penggalang.", true);
+      return;
+    }
+    const kategori = document.getElementById('absen-bantu-kategori').value;
+    const targetId = document.getElementById('absen-bantu-userid').value.trim();
+    const statusB = document.getElementById('absen-bantu-status').value;
+    if (!targetId) { showToast("User ID anggota yang dibantu wajib diisi!", true); return; }
+    if (statusB === "Hadir" && !base64SelfieString) {
+      showToast("Status Hadir wajib foto: aktifkan kamera lalu Ambil Foto.", true);
+      return;
+    }
+    const lanjutBantu = function (lat, lng, fake) {
+      setLoader(true, "Mencatat presensi " + targetId + "...");
+      callAPI('submitAbsenBantu', [sessionToken, targetId, kategori, statusB, base64SelfieString, lat, lng, fake])
+        .then(res => {
+          setLoader(false);
+          if (res.success) {
+            showToast(res.message);
+            stopCamera();
+            base64SelfieString = "";
+            const snap2 = document.getElementById('selfie-canvas-preview');
+            if (snap2) snap2.src = "";
+            document.getElementById('absen-bantu-userid').value = "";
+            loadAbsenHistory();
+            loadNotifications(false);
+          } else {
+            showToast(res.message, true);
+          }
+        })
+        .catch(err => { setLoader(false); showToast(err.message, true); });
+    };
+    if (userRole === "Dewan Penggalang" && statusB === "Hadir") {
+      setLoader(true, "Memvalidasi koordinat GPS pangkalan...");
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          const fake = (position.mocked === true || (position.coords && position.coords.mocked === true) || (position.coords && position.coords.accuracy === 0));
+          lanjutBantu(position.coords.latitude, position.coords.longitude, fake);
+        },
+        function () { setLoader(false); showToast("ABSENSI DITOLAK: Akses GPS wajib diizinkan untuk status Hadir.", true); },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      lanjutBantu(null, null, false);
+    }
+    return;
+  }
+
+  // ---- Mode Mandiri (alur asli, tidak berubah) ----
   const status = document.getElementById('absen-status').value;
 
   if (status === "Hadir" && !base64SelfieString) {
@@ -2431,6 +2529,7 @@ function loadAbsenHistory() {
                   <strong>${row.tanggal} (${row.jam})</strong>
                   <span class="badge" style="background-color:${statusColor}22; color:${statusColor}; font-weight:bold;">${row.status}</span>
                 </div>
+                ${row.keterangan ? `<div style="font-size:0.72rem; color:var(--color-text-muted); margin-top:4px;">📝 ${escapeHtml(row.keterangan)}</div>` : ""}
                 ${imgTag}
               </div>`;
           });
