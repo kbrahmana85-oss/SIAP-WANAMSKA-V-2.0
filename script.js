@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.12.0"; 
+const APP_VERSION = "3.13.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -2369,12 +2369,13 @@ function switchAbsenMode(mode) {
     bantu.style.display = "block"; mandiri.style.display = "none";
     judul.innerText = "Bantu Absen Anggota";
     tabM.classList.remove("btn-gold"); tabB.classList.add("btn-gold");
-    petunjuk.innerHTML = "<strong>Bantu Absen Anggota:</strong><br>" +
-      "1. Pilih kategori &amp; isi <strong>User ID</strong> anggota.<br>" +
+    petunjuk.innerHTML = "<strong>Bantu Absen Anggota Penggalang:</strong><br>" +
+      "1. Isi <strong>User ID</strong> Penggalang yang dibantu.<br>" +
       "2. Pilih status: <strong>Hadir / Sakit / Izin / Alpa</strong>.<br>" +
-      "3. Status <strong>Hadir</strong>: aktifkan kamera → Ambil Foto (wajib).<br>" +
-      "4. Status Sakit/Izin/Alpa: foto boleh dilewati.<br>" +
-      "5. Tekan <strong>KIRIM ABSENSI</strong> — riwayat tercatat di akun anggota.";
+      "3. Status <strong>Sakit/Izin/Alpa</strong>: wajib foto bukti — foto apa pun, tidak harus wajah anggota.<br>" +
+      "4. Status <strong>Hadir</strong>: foto opsional.<br>" +
+      "5. Dewan Penggalang wajib berada di area pangkalan (GPS).<br>" +
+      "6. Tekan <strong>KIRIM ABSENSI</strong> — riwayat tercatat di akun anggota.";
   } else {
     bantu.style.display = "none"; mandiri.style.display = "block";
     judul.innerText = "Presensi Mandiri";
@@ -2397,8 +2398,8 @@ function actionSubmitAbsen() {
     const targetId = document.getElementById('absen-bantu-userid').value.trim();
     const statusB = document.getElementById('absen-bantu-status').value;
     if (!targetId) { showToast("User ID anggota yang dibantu wajib diisi!", true); return; }
-    if (statusB === "Hadir" && !base64SelfieString) {
-      showToast("Status Hadir wajib foto: aktifkan kamera lalu Ambil Foto.", true);
+    if (statusB !== "Hadir" && !base64SelfieString) {
+      showToast("Status " + statusB + " wajib foto bukti (foto apa pun, tidak harus wajah anggota). Aktifkan kamera lalu Ambil Foto.", true);
       return;
     }
     const lanjutBantu = function (lat, lng, fake) {
@@ -2421,14 +2422,14 @@ function actionSubmitAbsen() {
         })
         .catch(err => { setLoader(false); showToast(err.message, true); });
     };
-    if (userRole === "Dewan Penggalang" && statusB === "Hadir") {
+    if (userRole === "Dewan Penggalang") {
       setLoader(true, "Memvalidasi koordinat GPS pangkalan...");
       navigator.geolocation.getCurrentPosition(
         function (position) {
           const fake = (position.mocked === true || (position.coords && position.coords.mocked === true) || (position.coords && position.coords.accuracy === 0));
           lanjutBantu(position.coords.latitude, position.coords.longitude, fake);
         },
-        function () { setLoader(false); showToast("ABSENSI DITOLAK: Akses GPS wajib diizinkan untuk status Hadir.", true); },
+        function () { setLoader(false); showToast("ABSENSI DITOLAK: Akses GPS wajib diizinkan untuk Bantu Absen.", true); },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
