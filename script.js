@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.13.0"; 
+const APP_VERSION = "3.14.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -2369,12 +2369,12 @@ function switchAbsenMode(mode) {
     bantu.style.display = "block"; mandiri.style.display = "none";
     judul.innerText = "Bantu Absen Anggota";
     tabM.classList.remove("btn-gold"); tabB.classList.add("btn-gold");
-    petunjuk.innerHTML = "<strong>Bantu Absen Anggota Penggalang:</strong><br>" +
-      "1. Isi <strong>User ID</strong> Penggalang yang dibantu.<br>" +
+    petunjuk.innerHTML = "<strong>Bantu Absen Anggota (Dewan Penggalang &amp; Penggalang):</strong><br>" +
+      "1. Pilih kategori &amp; isi <strong>User ID</strong> anggota (contoh: DGW202662 atau PGW2026200).<br>" +
       "2. Pilih status: <strong>Hadir / Sakit / Izin / Alpa</strong>.<br>" +
       "3. Status <strong>Sakit/Izin/Alpa</strong>: wajib foto bukti — foto apa pun, tidak harus wajah anggota.<br>" +
       "4. Status <strong>Hadir</strong>: foto opsional.<br>" +
-      "5. Dewan Penggalang wajib berada di area pangkalan (GPS).<br>" +
+      "5. Aturan jarak &amp; GPS tetap berlaku (helper Dewan Penggalang wajib di area pangkalan).<br>" +
       "6. Tekan <strong>KIRIM ABSENSI</strong> — riwayat tercatat di akun anggota.";
   } else {
     bantu.style.display = "none"; mandiri.style.display = "block";
