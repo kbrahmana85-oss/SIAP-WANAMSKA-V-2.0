@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.14.0"; 
+const APP_VERSION = "3.15.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -2374,8 +2374,9 @@ function switchAbsenMode(mode) {
       "2. Pilih status: <strong>Hadir / Sakit / Izin / Alpa</strong>.<br>" +
       "3. Status <strong>Sakit/Izin/Alpa</strong>: wajib foto bukti — foto apa pun, tidak harus wajah anggota.<br>" +
       "4. Status <strong>Hadir</strong>: foto opsional.<br>" +
-      "5. Aturan jarak &amp; GPS tetap berlaku (helper Dewan Penggalang wajib di area pangkalan).<br>" +
-      "6. Tekan <strong>KIRIM ABSENSI</strong> — riwayat tercatat di akun anggota.";
+      "5. Nama anggota terisi otomatis &amp; terkunci sesuai User ID.<br>" +
+      "6. Aturan jarak &amp; GPS berlaku untuk SEMUA pembantu — wajib di area pangkalan.<br>" +
+      "7. Tekan <strong>KIRIM ABSENSI</strong> — riwayat tercatat di akun anggota.";
   } else {
     bantu.style.display = "none"; mandiri.style.display = "block";
     judul.innerText = "Presensi Mandiri";
@@ -2385,6 +2386,32 @@ function switchAbsenMode(mode) {
       "2. Klik tombol <strong>Ambil Foto</strong>.<br>" +
       "3. Klik tombol <strong>KIRIM ABSENSI</strong> untuk mencatat kehadiran.";
   }
+}
+
+// [v3.15.0] Pemeriksa nama otomatis (dari sheet Users) utk field NAMA terkunci
+var absenBantuCekTimer = null;
+function absenBantuCekNama() {
+  const inp = document.getElementById('absen-bantu-userid');
+  const nama = document.getElementById('absen-bantu-nama');
+  if (!inp || !nama) return;
+  clearTimeout(absenBantuCekTimer);
+  nama.value = "";
+  const id = inp.value.trim();
+  if (!id) { nama.placeholder = "Nama muncul otomatis"; return; }
+  nama.placeholder = "Memeriksa User ID...";
+  absenBantuCekTimer = setTimeout(function () {
+    callAPI('getNamaByUserId', [sessionToken, id])
+      .then(res => {
+        if (res && res.success) {
+          nama.value = res.nama + " (" + res.role + ")";
+          nama.placeholder = "Nama muncul otomatis";
+        } else {
+          nama.value = "";
+          nama.placeholder = (res && res.message) ? res.message : "User ID tidak dikenal";
+        }
+      })
+      .catch(() => { nama.value = ""; nama.placeholder = "Gagal memeriksa User ID"; });
+  }, 500);
 }
 
 function actionSubmitAbsen() {
@@ -2414,6 +2441,8 @@ function actionSubmitAbsen() {
             const snap2 = document.getElementById('selfie-canvas-preview');
             if (snap2) snap2.src = "";
             document.getElementById('absen-bantu-userid').value = "";
+            const nmField = document.getElementById('absen-bantu-nama');
+            if (nmField) { nmField.value = ""; nmField.placeholder = "Nama muncul otomatis"; }
             loadAbsenHistory();
             loadNotifications(false);
           } else {
@@ -2422,19 +2451,16 @@ function actionSubmitAbsen() {
         })
         .catch(err => { setLoader(false); showToast(err.message, true); });
     };
-    if (userRole === "Dewan Penggalang") {
-      setLoader(true, "Memvalidasi koordinat GPS pangkalan...");
-      navigator.geolocation.getCurrentPosition(
-        function (position) {
-          const fake = (position.mocked === true || (position.coords && position.coords.mocked === true) || (position.coords && position.coords.accuracy === 0));
-          lanjutBantu(position.coords.latitude, position.coords.longitude, fake);
-        },
-        function () { setLoader(false); showToast("ABSENSI DITOLAK: Akses GPS wajib diizinkan untuk Bantu Absen.", true); },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-      lanjutBantu(null, null, false);
-    }
+    // [v3.15.0] GPS wajib untuk SELURUH pembantu (Admin/Pembina/Dewan Penggalang)
+    setLoader(true, "Memvalidasi koordinat GPS pangkalan...");
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        const fake = (position.mocked === true || (position.coords && position.coords.mocked === true) || (position.coords && position.coords.accuracy === 0));
+        lanjutBantu(position.coords.latitude, position.coords.longitude, fake);
+      },
+      function () { setLoader(false); showToast("ABSENSI DITOLAK: Akses GPS wajib diizinkan untuk Bantu Absen.", true); },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
     return;
   }
 
