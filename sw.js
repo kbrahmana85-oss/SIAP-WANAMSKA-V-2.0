@@ -6,7 +6,7 @@
 //           Integritas berkas tercatat di KUNCI_SCRIPT_v3.10.2.md
 //           (verifikasi: verifikasi_kunci.py)
 // ============================================================
-const CACHE_NAME = 'wanamska-v2-cache-v24';
+const CACHE_NAME = 'wanamska-v2-cache-v25';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
