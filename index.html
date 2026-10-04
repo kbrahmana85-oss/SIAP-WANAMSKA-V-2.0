@@ -14,17 +14,17 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>SIAP WANAMSKA</title>
+  <title>PRADESKA</title>
 
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#5D4037">
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SIAP WANAMSKA">
+  <meta name="apple-mobile-web-app-title" content="PRADESKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.11.0">
+    <link rel="stylesheet" href="style.css?v=3.16.1">
 </head>
 <body>
 
@@ -33,7 +33,7 @@
     <div style="background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); border-radius: var(--rounded-box); padding: 35px 25px; max-width: 450px; width: 100%; box-shadow: var(--shadow-bold); border: 2px solid rgba(255, 255, 255, 0.1); border-top: 6px solid var(--color-accent-gold);">
       <span style="font-size: 3.5rem; display: block; margin-bottom: 15px;">📡</span>
       <h2 style="margin-bottom: 10px; color: var(--color-accent-gold);">SISTEM LOKASI WAJIB</h2>
-      <p style="font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; color: #E0D4C5;">SIAP WANAMSKA memerlukan verifikasi GPS aktif untuk presensi pangkalan.</p>
+      <p style="font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; color: #E0D4C5;">PRADESKA memerlukan verifikasi GPS aktif untuk presensi pangkalan.</p>
       <button class="btn btn-gold btn-full" onclick="requestGPSPermission()">AKTIFKAN AKSES LOKASI</button>
     </div>
   </div>
@@ -68,9 +68,9 @@
     </div>
 
     <div class="login-box">
-      <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png" class="logo" id="login-logo" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto;">
-      <h1>SIAP WANAMSKA</h1>
-      <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.85rem;">Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
+      <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png" class="logo" id="login-logo" alt="Logo PRADESKA" style="width: 80px; height: auto;">
+      <h1 class="judul-3d judul-3d-gelap">PRADESKA</h1>
+      <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.85rem;">Pramuka SMP N 26 Kota Surakarta</p>
       
       <div class="form-group">
         <label for="userId">User ID</label>
@@ -124,10 +124,10 @@
     <header>
       <div class="header-logo">
         <button class="nav-toggle" onclick="toggleSidebar()" title="Buka/Tutup Menu" aria-label="Menu">☰</button>
-        <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png" class="logo" alt="Logo">
+        <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/65a52ede816df7592d429d5a507e9b5fbe805e81/PRADESKA.png" class="logo" alt="Logo PRADESKA">
         <div class="header-title">
-          <h2>SIAP WANAMSKA</h2>
-          <p>Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
+          <h2 class="judul-3d">PRADESKA</h2>
+          <p>Pramuka SMP N 26 Kota Surakarta</p>
         </div>
       </div>
       <div class="header-user">
@@ -456,6 +456,7 @@
                     <th>Nama Anggota</th>
                     <th>Status</th>
                     <th>Bukti Foto</th>
+                    <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="body-riwayat-absen">
@@ -1016,7 +1017,7 @@
               <div style="display:flex; flex-direction:column; gap:14px;">
                 <div class="form-group">
                   <label>Judul Header Laporan</label>
-                  <input type="text" id="laporan-judul" class="form-control" placeholder="Contoh: SIAP WANAMSKA / Laporan Absensi ...">
+                  <input type="text" id="laporan-judul" class="form-control" placeholder="Contoh: PRADESKA / Laporan Absensi ...">
                 </div>
                 <div class="form-group">
                   <label>Sub Judul / Alamat</label>
@@ -1024,7 +1025,7 @@
                 </div>
                 <div class="form-group">
                   <label>Catatan Kaki (Footer)</label>
-                  <input type="text" id="laporan-kaki" class="form-control" placeholder="Contoh: Dokumen resmi SIAP WANAMSKA">
+                  <input type="text" id="laporan-kaki" class="form-control" placeholder="Contoh: Dokumen resmi PRADESKA">
                 </div>
               </div>
             </div>
@@ -1591,6 +1592,6 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.11.1"></script><script src="script.js?v=3.15.0"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a441af4c7b99f92c',t:'MTc5MDkyMjkwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.11.1"></script><script src="script.js?v=3.16.0"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a45182396b1ef8f4',t:'MTc5MTA4ODgyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
