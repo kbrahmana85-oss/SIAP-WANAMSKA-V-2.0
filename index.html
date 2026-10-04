@@ -85,6 +85,10 @@
         </div>
       </div>
       
+      <!-- [v3.17.0] Pendaftaran mandiri Alumni (visibilitas diatur JS: tersembunyi bagi perangkat user terdata non-Admin) -->
+      <button type="button" id="btn-daftar-alumni" class="btn" style="display:none; width:100%; margin-top:12px; background:#F3F4F6; color:var(--color-primary); border:1px dashed var(--color-light-brown); font-weight:600;" onclick="bukaModalDaftarAlumni()">📝 Daftar Sebagai Alumni</button>
+      <div id="akun-tersimpan-info" style="display:none; margin-top:10px; font-size:0.72rem; color:#666; background:#FAF4EE; padding:8px 10px; border-radius:8px;"></div>
+
       <!-- [FIX-4] Login + ikon sidik jari berdampingan (ID & fungsi tetap sama) -->
       <div class="login-actions">
         <button type="button" id="loginBtn" class="btn btn-gold" onclick="handleLogin()">Login</button>
@@ -151,7 +155,7 @@
         <div class="menu-item" onclick="switchSection('section-agenda', this)">
           <span class="icon">&#128198;</span><span class="menu-label">Agenda Kegiatan</span>
         </div>
-        <div class="menu-item" onclick="switchSection('section-absensi', this)">
+        <div class="menu-item" id="menu-absensi" onclick="switchSection('section-absensi', this)">
           <span class="icon">&#128197;</span><span class="menu-label">Absensi Mandiri</span>
         </div>
         <div class="menu-item" onclick="switchSection('section-kegiatan', this)">
@@ -180,6 +184,9 @@
         <div class="menu-item" onclick="switchSection('section-profile', this)">
           <span class="icon">&#128100;</span><span class="menu-label">Profil Diri</span>
         </div>
+        <div class="menu-item role-restricted" id="menu-lulusan" style="display:none;" onclick="switchSection('section-profil-lulusan', this)">
+          <span class="icon">&#127891;</span><span class="menu-label">Profil Lulusan</span>
+        </div>
         
         <div class="menu-item role-restricted" id="menu-users" onclick="switchSection('section-users', this)">
           <span class="icon">&#128101;</span><span class="menu-label">Kelola User</span>
@@ -192,6 +199,13 @@
         </div>
         <div class="menu-item role-restricted" id="menu-logs" onclick="switchSection('section-logs', this)">
           <span class="icon">&#128196;</span><span class="menu-label">Log Aktivitas</span>
+        </div>
+
+        <div class="menu-item role-restricted" id="menu-usulan" onclick="switchSection('section-usulan', this)">
+          <span class="icon">&#128221;</span><span class="menu-label">Usulan Alumni</span>
+        </div>
+        <div class="menu-item" id="menu-pesan" onclick="switchSection('section-pesan', this)">
+          <span class="icon">&#128172;</span><span class="menu-label">Pesan Alumni</span>
         </div>
 
         <div class="menu-item" onclick="actionLogout()" style="color: var(--color-danger-red); margin-top: 25px;">
@@ -867,6 +881,65 @@
         </section>
 
         <!-- SECTION 10: PROFIL DIRI & BIOMETRIK -->
+        <!-- ============ [v3.18.0] SECTION PESAN & KESAN ALUMNI ============ -->
+        <section id="section-pesan" class="app-section">
+          <div class="section-header">
+            <h1>Pesan &amp; Kesan Alumni</h1>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted);">Titipan pesan dan kesan alumni untuk adik-adik Penggalang &amp; Pramuka SMP N 26 Kota Surakarta. Pesan tampil setelah divalidasi Admin.</p>
+          </div>
+
+          <div class="card" id="card-pesan-form" style="display:none;">
+            <h2 style="margin-bottom: 15px; font-size: 1.2rem; color: var(--color-primary);">Tulis Pesan &amp; Kesan</h2>
+            <div class="form-group">
+              <label>Pesan untuk adik-adik Penggalang</label>
+              <textarea id="pesan-alumni-teks" class="form-control" rows="4" placeholder="Tuliskan pesan, kesan, nasihat, atau semangat untuk adik-adik penggalang..."></textarea>
+            </div>
+            <button class="btn btn-gold btn-full" onclick="submitPesanAlumni()" style="padding: 12px;">KIRIM PESAN</button>
+          </div>
+
+          <div class="card" style="margin-top: 20px;">
+            <h2 style="margin-bottom: 15px; font-size: 1.2rem; color: var(--color-primary);" id="pesan-list-title">Pesan &amp; Kesan</h2>
+            <div id="pesan-list" style="display: flex; flex-direction: column; gap: 12px;">
+              <p style="text-align:center; color:var(--color-text-muted);">Memuat pesan...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ [v3.17.0] SECTION USULAN ALUMNI ============ -->
+        <section id="section-usulan" class="app-section">
+          <div class="section-header">
+            <h1>Usulan Alumni</h1>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted);">Alumni mengusulkan kegiatan — wajib menyatakan siap terlibat. Setiap usulan <strong>wajib divalidasi Admin selaku Pembina Utama</strong> sebelum dipublikasikan; hasilnya juga dapat dilihat Dewan Penggalang.</p>
+          </div>
+
+          <div class="card" id="card-usulan-form">
+            <h2 style="margin-bottom: 15px; font-size: 1.2rem; color: var(--color-primary);">Ajukan Usulan Kegiatan</h2>
+            <div class="form-group">
+              <label>Judul Usulan</label>
+              <input type="text" id="usulan-judul" class="form-control" placeholder="Contoh: Reuni & pelatihan kepemimpinan alumni" maxlength="120">
+            </div>
+            <div class="form-group">
+              <label>Detail Usulan</label>
+              <textarea id="usulan-detail" class="form-control" rows="4" placeholder="Uraian kegiatan yang diusulkan, tujuan, dan perkiraan pelaksanaan..."></textarea>
+            </div>
+            <div class="form-group" style="background:#FAF4EE; padding:12px; border-radius:8px; border-left:4px solid var(--color-accent-gold);">
+              <label style="display:flex; gap:10px; align-items:flex-start; cursor:pointer; margin:0;">
+                <input type="checkbox" id="usulan-siap" style="margin-top:3px; width:18px; height:18px;">
+                <span style="font-size:0.85rem;"><strong>WAJIB:</strong> Saya menyatakan <strong>SIAP TERLIBAT</strong> dalam kegiatan dari usulan yang saya berikan.</span>
+              </label>
+            </div>
+            <button class="btn btn-gold btn-full" onclick="submitUsulanAlumni()" style="padding: 12px;">KIRIM USULAN</button>
+            <p style="font-size:0.72rem; color:var(--color-text-muted); margin-top:8px;">⏳ Batas usulan: <strong>1 kali per bulan</strong> — setiap usulan dihitung, apapun hasil validasinya (disetujui/ditolak).</p>
+          </div>
+
+          <div class="card" style="margin-top: 20px;">
+            <h2 style="margin-bottom: 15px; font-size: 1.2rem; color: var(--color-primary);" id="usulan-list-title">Daftar Usulan</h2>
+            <div id="usulan-list" style="display: flex; flex-direction: column; gap: 12px;">
+              <p style="text-align:center; color:var(--color-text-muted);">Memuat usulan...</p>
+            </div>
+          </div>
+        </section>
+
         <section id="section-profile" class="app-section">
           <div class="section-header">
             <h1>Profil Anggota &amp; Pengaturan Akun</h1>
@@ -916,6 +989,27 @@
                 <label>No. HP (WhatsApp)</label>
                 <input type="text" id="prof-hp" class="form-control">
               </div>
+
+              <!-- [v3.20.0] Field WAJIB khusus lulusan/alumni -->
+              <div id="prof-alumni-extra" style="display:none;">
+                <div class="form-group">
+                  <label>Tahun Lulus / Angkatan <span style="color:var(--color-danger-red);">*</span></label>
+                  <input type="number" id="prof-tahun-lulus" class="form-control" min="1990" max="2100" placeholder="Contoh: 2022">
+                </div>
+                <div class="form-group">
+                  <label>Sekolah / Kuliah / Kerja <span style="color:var(--color-danger-red);">*</span></label>
+                  <input type="text" id="prof-sekolah" class="form-control" placeholder="Contoh: SMAN 3 Surakarta / Kuliah UNS / Bekerja di ...">
+                </div>
+                <div class="form-group">
+                  <label>Foto Lulusan 3x4 — WAJIB (JPEG/JPG/PNG, maks 1 MB)</label>
+                  <div style="width:90px; height:120px; border:2px dashed var(--color-light-brown); border-radius:8px; overflow:hidden; background:#FDF8EF; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
+                    <img id="prof-foto-lulusan-img" src="" alt="Foto 3x4" style="width:100%; height:100%; object-fit:cover; display:none;">
+                    <span id="prof-foto-lulusan-kosong" style="font-size:0.7rem; color:#8A6D4F; text-align:center;">3×4<br>belum ada</span>
+                  </div>
+                  <input type="file" id="prof-foto-lulusan" class="form-control" accept="image/jpeg,image/jpg,image/png" onchange="previewFotoLulusan(event)">
+                </div>
+              </div>
+
               <button class="btn btn-gold btn-full" id="btn-simpan-profil" onclick="actionSaveProfile()">SIMPAN PROFIL</button>
               <p id="prof-kunci-catatan" style="display:none; font-size:0.8rem; color:var(--color-text-muted); text-align:center; margin:8px 0 0;">🔒 Data profil dikunci oleh Admin.</p>
             </div>
@@ -980,6 +1074,28 @@
           </div>
         </section>
 
+        <!-- ============ [v3.20.0] SECTION PROFIL LULUSAN ============ -->
+        <section id="section-profil-lulusan" class="app-section" style="display:none;">
+          <div class="section-header">
+            <h1>Profil Lulusan</h1>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted);">Biodata lengkap lulusan (alumni) berdasarkan angkatan tahun lulus. Foto tersimpan pada folder Drive &quot;Foto Profil Lulusan/&lt;tahun lulus&gt;&quot;.</p>
+          </div>
+
+          <div class="card" id="kop-lulusan" style="text-align:center; padding:18px 14px;">
+            <p style="color:var(--color-text-muted); font-size:0.85rem;">Memuat kop template lulusan...</p>
+          </div>
+
+          <div class="card" style="margin-top:16px;">
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;">
+              <div id="lulusan-info" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;"></div>
+              <button class="btn btn-gold" id="btn-ekspor-lulusan" style="display:none;" onclick="triggerExportLaporan('lulusan','pdf')">⬇ Export PDF Biodata</button>
+            </div>
+            <div id="lulusan-list" style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px;">
+              <p style="color:var(--color-text-muted); grid-column:1/-1;">Memuat profil lulusan...</p>
+            </div>
+          </div>
+        </section>
+
         <!-- SECTION 12: KELOLA DATA LAPORAN (khusus Admin - template header export PER MODUL) -->
         <section id="section-laporan-admin" class="app-section" style="display:none;">
           <div class="section-header">
@@ -994,7 +1110,8 @@
               export <strong>PDF, Excel, dan DOC</strong> modul tersebut.
             </p>
             <div style="margin-bottom:16px; font-size:0.85rem; color:var(--color-primary-dark); background:#FBF1E3; border-left:4px solid var(--color-accent-gold); padding:8px 12px; border-radius:8px;">
-              ℹ️ <strong>Absensi</strong> = template export yang tampil untuk <strong>Pembina</strong> ·
+              ℹ️ <strong>Profil Lulusan</strong> = kop pada halaman Profil Lulusan &amp; export PDF biodata lulusan ·
+              <strong>Absensi</strong> = template export yang tampil untuk <strong>Pembina</strong> ·
               <strong>Kedai Penggalang</strong> (Laporan/Stok/Penjualan) = template export yang tampil untuk
               <strong>DGW202638 &amp; DGW202641</strong>.
             </div>
@@ -1592,6 +1709,42 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.11.1"></script><script src="script.js?v=3.16.2"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.11.1"></script><script src="script.js?v=3.21.0"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>  <!-- ============ [v3.17.0] MODAL PENDAFTARAN ALUMNI ============ -->
+  <div id="modal-daftar-alumni" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#FFFFFF; border-radius:14px; max-width:420px; width:100%; max-height:92vh; overflow-y:auto; padding:20px;">
+      <h2 style="margin:0 0 4px; color:var(--color-primary); font-size:1.25rem;">📝 Daftar Sebagai Alumni</h2>
+      <p style="font-size:0.78rem; color:#666; margin:0 0 14px;">User ID alumni dibuat otomatis berurutan (Alumni001, Alumni002, ...). Password tersimpan ter-hash.</p>
+      <div id="daftar-alumni-hasil" style="display:none; background:#E8F7EE; border:1px solid #03543F22; border-radius:10px; padding:14px; margin-bottom:12px;"></div>
+      <form id="form-daftar-alumni" onsubmit="event.preventDefault(); submitDaftarAlumni();">
+        <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="al-nama" class="form-control" required></div>
+        <div class="form-group"><label>NTA (jika ada)</label><input type="text" id="al-nta" class="form-control"></div>
+        <div style="display:flex; gap:10px;">
+          <div class="form-group" style="flex:1;"><label>Tempat Lahir *</label><input type="text" id="al-tempat" class="form-control" required></div>
+          <div class="form-group" style="flex:1;"><label>Tanggal Lahir *</label><input type="date" id="al-lahir" class="form-control" required></div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <div class="form-group" style="flex:1;"><label>Jenis Kelamin *</label>
+            <select id="al-jk" class="form-control" required><option value="">— pilih —</option><option>Laki-laki</option><option>Perempuan</option></select>
+          </div>
+          <div class="form-group" style="flex:1;"><label>Tahun Lulus</label><input type="number" id="al-lulus" class="form-control" min="1990" max="2100" placeholder="2024"></div>
+        </div>
+        <div class="form-group"><label>Alamat</label><input type="text" id="al-alamat" class="form-control"></div>
+        <div class="form-group"><label>No. HP *</label><input type="tel" id="al-hp" class="form-control" required></div>
+        <div style="display:flex; gap:10px;">
+          <div class="form-group" style="flex:1;"><label>Password * (min 6)</label><input type="password" id="al-pw" class="form-control" required minlength="6"></div>
+          <div class="form-group" style="flex:1;"><label>Ulangi Password *</label><input type="password" id="al-pw2" class="form-control" required minlength="6"></div>
+        </div>
+        <div class="form-group" style="background:#FAF4EE; padding:10px; border-radius:8px; border-left:4px solid var(--color-accent-gold);">
+          <label style="display:flex; gap:10px; align-items:flex-start; cursor:pointer; margin:0;">
+            <input type="checkbox" id="al-setuju" style="margin-top:3px; width:18px; height:18px;" required>
+            <span style="font-size:0.8rem;">Saya menyatakan data yang diisi <strong>benar</strong> dan saya adalah <strong>alumni</strong> gudep ini.</span>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-gold btn-full" style="padding:11px;">DAFTARKAN SAYA</button>
+        <button type="button" class="btn btn-full" style="padding:9px; margin-top:8px; background:#EEE;" onclick="tutupModalDaftarAlumni()">Tutup</button>
+      </form>
+    </div>
+  </div>
+</body>
 </html>
