@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.16.2"; 
+const APP_VERSION = "3.21.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -90,6 +90,13 @@ let materiFileName = "";
 let materiFileMime = "";
 let kedaiFotoBase64 = "";
 
+// [v3.20.0] Profil Lulusan
+let fotoLulusanBase64 = "";
+let fotoLulusanDim = null;
+let fotoLulusanAda = false;
+let lulusanCache = null;
+let lulusanAngkatanAktif = "";  // [v3.21.0] "" = tampilan kartu angkatan, selain itu = angkatan terpilih
+
 // =========================================================================
 // === API CACHE & NETWORK ENGINE                                        ===
 // =========================================================================
@@ -104,7 +111,8 @@ const READ_ONLY_FUNCS = new Set([
   'getKedaiList', 'getKedaiNextId', 'getHasilKedaiList',
   'getPotensiGameProgres', 'getPotensiMateriList', 'getPotensiPapanSkor',
   'getDashboardBundle', 'getPotensiAwal',
-  'getPotensiFolderStatus', 'getPotensiSoalKelola', 'getUcapanUlangTahun'
+  'getPotensiFolderStatus', 'getPotensiSoalKelola', 'getUcapanUlangTahun',
+  'getProfilLulusan'  // [v3.20.0]
 ]);
 
 function isWriteFunc(name) {
@@ -571,7 +579,36 @@ function requestGPSPermission() {
   }
 }
 
+// [v3.17.0] Tombol "Daftar Sebagai Alumni": terlihat bagi pengunjung baru & Admin;
+// tersembunyi di perangkat yang pernah dipakai login user terdata (non-Admin).
+function sinkronTombolAlumni() {
+  const btn = document.getElementById('btn-daftar-alumni');
+  if (!btn) return;
+  // [v3.18.0] Prefill kredensial alumni tersimpan di perangkat
+  try {
+    const raw = localStorage.getItem('pradeska_akun_alumni');
+    if (raw) {
+      const akun = JSON.parse(raw);
+      if (akun && akun.u) {
+        const inpU = document.getElementById('userId');
+        const inpP = document.getElementById('password');
+        if (inpU && !inpU.value) inpU.value = akun.u;
+        if (inpP && !inpP.value) inpP.value = akun.p || "";
+        const info = document.getElementById('akun-tersimpan-info');
+        if (info) {
+          info.innerHTML = `🔐 Akun alumni tersimpan di perangkat ini: <strong>${akun.u}</strong>`;
+          info.style.display = 'block';
+        }
+      }
+    }
+  } catch (e) {}
+  let peran = "";
+  try { peran = localStorage.getItem("pradeska_role_terakhir") || ""; } catch (e) {}
+  btn.style.display = (!peran || peran === "Admin") ? "block" : "none";
+}
+
 function showPage(pageId) {
+  if (pageId === 'login-page') { try { sinkronTombolAlumni(); } catch (e) {} }
   const toggleBtn = document.querySelector('.menu-toggle');
   const overlayEl = document.querySelector('.overlay');
 
@@ -676,6 +713,9 @@ function switchSection(sectionId, elementMenu) {
 
   if (sectionId === 'section-dashboard') loadDashboard();
   else if (sectionId === 'section-absensi') loadAbsenHistory();
+  else if (sectionId === 'section-usulan') muatUsulanAlumni();  // [v3.17.0]
+  else if (sectionId === 'section-pesan') muatPesanAlumni();    // [v3.18.0]
+  else if (sectionId === 'section-profil-lulusan') muatProfilLulusan();  // [v3.20.0]
   else if (sectionId === 'section-kegiatan') loadKegiatan();
   else if (sectionId === 'section-agenda') loadAgenda();
   else if (sectionId === 'section-materi') closeMateriFilesContainer();
@@ -765,6 +805,7 @@ function handleLogin() {
         userId = res.user.user_id;
 
         localStorage.setItem("last_passkey_user_id", userId.toLowerCase());
+        localStorage.setItem("pradeska_role_terakhir", res.user.role);  // [v3.17.0] dasar aturan tampil tombol daftar alumni
 
         document.getElementById('user-display-name').innerText = res.user.nama_lengkap;
         document.getElementById('user-display-role').innerText = res.user.role;
@@ -789,6 +830,320 @@ function handleLogin() {
       setLoginLoading(false);
       showToast(err.message || 'Login gagal', true);
     });
+}
+
+// =========================================================
+// === [v3.17.0] PENDAFTARAN & USULAN ALUMNI             ===
+// =========================================================
+function bukaModalDaftarAlumni() {
+  const m = document.getElementById('modal-daftar-alumni');
+  if (!m) return;
+  m.style.display = 'flex';
+  const h = document.getElementById('daftar-alumni-hasil');
+  if (h) h.style.display = 'none';
+  const f = document.getElementById('form-daftar-alumni');
+  if (f) { f.reset(); f.style.display = 'block'; }
+}
+
+function tutupModalDaftarAlumni() {
+  const m = document.getElementById('modal-daftar-alumni');
+  if (m) m.style.display = 'none';
+}
+
+function submitDaftarAlumni() {
+  const data = {
+    nama: (document.getElementById('al-nama').value || "").trim(),
+    nta: (document.getElementById('al-nta').value || "").trim(),
+    tempatLahir: (document.getElementById('al-tempat').value || "").trim(),
+    tanggalLahir: document.getElementById('al-lahir').value,
+    jenisKelamin: document.getElementById('al-jk').value,
+    tahunLulus: (document.getElementById('al-lulus').value || "").trim(),
+    alamat: (document.getElementById('al-alamat').value || "").trim(),
+    noHp: (document.getElementById('al-hp').value || "").trim(),
+    password: document.getElementById('al-pw').value,
+    setuju: document.getElementById('al-setuju').checked
+  };
+  if (!data.nama || !data.tempatLahir || !data.tanggalLahir || !data.jenisKelamin || !data.noHp) {
+    showToast("Lengkapi data bertanda *.", true); return;
+  }
+  if (!data.password || data.password.length < 6) { showToast("Password minimal 6 karakter.", true); return; }
+  if (data.password !== document.getElementById('al-pw2').value) { showToast("Konfirmasi password tidak sama.", true); return; }
+  if (!data.setuju) { showToast("Centang pernyataan kebenaran data.", true); return; }
+  setLoader(true, "Mendaftarkan akun alumni...");
+  callAPI('daftarAlumni', [data])
+    .then(res => {
+      setLoader(false);
+      if (res.success) {
+        const h = document.getElementById('daftar-alumni-hasil');
+        h.innerHTML = `<strong>✅ Pendaftaran berhasil!</strong><br>User ID Anda: <span style="font-size:1.1rem; font-weight:800; color:var(--color-primary);">${res.userId}</span><br><small>Simpan User ID ini. Login dengan password yang Anda buat; setelah login Anda dapat mendaftarkan biometrik di Profil.</small>`;
+        h.style.display = 'block';
+        document.getElementById('form-daftar-alumni').style.display = 'none';
+        // [v3.18.0] Simpan kredensial alumni di perangkat ini -> login terisi otomatis
+        try {
+          localStorage.setItem('pradeska_akun_alumni', JSON.stringify({ u: res.userId, p: data.password }));
+          const info = document.getElementById('akun-tersimpan-info');
+          if (info) {
+            info.innerHTML = `🔐 Akun alumni tersimpan di perangkat ini: <strong>${res.userId}</strong> — kolom login terisi otomatis.`;
+            info.style.display = 'block';
+          }
+        } catch (e) {}
+        showToast(res.message);
+      } else {
+        showToast(res.message, true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// ----- Usulan Alumni -----
+function muatUsulanAlumni() {
+  if (["Alumni", "Admin", "Dewan Penggalang"].indexOf(userRole) === -1) return;
+  const isAdmin = userRole === "Admin";          // Pembina Utama: validasi & publikasi
+  const isAlumni = userRole === "Alumni";
+  const form = document.getElementById('card-usulan-form');
+  if (form) form.style.display = isAlumni ? 'block' : 'none';
+  const judul = document.getElementById('usulan-list-title');
+  if (judul) judul.innerText = isAdmin ? "Kelola Usulan Alumni (Validasi Pembina Utama)" :
+    isAlumni ? "Usulan Saya & yang Dipublikasikan" : "Hasil Usulan Alumni (Tervalidasi)";
+  const list = document.getElementById('usulan-list');
+  if (!list) return;
+  list.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Memuat usulan...</p>';
+  callAPI('getUsulanAlumni', [sessionToken])
+    .then(res => {
+      if (!res.success) { list.innerHTML = `<p style="color:var(--color-danger-red);">${escapeHtml(res.message)}</p>`; return; }
+      if (!res.list.length) { list.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada usulan.</p>'; return; }
+      const warna = s => s === "Dipublikasikan" ? "#03543F" : s === "Disetujui" ? "#1E429F" : s === "Ditolak" ? "#B91C1C" : "#92400E";
+      list.innerHTML = res.list.map(u => {
+        const aksi = isAdmin && u.status !== "Dipublikasikan" ?
+          `<div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+            ${u.status !== "Disetujui" ? `<button class="btn" style="padding:4px 10px; font-size:0.72rem; background:#03543F; color:#fff;" onclick="aksiUsulanUI('${u.id}','setujui')">✔ Setujui</button>` : `<button class="btn" style="padding:4px 10px; font-size:0.72rem; background:#1E429F; color:#fff;" onclick="aksiUsulanUI('${u.id}','publish')">📢 Publikasikan</button>`}
+            ${u.status !== "Ditolak" ? `<button class="btn" style="padding:4px 10px; font-size:0.72rem; background:var(--color-danger-red); color:#fff;" onclick="aksiUsulanUI('${u.id}','tolak')">✖ Tolak</button>` : ""}
+          </div>` : "";
+        return `<div style="padding:12px; background:#FFF; border-radius:10px; border-left:5px solid ${warna(u.status)}; box-shadow:var(--shadow-soft);">
+          <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">
+            <strong>${escapeHtml(u.judul)}</strong>
+            <span class="badge" style="background:${warna(u.status)}22; color:${warna(u.status)}; font-weight:700;">${u.status}</span>
+          </div>
+          <div style="font-size:0.75rem; color:var(--color-text-muted); margin:3px 0;">${u.id} • ${escapeHtml(u.nama)} (${escapeHtml(u.user_id)}) • ${u.tanggal} ${u.jam} • Kesediaan terlibat: <strong>${u.kesediaan === "Ya" ? "YA" : "-"}</strong></div>
+          <div style="font-size:0.85rem; margin-top:4px;">${escapeHtml(u.detail)}</div>
+          ${u.catatan_admin ? `<div style="font-size:0.75rem; color:#1E429F; margin-top:4px;">💬 ${escapeHtml(u.catatan_admin)}</div>` : ""}
+          ${aksi}
+        </div>`;
+      }).join("");
+    })
+    .catch(err => { list.innerHTML = `<p style="color:var(--color-danger-red);">${escapeHtml(err.message)}</p>`; });
+}
+
+function submitUsulanAlumni() {
+  const judul = (document.getElementById('usulan-judul').value || "").trim();
+  const detail = (document.getElementById('usulan-detail').value || "").trim();
+  const siap = document.getElementById('usulan-siap').checked;
+  if (!judul || !detail) { showToast("Judul dan detail usulan wajib diisi.", true); return; }
+  if (!siap) { showToast("WAJIB centang pernyataan SIAP TERLIBAT dalam usulan Anda.", true); return; }
+  setLoader(true, "Mengirim usulan...");
+  callAPI('ajukanUsulanAlumni', [sessionToken, judul, detail, siap ? "Ya" : "Tidak"])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      if (res.success) {
+        document.getElementById('usulan-judul').value = "";
+        document.getElementById('usulan-detail').value = "";
+        document.getElementById('usulan-siap').checked = false;
+        muatUsulanAlumni();
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function aksiUsulanUI(id, aksi) {
+  let catatan = "";
+  if (aksi === "tolak" || aksi === "setujui") {
+    catatan = prompt((aksi === "tolak" ? "Alasan penolakan" : "Catatan Admin") + " (boleh dikosongkan):", "") || "";
+    if (aksi === "tolak" && catatan === null) return;
+  }
+  if (!confirm("Usulan " + id + " -> " + aksi.toUpperCase() + "?")) return;
+  setLoader(true, "Memproses usulan...");
+  callAPI('aksiUsulanAlumni', [sessionToken, id, aksi, catatan])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      if (res.success) muatUsulanAlumni();
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// =========================================================
+// === [v3.18.0] PESAN & KESAN ALUMNI                    ===
+// =========================================================
+function muatPesanAlumni() {
+  const isAdmin = userRole === "Admin";
+  const isAlumni = userRole === "Alumni";
+  const form = document.getElementById('card-pesan-form');
+  if (form) form.style.display = isAlumni ? 'block' : 'none';
+  const judul = document.getElementById('pesan-list-title');
+  if (judul) judul.innerText = isAdmin ? "Kelola Pesan & Kesan Alumni" : "Pesan & Kesan untuk Adik-Adik Penggalang";
+  const list = document.getElementById('pesan-list');
+  if (!list) return;
+  list.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Memuat pesan...</p>';
+  callAPI('getPesanAlumni', [sessionToken])
+    .then(res => {
+      if (!res.success) { list.innerHTML = `<p style="color:var(--color-danger-red);">${escapeHtml(res.message)}</p>`; return; }
+      if (!res.list.length) { list.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada pesan.</p>'; return; }
+      const warna = s => s === "Terbit" ? "#03543F" : s === "Ditolak" ? "#B91C1C" : "#92400E";
+      list.innerHTML = res.list.map(m => {
+        const badge = (isAdmin || m.milik) ? `<span class="badge" style="background:${warna(m.status)}22; color:${warna(m.status)}; font-weight:700;">${m.status}</span>` : "";
+        const aksi = (isAdmin && m.status === "Menunggu") ?
+          `<div style="display:flex; gap:6px; margin-top:8px;">
+            <button class="btn" style="padding:4px 10px; font-size:0.72rem; background:#03543F; color:#fff;" onclick="aksiPesanUI('${m.id}','terbitkan')">📢 Terbitkan</button>
+            <button class="btn" style="padding:4px 10px; font-size:0.72rem; background:var(--color-danger-red); color:#fff;" onclick="aksiPesanUI('${m.id}','tolak')">✖ Tolak</button>
+          </div>` : "";
+        return `<div style="padding:12px; background:#FFFDF7; border-radius:10px; border-left:5px solid ${warna(m.status)}; box-shadow:var(--shadow-soft);">
+          <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">
+            <strong style="color:var(--color-primary);">💌 ${escapeHtml(m.nama)}</strong>
+            ${badge}
+          </div>
+          <div style="font-size:0.72rem; color:var(--color-text-muted); margin:2px 0 6px;">${m.id} • ${m.tanggal} ${m.jam}</div>
+          <div style="font-size:0.9rem; font-style:italic;">"${escapeHtml(m.pesan)}"</div>
+          ${m.catatan_admin ? `<div style="font-size:0.75rem; color:#1E429F; margin-top:4px;">💬 ${escapeHtml(m.catatan_admin)}</div>` : ""}
+          ${aksi}
+        </div>`;
+      }).join("");
+    })
+    .catch(err => { list.innerHTML = `<p style="color:var(--color-danger-red);">${escapeHtml(err.message)}</p>`; });
+}
+
+function submitPesanAlumni() {
+  const pesan = (document.getElementById('pesan-alumni-teks').value || "").trim();
+  if (pesan.length < 10) { showToast("Pesan terlalu pendek (minimal 10 karakter).", true); return; }
+  setLoader(true, "Mengirim pesan...");
+  callAPI('kirimPesanAlumni', [sessionToken, pesan])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      if (res.success) {
+        document.getElementById('pesan-alumni-teks').value = "";
+        muatPesanAlumni();
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function aksiPesanUI(id, aksi) {
+  let catatan = "";
+  if (aksi === "tolak") {
+    catatan = prompt("Alasan penolakan (boleh dikosongkan):", "");
+    if (catatan === null) return;
+  }
+  if (!confirm("Pesan " + id + " -> " + aksi.toUpperCase() + "?")) return;
+  setLoader(true, "Memproses pesan...");
+  callAPI('aksiPesanAlumni', [sessionToken, id, aksi, catatan])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      if (res.success) muatPesanAlumni();
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// =========================================================
+// === [v3.20.0] MENU PROFIL LULUSAN (per angkatan)      ===
+// =========================================================
+function muatProfilLulusan() {
+  const list = document.getElementById('lulusan-list');
+  if (!list) return;
+  const btnEkspor = document.getElementById('btn-ekspor-lulusan');
+  if (btnEkspor) btnEkspor.style.display = (userRole === "Admin") ? 'inline-block' : 'none';
+  list.innerHTML = '<p style="color:var(--color-text-muted); grid-column:1/-1;">Memuat profil lulusan...</p>';
+  callAPI('getProfilLulusan', [sessionToken])
+    .then(res => {
+      if (!res.success) { list.innerHTML = `<p style="color:var(--color-danger-red); grid-column:1/-1;">${escapeHtml(res.message)}</p>`; return; }
+      lulusanCache = res;
+      lulusanAngkatanAktif = "";  // [v3.21.0] selalu mulai dari kartu angkatan
+      renderKopLulusan(res.template);
+      renderProfilLulusan();
+    })
+    .catch(err => { list.innerHTML = `<p style="color:var(--color-danger-red); grid-column:1/-1;">${escapeHtml(err.message)}</p>`; });
+}
+
+function renderKopLulusan(tpl) {
+  const kop = document.getElementById('kop-lulusan');
+  if (!kop) return;
+  tpl = tpl || {};
+  const logo = tpl.logo_url ? `<img src="${escapeHtml(tpl.logo_url)}" alt="Logo" style="height:64px; margin-bottom:6px;">` : "";
+  const judul = tpl.judul_laporan || "PROFIL LULUSAN";
+  const sub = tpl.sub_judul_laporan || "PRADESKA — Pramuka SMP N 26 Kota Surakarta";
+  kop.innerHTML = `${logo}
+    <h2 style="color:var(--color-primary); margin:2px 0;">${escapeHtml(judul)}</h2>
+    <div style="font-size:0.85rem; color:var(--color-text-muted);">${escapeHtml(sub)}</div>`;
+}
+
+function bukaAngkatanLulusan(tl) {  // [v3.21.0] klik kartu tahun -> tampilan nama + foto
+  lulusanAngkatanAktif = String(tl || "");
+  renderProfilLulusan();
+  try { document.getElementById('section-profil-lulusan').scrollIntoView({ behavior: "smooth" }); } catch (e) {}
+}
+
+function kembaliDaftarAngkatan() {  // [v3.21.0] tombol kembali
+  lulusanAngkatanAktif = "";
+  renderProfilLulusan();
+}
+
+// Foto gagal dimuat -> ganti frame dengan placeholder rapi (tanpa merusak layout)
+function fotoLulusanGagal(el) {
+  const frame = el && el.parentElement;
+  if (!frame) return;
+  el.remove();
+  frame.innerHTML = '<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#999; font-size:0.75rem; text-align:center; padding:8px;">Foto belum dapat<br>dimuat</div>';
+}
+
+function renderProfilLulusan() {
+  const res = lulusanCache;
+  if (!res) return;
+  const list = document.getElementById('lulusan-list');
+  if (!list) return;
+  const info = document.getElementById('lulusan-info');
+
+  // ===== TINGKAT 1: KARTU PER TAHUN LULUSAN =====
+  if (!lulusanAngkatanAktif) {
+    if (info) info.innerHTML = "";
+    const kel = {};
+    res.list.forEach(x => { const tl = x.tahun_lulus || "(tanpa tahun)"; (kel[tl] = kel[tl] || []).push(x); });
+    const tahunList = Object.keys(kel).sort();
+    if (!tahunList.length) {
+      list.innerHTML = '<p style="color:var(--color-text-muted); grid-column:1/-1;">Belum ada data lulusan.</p>';
+      return;
+    }
+    list.innerHTML = tahunList.map(tl => `
+      <div class="card" style="margin:0; text-align:center; padding:22px 10px; cursor:pointer; border:2px solid var(--color-light-brown); transition:transform .15s;" onclick="bukaAngkatanLulusan('${escapeHtml(tl)}')">
+        <div style="font-size:2.1rem; line-height:1;">🎓</div>
+        <div style="font-weight:800; color:var(--color-primary); font-size:1.15rem; margin-top:8px;">Angkatan ${escapeHtml(tl)}</div>
+        <div style="font-size:0.75rem; color:var(--color-text-muted); margin-top:3px;">${kel[tl].length} lulusan • ketuk untuk membuka</div>
+      </div>`).join("");
+    return;
+  }
+
+  // ===== TINGKAT 2: KARTU NAMA + FOTO (FRAME 3x4 PRESISI, TIDAK TERPOTONG) =====
+  const data = res.list.filter(x => (x.tahun_lulus || "(tanpa tahun)") === lulusanAngkatanAktif);
+  if (info) info.innerHTML = `
+    <button class="btn" style="padding:5px 12px; font-size:0.78rem;" onclick="kembaliDaftarAngkatan()">⬅ Semua Angkatan</button>
+    <strong style="color:var(--color-primary); font-size:1rem;">Angkatan ${escapeHtml(lulusanAngkatanAktif)}</strong>
+    <span style="font-size:0.75rem; color:var(--color-text-muted);">(${data.length} lulusan)</span>`;
+  if (!data.length) {
+    list.innerHTML = '<p style="color:var(--color-text-muted); grid-column:1/-1;">Belum ada lulusan pada angkatan ini.</p>';
+    return;
+  }
+  list.innerHTML = data.map(x => {
+    // Frame rasio 3:4; foto di-RESIZE otomatis (object-fit:contain) sehingga TAMPIL UTUH & presisi di dalam frame
+    const isiFoto = x.foto_lulusan
+      ? `<img src="${escapeHtml(x.foto_lulusan)}" alt="Foto ${escapeHtml(x.nama)}" style="width:100%; height:100%; object-fit:contain; display:block;" onerror="fotoLulusanGagal(this)">`
+      : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#999; font-size:0.75rem; text-align:center; padding:8px;">Foto 3x4<br>belum ada</div>`;
+    return `<div class="card" style="margin:0; padding:10px; text-align:center;">
+      <div class="lulusan-frame" style="width:100%; aspect-ratio:3/4; background:#FFFFFF; border:2px solid var(--color-light-brown); border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+        ${isiFoto}
+      </div>
+      <div style="margin-top:9px; font-weight:800; color:var(--color-primary); font-size:0.95rem; line-height:1.3;">${escapeHtml(x.nama)}</div>
+    </div>`;
+  }).join("");
 }
 
 function actionLogout() {
@@ -817,6 +1172,8 @@ function setupRBACUI(role) {
   document.getElementById('menu-exports').style.display = 'none';
   document.getElementById('menu-laporan-admin').style.display = 'none';
   document.getElementById('menu-logs').style.display = 'none';
+  document.getElementById('menu-usulan').style.display = 'none';  // [v3.17.0]
+  document.getElementById('menu-lulusan').style.display = 'none';  // [v3.20.0] Profil Lulusan
   
   // Grup tombol export per-modul (ditampilkan sesuai hak peran)
   const expActs = ['export-actions-agenda','export-actions-inventaris','export-actions-kas','export-actions-kedai','export-actions-absensi'];
@@ -854,8 +1211,11 @@ function setupRBACUI(role) {
   document.getElementById('btn-lonceng').style.display = 'flex';
   setTimeout(function () { loadNotifications(false); }, 1500);
 
-  // POIN 1.h: Menu Kedai Penggalang selalu tampil untuk semua peran
+  // POIN 1.h: Menu Kedai Penggalang selalu tampil untuk semua peran (kecuali Alumni — [v3.17.0])
   document.getElementById('menu-kedai').style.display = 'flex';
+  if (role === "Admin" || role === "Dewan Penggalang") document.getElementById('menu-usulan').style.display = 'flex';  // [v3.17.0/v3.18.0] Admin validasi, Dewan melihat hasil tervalidasi
+  // [v3.20.0] Profil Lulusan: Admin, Pembina, Dewan Penggalang, Penggalang (Alumni tidak)
+  if (["Admin", "Pembina", "Dewan Penggalang", "Penggalang"].indexOf(role) !== -1) document.getElementById('menu-lulusan').style.display = 'flex';
 
   // [v3.12.0] Tab Bantu Absen hanya untuk Admin/Pembina/Dewan Penggalang
   const tabsAbsen = document.getElementById('absen-mode-tabs');
@@ -873,6 +1233,17 @@ function setupRBACUI(role) {
     document.getElementById('btn-kurangi-kedai-trigger').style.display = 'inline-block'; // Poin 1.g
   } else if (isKedaiPetugasJual) {
     document.getElementById('btn-kurangi-kedai-trigger').style.display = 'inline-block'; // Poin 1.g
+  }
+
+  // [v3.17.0] Blok peran ALUMNI: Dashboard, Agenda, Dokumentasi, Profil, Usulan — tanpa Absensi/Potensi/Kedai
+  if (role === "Alumni") {
+    document.getElementById('menu-absensi').style.display = 'none';
+    document.getElementById('menu-potensi').style.display = 'none';
+    document.getElementById('menu-kedai').style.display = 'none';
+    document.getElementById('menu-usulan').style.display = 'flex';
+    document.getElementById('widget-leaderboard-potensi').style.display = 'none';
+    applyExportActionUI();
+    return; // alur peran lain tidak dieksekusi
   }
 
   if (role === "Admin" || role === "Pembina" || role === "Dewan Penggalang") {
@@ -2660,6 +3031,11 @@ function renderLeaderboardPotensi(daftar) {
 }
 
 function loadDashboard() {
+  // [v3.17.0] Dashboard Alumni: sapaan + agenda ringkas + banner ultah (ringan, tanpa data administratif)
+  if (userRole === "Alumni") {
+    try { muatUcapanUlangTahun(); } catch (e) {}
+    return;
+  }
   // [FIX-3] Tampilkan cache instan dulu (jika ada), lalu segarkan dari server
   try {
     var cached = getCachedDashboard();
@@ -3181,9 +3557,63 @@ function loadProfileDiri() {
           document.getElementById('prof-preview-img').src = p.foto_profil;
           profilePhotoBase64 = p.foto_profil;
         }
+
+        // [v3.20.0] Field wajib lulusan
+        const extra = document.getElementById('prof-alumni-extra');
+        if (extra) extra.style.display = (userRole === "Alumni") ? 'block' : 'none';
+        if (userRole === "Alumni") {
+          document.getElementById('prof-tahun-lulus').value = p.tahun_lulus || "";
+          document.getElementById('prof-sekolah').value = p.sekolah_kuliah_kerja || "";
+          const imgF = document.getElementById('prof-foto-lulusan-img');
+          const spF = document.getElementById('prof-foto-lulusan-kosong');
+          fotoLulusanBase64 = ""; fotoLulusanDim = null;
+          if (p.foto_lulusan) {
+            imgF.src = p.foto_lulusan; imgF.style.display = 'block';
+            if (spF) spF.style.display = 'none';
+            fotoLulusanAda = true;
+          } else {
+            imgF.style.display = 'none';
+            if (spF) spF.style.display = 'block';
+            fotoLulusanAda = false;
+          }
+        }
       }
     })
     .catch(err => showToast(err.message, true));
+}
+
+// [v3.20.0] Pratinjau + validasi foto lulusan 3x4 (JPEG/JPG/PNG, maks 1 MB)
+function previewFotoLulusan(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (["image/jpeg", "image/jpg", "image/png"].indexOf(file.type) === -1) {
+    showToast("Format foto harus JPEG/JPG/PNG.", true); event.target.value = ""; return;
+  }
+  if (file.size > 1024 * 1024) {
+    showToast("Ukuran foto maksimal 1 MB. Kompres/foto ulang.", true); event.target.value = ""; return;
+  }
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const img = new Image();
+    img.onload = function () {
+      if (Math.abs((img.width / img.height) - 0.75) > 0.03) {
+        showToast("Rasio foto harus 3x4 (contoh 300x400 piksel). Foto belum disimpan.", true);
+        event.target.value = ""; return;
+      }
+      fotoLulusanBase64 = e.target.result;
+      fotoLulusanDim = { w: img.width, h: img.height };
+      fotoLulusanAda = true;
+      const im = document.getElementById('prof-foto-lulusan-img');
+      im.src = fotoLulusanBase64; im.style.display = 'block';
+      const sp = document.getElementById('prof-foto-lulusan-kosong');
+      if (sp) sp.style.display = 'none';
+      showToast("Foto 3x4 siap. Klik SIMPAN PROFIL untuk menyimpan.");
+    };
+    img.onerror = function () { showToast("File gambar tidak dapat dibaca.", true); };
+    img.src = e.target.result;
+  };
+  reader.onerror = function () { showToast("Gagal membaca file foto.", true); };
+  reader.readAsDataURL(file);
 }
 
 function previewAndResizeProfilePhoto(event) {
@@ -3224,6 +3654,19 @@ function actionSaveProfile() {
     no_hp: document.getElementById('prof-hp').value,
     foto_profil: profilePhotoBase64 
   };
+  // [v3.20.0] Lulusan: seluruh field WAJIB lengkap termasuk foto 3x4
+  if (userRole === "Alumni") {
+    payload.tahun_lulus = (document.getElementById('prof-tahun-lulus').value || "").trim();
+    payload.sekolah_kuliah_kerja = (document.getElementById('prof-sekolah').value || "").trim();
+    payload.foto_lulusan = fotoLulusanBase64;
+    payload.foto_lulusan_dim = fotoLulusanDim;
+    if (!payload.tahun_lulus || !payload.sekolah_kuliah_kerja) {
+      showToast("Tahun Lulus dan Sekolah/Kuliah/Kerja WAJIB diisi.", true); return;
+    }
+    if (!fotoLulusanBase64 && !fotoLulusanAda) {
+      showToast("Foto lulusan 3x4 WAJIB diunggah (JPEG/JPG/PNG, maks 1 MB).", true); return;
+    }
+  }
   setLoader(true, "Menyimpan profil...");
   callAPI('saveUserProfile', [sessionToken, payload])
     .then(res => {
