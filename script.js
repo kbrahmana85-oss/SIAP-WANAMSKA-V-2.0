@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.15.0"; 
+const APP_VERSION = "3.16.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -309,7 +309,7 @@ function requestPushNotificationPermission() {
     if (Notification.permission !== "granted" && Notification.permission !== "denied") {
       Notification.requestPermission().then(permission => {
         if (permission === "granted") {
-          triggerNativeNotification("SIAP WANAMSKA", "Notifikasi perangkat berhasil diaktifkan.");
+          triggerNativeNotification("PRADESKA", "Notifikasi perangkat berhasil diaktifkan.");
         }
       });
     }
@@ -385,7 +385,7 @@ async function actionRegisterPasskey() {
       publicKey: {
         challenge: challenge,
         rp: {
-          name: "SIAP WANAMSKA",
+          name: "PRADESKA",
           id: window.location.hostname || "localhost"
         },
         user: {
@@ -428,7 +428,7 @@ async function actionRegisterPasskey() {
         localStorage.setItem("saved_passkey_cred_" + userId.toLowerCase(), credIdBase64);
         localStorage.setItem("last_passkey_user_id", userId.toLowerCase());
         showToast("✅ Sidik jari perangkat berhasil didaftarkan!");
-        triggerNativeNotification("SIAP WANAMSKA", "Biometrik berhasil didaftarkan untuk akun Anda.");
+        triggerNativeNotification("PRADESKA", "Biometrik berhasil didaftarkan untuk akun Anda.");
       } else {
         showToast(res.message, true);
       }
@@ -1347,7 +1347,7 @@ function loadNotifications(markAsRead = false) {
         const lastReadId = localStorage.getItem('last_read_notif_id_' + userId);
 
         if (lastReadId !== newestId && !markAsRead) {
-          triggerNativeNotification("SIAP WANAMSKA: " + res.list[0].title, res.list[0].detail);
+          triggerNativeNotification("PRADESKA: " + res.list[0].title, res.list[0].detail);
         }
 
         const badge = document.getElementById('lonceng-badge');
@@ -2443,6 +2443,7 @@ function actionSubmitAbsen() {
             document.getElementById('absen-bantu-userid').value = "";
             const nmField = document.getElementById('absen-bantu-nama');
             if (nmField) { nmField.value = ""; nmField.placeholder = "Nama muncul otomatis"; }
+            hapusCacheAbsensi();
             loadAbsenHistory();
             loadNotifications(false);
           } else {
@@ -2504,11 +2505,53 @@ function sendAbsenRequest(status, fotoSelfie, lat, lng, isFake) {
         base64SelfieString = "";
         const snap = document.getElementById('selfie-canvas-preview');
         if (snap) snap.src = "";
+        hapusCacheAbsensi();
         loadAbsenHistory();
         loadNotifications(false);
       } else {
         showToast(res.message, true);
       }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// =========================================================
+// === [v3.16.0] EDIT & HAPUS RIWAYAT ABSENSI (Admin)    ===
+// =========================================================
+// Invalidasi cache riwayat absensi agar tampilan langsung segar setelah aksi tulis
+function hapusCacheAbsensi() {
+  try {
+    const kunciHapus = [];
+    API_CACHE.forEach((v, k) => { if (k.indexOf("getAbsenHistory|") === 0) kunciHapus.push(k); });
+    kunciHapus.forEach(k => API_CACHE.delete(k));
+  } catch (e) {}
+}
+
+function editAbsensi(idAbsen) {
+  if (userRole !== "Admin") { showToast("Hanya Admin yang dapat mengedit riwayat absensi.", true); return; }
+  const statusBaru = prompt("Ubah status riwayat " + idAbsen + " menjadi:\nKetik salah satu: Hadir / Sakit / Izin / Alpa", "");
+  if (statusBaru === null) return;
+  const st = statusBaru.trim();
+  if (!st) { showToast("Status baru tidak boleh kosong.", true); return; }
+  setLoader(true, "Memperbarui riwayat...");
+  callAPI('editAbsensi', [sessionToken, idAbsen, st])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      if (res.success) { hapusCacheAbsensi(); loadAbsenHistory(); }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function hapusAbsensi(idAbsen) {
+  if (userRole !== "Admin") { showToast("Hanya Admin yang dapat menghapus riwayat absensi.", true); return; }
+  if (!confirm("Hapus permanen riwayat absensi " + idAbsen + "?\nGunakan untuk membersihkan catatan absen ganda.")) return;
+  setLoader(true, "Menghapus riwayat...");
+  callAPI('hapusAbsensi', [sessionToken, idAbsen])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      if (res.success) { hapusCacheAbsensi(); loadAbsenHistory(); }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
@@ -2524,18 +2567,29 @@ function loadAbsenHistory() {
           if (!tbody) return;
           tbody.innerHTML = "";
           if (res.list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum terdapat riwayat absensi.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum terdapat riwayat absensi.</td></tr>`;
             return;
           }
           res.list.forEach(row => {
             let badgeClass = row.status === "Hadir" ? "badge-hadir" : row.status === "Izin" ? "badge-izin" : "badge-sakit";
             let imgTag = row.foto_base64 ? `<img src="${row.foto_base64}" style="width: 50px; height: 65px; border-radius:4px; object-fit:cover; cursor:pointer;" onclick="viewFullImage('${row.foto_base64}')">` : "Tidak Ada";
+            // [v3.16.0] Edit & Hapus riwayat — khusus Admin
+            let aksiTd = "—";
+            const rid = row.id_absen || row.id;
+            if (userRole === "Admin" && rid) {
+              const aman = String(rid).replace(/[^A-Za-z0-9\-]/g, "");
+              aksiTd = `<span style="display:inline-flex; gap:6px;">
+                <button class="btn" style="padding:4px 9px; font-size:0.72rem; background:#1E429F; color:#FFFFFF;" title="Ubah status riwayat" onclick="editAbsensi('${aman}')">✏️ Edit</button>
+                <button class="btn" style="padding:4px 9px; font-size:0.72rem; background:var(--color-danger-red); color:#FFFFFF;" title="Hapus riwayat (mis. absen ganda)" onclick="hapusAbsensi('${aman}')">🗑 Hapus</button>
+              </span>`;
+            }
             tbody.innerHTML += `
               <tr>
                 <td>${row.tanggal} <br> <span style="font-size:0.75rem; color:var(--color-text-muted);">${row.jam}</span></td>
                 <td><strong>${row.nama}</strong><br><span style="font-size:0.75rem;">${row.user_id}</span></td>
                 <td><span class="badge ${badgeClass}">${row.status}</span></td>
                 <td>${imgTag}</td>
+                <td>${aksiTd}</td>
               </tr>`;
           });
         } else {
