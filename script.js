@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.21.0"; 
+const APP_VERSION = "3.22.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -96,6 +96,7 @@ let fotoLulusanDim = null;
 let fotoLulusanAda = false;
 let lulusanCache = null;
 let lulusanAngkatanAktif = "";  // [v3.21.0] "" = tampilan kartu angkatan, selain itu = angkatan terpilih
+let alumniFotoBelum = null;     // [v3.22.0] null=belum dicek; true=terkunci (foto wajib belum diisi)
 
 // =========================================================================
 // === API CACHE & NETWORK ENGINE                                        ===
@@ -727,6 +728,12 @@ function switchSection(sectionId, elementMenu) {
   else if (sectionId === 'section-users') loadUsers();
   else if (sectionId === 'section-logs') loadSystemLogs();
   else if (sectionId === 'section-laporan-admin') loadLaporanAdmin();
+
+  // [v3.22.0] alumni dengan foto belum diisi: overlay menutup semua menu KECUALI Profil Diri (agar bisa melengkapi)
+  if (userRole === "Alumni" && alumniFotoBelum === true) {
+    const ov = document.getElementById('gate-alumni');
+    if (ov) ov.style.display = (sectionId !== 'section-profile') ? 'flex' : 'none';
+  }
 }
 
 function initLiveTimer() {
@@ -1146,6 +1153,46 @@ function renderProfilLulusan() {
   }).join("");
 }
 
+// =========================================================
+// === [v3.22.0] GATE FOTO WAJIB ALUMNI                  ===
+// =========================================================
+function periksaGateAlumni() {
+  if (userRole !== "Alumni") {
+    alumniFotoBelum = false;
+    const ov = document.getElementById('gate-alumni');
+    if (ov) ov.style.display = 'none';
+    return;
+  }
+  callAPI('getUserProfile', [sessionToken, userId])
+    .then(res => {
+      const belum = !(res.success && res.profile && res.profile.foto_lulusan);
+      alumniFotoBelum = belum;
+      terapkanGateAlumni(belum);
+    })
+    .catch(() => {});
+}
+
+function terapkanGateAlumni(belum) {
+  const ov = document.getElementById('gate-alumni');
+  if (ov) ov.style.display = belum ? 'flex' : 'none';
+  const btnBio = document.getElementById('btn-daftar-sidik-jari');
+  if (btnBio) { btnBio.disabled = !!belum; btnBio.style.opacity = belum ? 0.5 : 1; }
+  const catBio = document.getElementById('biometrik-gate-catatan');
+  if (catBio) catBio.style.display = belum ? 'block' : 'none';
+  const btnPass = document.getElementById('btn-update-password');
+  if (btnPass) { btnPass.disabled = !!belum; btnPass.style.opacity = belum ? 0.5 : 1; }
+  const catPass = document.getElementById('password-gate-catatan');
+  if (catPass) catPass.style.display = belum ? 'block' : 'none';
+}
+
+function bukaProfilDariGate() {
+  const ov = document.getElementById('gate-alumni');
+  if (ov) ov.style.display = 'none';
+  const mi = document.querySelector(".menu-item[onclick*='section-profile']");
+  if (mi) mi.click(); else switchSection('section-profile');
+  showToast("Lengkapi seluruh data + foto 3x4, lalu SIMPAN PROFIL.");
+}
+
 function actionLogout() {
   if (!confirm("Apakah Anda yakin ingin keluar dari sistem?")) return;
   callAPI('logoutUser', [sessionToken]).catch(() => {});
@@ -1243,6 +1290,7 @@ function setupRBACUI(role) {
     document.getElementById('menu-usulan').style.display = 'flex';
     document.getElementById('widget-leaderboard-potensi').style.display = 'none';
     applyExportActionUI();
+    periksaGateAlumni();  // [v3.22.0] foto wajib -> kunci fitur bila belum diisi
     return; // alur peran lain tidak dieksekusi
   }
 
@@ -3673,11 +3721,13 @@ function actionSaveProfile() {
       setLoader(false);
       showToast(res.message);
       loadProfileDiri();
+      if (userRole === "Alumni" && res.success) periksaGateAlumni();  // [v3.22.0] buka kunci bila foto telah diisi
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
 function actionGantiPassword() {
+  if (userRole === "Alumni" && alumniFotoBelum) { showToast("Foto profil lulusan WAJIB diisi dahulu di Profil Diri.", true); return; }
   const lama = document.getElementById('pass-lama').value;
   const baru = document.getElementById('pass-baru').value;
   if (!lama || !baru) { showToast("Password lama dan baru wajib diisi.", true); return; }
