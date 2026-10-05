@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.10.2 - TERKUNCI (2026-09-25)
+// [KUNCI] SIAP WANAMSKA v3.23.0 - TERKUNCI (2026-10-05)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.22.0"; 
+const APP_VERSION = "3.23.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -1076,7 +1076,8 @@ function renderKopLulusan(tpl) {
   const kop = document.getElementById('kop-lulusan');
   if (!kop) return;
   tpl = tpl || {};
-  const logo = tpl.logo_url ? `<img src="${escapeHtml(tpl.logo_url)}" alt="Logo" style="height:64px; margin-bottom:6px;">` : "";
+  const srcLogo = tpl.logo_url || logoLaporanTerkunci();  // [v3.23.0] emblem terkunci
+  const logo = srcLogo ? `<img src="${escapeHtml(srcLogo)}" alt="Logo PRADESKA" style="height:64px; margin-bottom:6px;">` : "";
   const judul = tpl.judul_laporan || "PROFIL LULUSAN";
   const sub = tpl.sub_judul_laporan || "PRADESKA — Pramuka SMP N 26 Kota Surakarta";
   kop.innerHTML = `${logo}
@@ -3940,6 +3941,13 @@ let laporanTemplateRows = []; // hasil getReportTemplate
 let laporanModulLabels  = {}; // label dari server
 let laporanLogoBase64   = ""; // logo baru (data URL) utk modul yang sedang diedit
 
+// [v3.23.0] Logo template laporan DIKUNCI = emblem PRADESKA transparan (sama dengan logo header).
+// Tidak dapat diganti; sumber gambar diambil dari <img class="logo"> pada header aplikasi.
+function logoLaporanTerkunci() {
+  try { return (window.LOGO_PRADESKA_TERKUNCI || (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || ""); }
+  catch (e) { return ""; }
+}
+
 function laporanLabel(key) {
   if (laporanModulLabels && laporanModulLabels[key]) return laporanModulLabels[key];
   const hit = LAPORAN_MODUL_OPTIONS.find(o => o.key === key);
@@ -4137,13 +4145,13 @@ function loadLaporanModuleForm(modulKey) {
   if (s) s.value = row.sub_judul_laporan || '';
   if (k) k.value = row.catatan_kaki || '';
   laporanLogoBase64 = '';
-  setLaporanLogoPreview(row.logo_url || '');
+  setLaporanLogoPreview(logoLaporanTerkunci());  // [v3.23.0] dikunci
 }
 
 function setLaporanLogoPreview(logoValue) {
   const box = document.getElementById('laporan-logo-preview');
   if (!box) return;
-  const v = logoValue || '';
+  const v = logoLaporanTerkunci() || (logoValue || '');  // [v3.23.0] selalu emblem terkunci
   box.innerHTML = '';
   if (v) {
     const im = document.createElement('img');
@@ -4160,6 +4168,7 @@ function previewLaporanLogo(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
   setLoader(true, 'Mengompresi logo laporan...');
+  setTimeout(() => { try { setLoader(false); } catch (e) {} }, 6000);  // [v3.23.0] pengaman: loader tak boleh menggantung
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
@@ -4174,7 +4183,7 @@ function previewLaporanLogo(event) {
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       laporanLogoBase64 = canvas.toDataURL('image/png');
-      setLaporanLogoPanLogoPreview(laporanLogoBase64);
+      try { setLaporanLogoPreview(laporanLogoBase64); } catch (eP) { setLoader(false); }
       setLoader(false);
       showToast('Logo baru siap disimpan untuk modul ini.');
     };
@@ -4200,9 +4209,10 @@ function renderLaporanModulStatus() {
     card.style.cssText = 'border:1px solid #E7D3B5;border-radius:12px;background:#FFFDF8;padding:10px 12px;display:flex;gap:10px;align-items:center;';
     const logoBox = document.createElement('div');
     logoBox.style.cssText = 'width:44px;height:44px;border-radius:8px;background:#F0EAE1;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;';
-    if (row.logo_url) {
+    const logoTerkunci = logoLaporanTerkunci();
+    if (logoTerkunci || row.logo_url) {
       const im = document.createElement('img');
-      im.src = row.logo_url; im.alt='';
+      im.src = logoTerkunci || row.logo_url; im.alt='Logo PRADESKA (dikunci)';
       im.style.cssText = 'width:100%;height:100%;object-fit:contain;';
       logoBox.appendChild(im);
     } else {
@@ -4259,12 +4269,7 @@ function saveLaporanTemplate() {
   const s = (document.getElementById('laporan-subjudul') || {}).value || '';
   const k = (document.getElementById('laporan-kaki') || {}).value || '';
 
-  // Logo: utamakan logo baru; bila tidak diganti, pakai logo tersimpan modul ini
-  let logoValue = laporanLogoBase64;
-  if (!logoValue) {
-    const row = templateRowFor(modul);
-    if (row && row.logo_url) logoValue = row.logo_url;
-  }
+  // [v3.23.0] Logo dikunci ke emblem PRADESKA — tidak dikirim dari klien
 
   setLoader(true, 'Menyimpan template modul "' + laporanLabel(modul) + '"...');
   callAPI('saveReportTemplate', [sessionToken, {
@@ -4272,7 +4277,7 @@ function saveLaporanTemplate() {
     judul_laporan: j.trim(),
     sub_judul_laporan: s.trim(),
     catatan_kaki: k.trim(),
-    logo_url: logoValue || ''
+    logo_url: ''  // [v3.23.0] dikunci di server
   }])
     .then(res => {
       setLoader(false);
