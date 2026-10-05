@@ -1,11 +1,11 @@
 {
-  "versi": "3.21.0",
+  "versi": "3.22.0",
   "tanggal_kunci": "2026-10-04",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 247802,
-      "sha256": "e2146446c6e95bbdb3e783d5fc4e8f94c866fce6eb0eba5668f32f05db0d07c1",
+      "ukuran_byte": 249331,
+      "sha256": "9ce1baaecbc6e777ed5ab50c673c0eb161829f7959337953083a54ca54f0791a",
       "jumlah_fungsi": 1,
       "fungsi": [
         "c"
@@ -20,9 +20,9 @@
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 182160,
-      "sha256": "781a68d99a201d52472321b585170e0b3bf689e4b33fd1f47b9f22e59dfd12e4",
-      "jumlah_fungsi": 182,
+      "ukuran_byte": 184597,
+      "sha256": "99d9934d9e3e185da37d2ce73d5d1b80843666048d67b711eb93c66b1760315c",
+      "jumlah_fungsi": 185,
       "fungsi": [
         "absenBantuCekNama",
         "actionDeleteAgenda",
@@ -52,6 +52,7 @@
         "bufferToBase64Url",
         "bukaAngkatanLulusan",
         "bukaModalDaftarAlumni",
+        "bukaProfilDariGate",
         "calculateKedaiTotalPembayaran",
         "callAPI",
         "captureSnapshot",
@@ -145,6 +146,7 @@
         "openTambahKedaiModal",
         "openTambahMateriModal",
         "openUserModal",
+        "periksaGateAlumni",
         "populateSelectBarangOptions",
         "previewAndResizeProfilePhoto",
         "previewFotoLulusan",
@@ -191,6 +193,7 @@
         "switchSection",
         "syncKedaiRoleUI",
         "templateRowFor",
+        "terapkanGateAlumni",
         "terapkanKunciProfil",
         "todayLocalInput",
         "toggleExportDropdown",
@@ -271,17 +274,18 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v16)",
       "ukuran_byte": 2971,
-      "sha256": "fdc791750895a7d3653133d4a36889b1b37935a007717f17cc19b8ed62e94b9f",
+      "sha256": "b4384ceba3e6456032d994e17a96e30d0c32de33446a310d68910941aedad646",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 219360,
-      "sha256": "2b6f954a42f1b0efbd25c4786ded7fd32794705b9cccafaad463c5740c7cf367",
-      "jumlah_fungsi": 139,
+      "ukuran_byte": 221626,
+      "sha256": "d5646dd100e9f32674a7874236d95ad34112ee2724631b7429d544557386b837",
+      "jumlah_fungsi": 142,
       "fungsi": [
         "_allowedExportModuls",
+        "_alumniFotoBelum_",
         "_barisUsulan_",
         "_buildDashboardForSession",
         "_cleanCellText",
@@ -294,6 +298,7 @@
         "_ensureLaporanTemplateSheet",
         "_fmtRp",
         "_folderFotoLulusan_",
+        "_folderIndukLulusan_",
         "_getTemplateRow",
         "_hitungIdAlumniBerikut_",
         "_mimeExport",
@@ -314,6 +319,7 @@
         "_templateDefaultGlobal",
         "_templateRowToObj",
         "_thousand",
+        "_tolakFotoBelum_",
         "_uploadFotoLulusan_",
         "_validasiFotoLulusan_",
         "_writeLaporanDocument",
