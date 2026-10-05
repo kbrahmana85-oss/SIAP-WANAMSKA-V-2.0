@@ -1029,9 +1029,10 @@
                 <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 15px;">
                   Daftarkan sensor sidik jari atau kunci layar perangkat HP/Laptop ini untuk login instan tanpa mengetik password.
                 </p>
-                <button class="btn btn-biometric btn-full" onclick="actionRegisterPasskey()">
+                <button class="btn btn-biometric btn-full" id="btn-daftar-sidik-jari" onclick="actionRegisterPasskey()">
                   🖐️ Daftarkan Sidik Jari Perangkat Ini
                 </button>
+                <p id="biometrik-gate-catatan" style="display:none; font-size:0.8rem; color:var(--color-danger-red); margin-top:8px;">🔒 Foto profil lulusan wajib diisi dahulu (Profil Diri) sebelum mendaftarkan biometrik.</p>
               </div>
 
               <div class="card" style="margin-top: 20px;">
@@ -1044,7 +1045,8 @@
                   <label>Password Baru</label>
                   <input type="password" id="pass-baru" class="form-control">
                 </div>
-                <button class="btn btn-danger btn-full" onclick="actionGantiPassword()">UPDATE PASSWORD</button>
+                <button class="btn btn-danger btn-full" id="btn-update-password" onclick="actionGantiPassword()">UPDATE PASSWORD</button>
+                <p id="password-gate-catatan" style="display:none; font-size:0.8rem; color:var(--color-danger-red); margin-top:8px;">🔒 Foto profil lulusan wajib diisi dahulu (Profil Diri) sebelum dapat mengganti password.</p>
               </div>
             </div>
           </div>
@@ -1709,7 +1711,7 @@
   </div>
 
   <!-- SCRIPT ENGINE V2.9.0 -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.11.1"></script><script src="script.js?v=3.21.0"></script>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="potensi-game.js?v=3.11.1"></script><script src="script.js?v=3.22.0"></script>
 <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>  <!-- ============ [v3.17.0] MODAL PENDAFTARAN ALUMNI ============ -->
   <div id="modal-daftar-alumni" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#FFFFFF; border-radius:14px; max-width:420px; width:100%; max-height:92vh; overflow-y:auto; padding:20px;">
@@ -1746,5 +1748,14 @@
       </form>
     </div>
   </div>
-</body>
+<div id="gate-alumni" style="display:none; position:fixed; inset:0; z-index:9998; background:rgba(26,12,0,0.55); backdrop-filter:blur(2px); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#fff; border-radius:16px; max-width:360px; width:100%; padding:24px 20px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <div style="font-size:2.2rem;">📷</div>
+    <h2 style="color:var(--color-primary); font-size:1.15rem; margin:8px 0 6px;">Foto Profil Lulusan Wajib</h2>
+    <p style="font-size:0.88rem; color:#555; line-height:1.55;">Anda belum mengunggah <strong>foto 3×4</strong>. Selama foto belum diisi, penyimpanan dan fitur lain (usulan, pesan, biometrik, ganti password) <strong>terkunci</strong>.</p>
+    <p style="font-size:0.78rem; color:var(--color-text-muted); margin:6px 0 14px;">JPEG/JPG/PNG • rasio 3:4 • maks 1 MB</p>
+    <button class="btn btn-gold btn-full" onclick="bukaProfilDariGate()">📥 Lengkapi Profil Diri Sekarang</button>
+  </div>
+</div>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4588dff0b48fdca',t:'MTc5MTE2MjcxMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
