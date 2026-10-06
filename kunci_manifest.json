@@ -1,11 +1,11 @@
 {
-  "versi": "3.24.0",
+  "versi": "3.24.1",
   "tanggal_kunci": "2026-10-06",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
       "ukuran_byte": 249873,
-      "sha256": "734e1fc7bf405b3d032a706914305699dc4de835c6eb666a5040df3f242ea4f5",
+      "sha256": "bd8566d4c4d6939b57b210fff2b4bcdd6bcad0fffff9ca2fee63ea37a6150eb4",
       "jumlah_fungsi": 1,
       "fungsi": [
         "c"
@@ -14,14 +14,14 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 72598,
-      "sha256": "4a1a6af1ee8f6f65669049be172f568af95c38e94c25b1accc079ed20435439d",
+      "sha256": "6313945c37e72533136484983251105851d66714dfb28efc8c1e41f2f362e2d1",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
       "ukuran_byte": 186407,
-      "sha256": "730be6e3c0d19332ca53444e8b8c5cbf5eccf7ebec733c212161e48ea1353f61",
+      "sha256": "e920c1182531c612f6603e5c1fb8b0c97b858668bacb2b8f890de23e1ca2782e",
       "jumlah_fungsi": 186,
       "fungsi": [
         "absenBantuCekNama",
@@ -215,7 +215,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "94fbafb1d310d50db0082c3b0cdd3c434ac1b1e2e174916139cec03f85330d5d",
+      "sha256": "fa7669d301afe11fcc4e18b9919d74a2ef2b94395a0bf0cfc902f8389152c1a1",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -273,16 +273,16 @@
       ]
     },
     "sw.js": {
-      "keterangan": "Service worker: cache offline PWA (v34)",
+      "keterangan": "Service worker: cache offline PWA (v35)",
       "ukuran_byte": 2971,
-      "sha256": "fa0232656130988fa5c391c8ecfa118038bdae57a311c2f614f5d314443acd41",
+      "sha256": "d3ecb5035f7ff6e57003822ec15f13134adc1a469cc4b4c4cf1baae3e12348ec",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 369852,
-      "sha256": "c5a42fb3aaee0ae30bbf0689e278c2d7098b37a932cbd536d8768098d83b2b8e",
+      "ukuran_byte": 370174,
+      "sha256": "8950d782235ed13edb3db162a68e8e4812f2a8dfca92630a10a6636306b7572b",
       "jumlah_fungsi": 142,
       "fungsi": [
         "_allowedExportModuls",
