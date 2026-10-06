@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.23.0 - TERKUNCI (2026-10-05)
+// [KUNCI] SIAP WANAMSKA v3.24.0 - TERKUNCI (2026-10-06)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.23.0"; 
+const APP_VERSION = "3.24.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3532,18 +3532,22 @@ function renderUcapanUlangTahun(res) {
 
 // [v3.9.0] KUNCI PROFIL — status dari server; Admin dapat membuka/kunci ulang
 let profilTerbuka = null; // null = belum diketahui
+let alumniProfilTerkunci = false; // [v3.24.0] profil alumni TERKUNCI otomatis setelah profil+foto lengkap
 
 function muatStatusKunciProfil() {
   callAPI('getStatusKunciProfil', [sessionToken], { cache: false })
-    .then(res => terapkanKunciProfil(!!(res && res.terbuka), !!(res && res.admin)))
+    .then(res => terapkanKunciProfil(!!(res && res.terbuka), !!(res && res.admin), false))
     .catch(() => {});
 }
 
-function terapkanKunciProfil(terbuka, isAdmin) {
+function terapkanKunciProfil(terbuka, isAdmin, alumniTerkunci) {
   profilTerbuka = terbuka;
-  const bolehEdit = terbuka || isAdmin;
+  alumniProfilTerkunci = !!alumniTerkunci;  // [v3.24.0]
+  // [v3.24.0] profil alumni yang sudah LENGKAP terkunci walau status global terbuka (Admin tetap bisa lewat jalur Admin)
+  const bolehEdit = (terbuka || isAdmin) && !alumniProfilTerkunci;
   ['prof-nta', 'prof-nama', 'prof-tempat-lahir', 'prof-tanggal-lahir', 'prof-jk',
-   'prof-golongan', 'prof-regu', 'prof-alamat', 'prof-hp'].forEach(id => {
+   'prof-golongan', 'prof-regu', 'prof-alamat', 'prof-hp',
+   'prof-tahun-lulus', 'prof-sekolah', 'prof-foto-lulusan'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.disabled = !bolehEdit;
   });
@@ -3552,7 +3556,13 @@ function terapkanKunciProfil(terbuka, isAdmin) {
   const simpan = document.getElementById('btn-simpan-profil');
   if (simpan) simpan.style.display = bolehEdit ? 'inline-block' : 'none';
   const catatan = document.getElementById('prof-kunci-catatan');
-  if (catatan) catatan.style.display = bolehEdit ? 'none' : 'block';
+  if (catatan) {
+    catatan.style.display = bolehEdit ? 'none' : 'block';
+    // [v3.24.0] alasan kunci: profil alumni sudah lengkap vs dikunci Admin
+    catatan.textContent = alumniProfilTerkunci
+      ? "🔒 Profil sudah LENGKAP & TERKUNCI — data tidak dapat diubah lagi. Hubungi Admin bila ada perubahan data."
+      : "🔒 Data profil dikunci oleh Admin.";
+  }
   const btn = document.getElementById('btn-kunci-profil');
   if (btn) {
     if (isAdmin) {
@@ -3583,7 +3593,7 @@ function loadProfileDiri() {
     .then(res => {
       if (res.success) {
         // [v3.11.0] status kunci disertakan respons -> tanpa eksekusi ke-2
-        if (res.kunci) terapkanKunciProfil(!!res.kunci.terbuka, !!res.kunci.admin);
+        if (res.kunci) terapkanKunciProfil(!!res.kunci.terbuka, !!res.kunci.admin, !!res.kunci.alumni_terkunci);  // [v3.24.0]
         else muatStatusKunciProfil(); // kompatibel backend lama
         const p = res.profile;
         document.getElementById('prof-user-id').value = p.user_id;
@@ -3690,6 +3700,8 @@ function previewAndResizeProfilePhoto(event) {
 }
 
 function actionSaveProfile() {
+  // [v3.24.0] profil alumni yang sudah lengkap TERKUNCI — tolak sebelum kirim
+  if (userRole === "Alumni" && alumniProfilTerkunci) { showToast("Profil sudah LENGKAP & TERKUNCI — hubungi Admin untuk perubahan data.", true); return; }
   const payload = {
     user_id: document.getElementById('prof-user-id').value,
     nta: document.getElementById('prof-nta').value,
@@ -3724,7 +3736,7 @@ function actionSaveProfile() {
       loadProfileDiri();
       if (userRole === "Alumni" && res.success) periksaGateAlumni();  // [v3.22.0] buka kunci bila foto telah diisi
     })
-    .catch(err => { setLoader(false); showToast(err.message, true); });
+    .catch(err => { setLoader(false); showToast(err.message, true); if (err && err.message && String(err.message).indexOf("TERKUNCI") !== -1) loadProfileDiri(); });  // [v3.24.0] sinkron status kunci
 }
 
 function actionGantiPassword() {
