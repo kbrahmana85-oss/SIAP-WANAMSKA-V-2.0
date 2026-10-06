@@ -1,11 +1,11 @@
 {
-  "versi": "3.23.0",
-  "tanggal_kunci": "2026-10-05",
+  "versi": "3.24.0",
+  "tanggal_kunci": "2026-10-06",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
       "ukuran_byte": 249873,
-      "sha256": "c5b0cfdb71be94c5bbb1f7a2659c86c46eecfde3bec911cf5a6d81b86c010ca3",
+      "sha256": "734e1fc7bf405b3d032a706914305699dc4de835c6eb666a5040df3f242ea4f5",
       "jumlah_fungsi": 1,
       "fungsi": [
         "c"
@@ -14,14 +14,14 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 72598,
-      "sha256": "b5f694a4b29e673cb7679e4124ba1791b47196801424e2d4619594ac976a036e",
+      "sha256": "4a1a6af1ee8f6f65669049be172f568af95c38e94c25b1accc079ed20435439d",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 185301,
-      "sha256": "17dad4c07d2a8a69be57afc89c22e78922d2f9b17308c41fe8357355174f7126",
+      "ukuran_byte": 186407,
+      "sha256": "730be6e3c0d19332ca53444e8b8c5cbf5eccf7ebec733c212161e48ea1353f61",
       "jumlah_fungsi": 186,
       "fungsi": [
         "absenBantuCekNama",
@@ -215,7 +215,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "594f81d7a0c0c25694bed3e86a22be923858413314faf32e4b31042db0361d2b",
+      "sha256": "94fbafb1d310d50db0082c3b0cdd3c434ac1b1e2e174916139cec03f85330d5d",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -273,16 +273,16 @@
       ]
     },
     "sw.js": {
-      "keterangan": "Service worker: cache offline PWA (v33)",
+      "keterangan": "Service worker: cache offline PWA (v34)",
       "ukuran_byte": 2971,
-      "sha256": "82069ab7d945ea669700e8dc709d913ea687ab5f631b2127b69cd6f70fd76f10",
+      "sha256": "fa0232656130988fa5c391c8ecfa118038bdae57a311c2f614f5d314443acd41",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 368772,
-      "sha256": "8de5e4c7045bead7f94291048e14a30c7ccf313f9ad25cd0ceb20cf332ef5a42",
+      "ukuran_byte": 369852,
+      "sha256": "c5a42fb3aaee0ae30bbf0689e278c2d7098b37a932cbd536d8768098d83b2b8e",
       "jumlah_fungsi": 142,
       "fungsi": [
         "_allowedExportModuls",
