@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.24.1 - TERKUNCI (2026-10-06)
+// [KUNCI] SIAP WANAMSKA v3.25.0 - TERKUNCI (2026-10-13)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -11,8 +11,8 @@
 // =========================================================================
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
-const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.24.1"; 
+const API_URL = "http://localhost:8000";
+const APP_VERSION = "3.25.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -2976,6 +2976,53 @@ function hapusAbsensi(idAbsen) {
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
+
+// =========================================================
+// === [v3.25.0] FORMAT WAKTU ABSENSI + CENTANG & HAPUS MASSAL (Admin) ===
+// =========================================================
+// Tanggal -> "Senin, 13 Oktober 2026"; jam -> "09:24". Tangani pula nilai mentah
+// ISO ("2026-10-13T17:00:00.000Z", epoch jam-saja 1899-12-30) dari sheet.
+const HARI_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const BULAN_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+function fmtTanggalAbsen(v) {
+  if (!v) return "";
+  let st = String(v).trim();
+  if (st.indexOf("T") !== -1) st = st.split("T")[0];
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(st);
+  if (!m) return String(v);
+  if (m[1] === "1899") return "";  // nilai jam-saja epoch Sheets
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return HARI_ID[d.getDay()] + ", " + (+m[3]) + " " + BULAN_ID[+m[2] - 1] + " " + m[1];
+}
+function fmtJamAbsen(v) {
+  if (!v) return "";
+  const st = String(v).trim();
+  if (st.indexOf("T") !== -1) {
+    const bag = st.split("T")[1] || "";
+    return /^\d{2}:\d{2}/.test(bag) ? bag.substring(0, 5) : "";
+  }
+  return /^\d{2}:\d{2}/.test(st) ? st.substring(0, 5) : st;
+}
+// Centang semua pada header -> semua kotak centang baris mengikuti
+function cekSemuaAbsen(cek) {
+  document.querySelectorAll('.cek-absen').forEach(el => { el.checked = !!cek; });
+}
+// Hapus seluruh riwayat yang dicentang (khusus Admin; utk absen ganda/berulang)
+function hapusAbsensiTerpilih() {
+  if (userRole !== "Admin") { showToast("Hanya Admin yang dapat menghapus riwayat absensi.", true); return; }
+  const ids = Array.from(document.querySelectorAll('.cek-absen:checked')).map(el => el.value);
+  if (ids.length === 0) { showToast("Centang dulu riwayat yang ingin dihapus.", true); return; }
+  if (!confirm("Hapus permanen " + ids.length + " riwayat absensi terpilih?\nGunakan untuk membersihkan catatan absen ganda/berulang.")) return;
+  setLoader(true, "Menghapus " + ids.length + " riwayat...");
+  callAPI('hapusAbsensiBatch', [sessionToken, ids])
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      if (res.success) { hapusCacheAbsensi(); loadAbsenHistory(); }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
 function loadAbsenHistory() {
   const filter = document.getElementById('filter-absen-date') ? document.getElementById('filter-absen-date').value : "";
 
@@ -2986,8 +3033,17 @@ function loadAbsenHistory() {
           const tbody = document.getElementById('body-riwayat-absen');
           if (!tbody) return;
           tbody.innerHTML = "";
+          // [v3.25.0] header tabel dibangun ulang: Admin mendapat kotak centang + centang semua + kolom Radius
+          const headTr = document.getElementById('head-riwayat-absen');
+          if (headTr) {
+            headTr.innerHTML = userRole === "Admin"
+              ? `<th style="width:34px; text-align:center;" title="Centang semua"><input type="checkbox" id="cek-semua-absen" onchange="cekSemuaAbsen(this.checked)"></th><th>Waktu / Jam</th><th>Nama Anggota</th><th>Status</th><th>Radius</th><th>Bukti Foto</th><th>Aksi</th>`
+              : `<th>Waktu / Jam</th><th>Nama Anggota</th><th>Status</th><th>Radius</th><th>Bukti Foto</th><th>Aksi</th>`;
+          }
+          const btnMassal = document.getElementById('btn-hapus-absen-terpilih');
+          if (btnMassal) btnMassal.style.display = userRole === "Admin" ? "inline-block" : "none";
           if (res.list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Belum terdapat riwayat absensi.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${userRole === "Admin" ? 7 : 6}" style="text-align:center;">Belum terdapat riwayat absensi.</td></tr>`;
             return;
           }
           res.list.forEach(row => {
@@ -3003,11 +3059,17 @@ function loadAbsenHistory() {
                 <button class="btn" style="padding:4px 9px; font-size:0.72rem; background:var(--color-danger-red); color:#FFFFFF;" title="Hapus riwayat (mis. absen ganda)" onclick="hapusAbsensi('${aman}')">🗑 Hapus</button>
               </span>`;
             }
+            // [v3.25.0] kotak centang (Admin), waktu terformat, kolom Radius
+            const cekTd = userRole === "Admin" && rid
+              ? `<td style="text-align:center;"><input type="checkbox" class="cek-absen" value="${String(rid).replace(/"/g, "")}" title="Pilih utk dihapus"></td>`
+              : (userRole === "Admin" ? `<td></td>` : "");
             tbody.innerHTML += `
               <tr>
-                <td>${row.tanggal} <br> <span style="font-size:0.75rem; color:var(--color-text-muted);">${row.jam}</span></td>
+                ${cekTd}
+                <td>${fmtTanggalAbsen(row.tanggal)} <br> <span style="font-size:0.75rem; color:var(--color-text-muted);">${fmtJamAbsen(row.jam)}</span></td>
                 <td><strong>${row.nama}</strong><br><span style="font-size:0.75rem;">${row.user_id}</span></td>
                 <td><span class="badge ${badgeClass}">${row.status}</span></td>
+                <td>${row.radius ? escapeHtml(row.radius) : "—"}</td>
                 <td>${imgTag}</td>
                 <td>${aksiTd}</td>
               </tr>`;
@@ -3027,9 +3089,10 @@ function loadAbsenHistory() {
             container.innerHTML += `
               <div style="padding: 12px; background: #FFFFFF; border-radius: var(--rounded-btn); border-left: 5px solid ${statusColor}; box-shadow: var(--shadow-soft);">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <strong>${row.tanggal} (${row.jam})</strong>
+                  <strong>${fmtTanggalAbsen(row.tanggal)} (${fmtJamAbsen(row.jam)})</strong>
                   <span class="badge" style="background-color:${statusColor}22; color:${statusColor}; font-weight:bold;">${row.status}</span>
                 </div>
+                <div style="font-size:0.72rem; color:var(--color-text-muted); margin-top:4px;">📍 Radius: ${row.radius ? escapeHtml(row.radius) : "—"}</div>
                 ${row.keterangan ? `<div style="font-size:0.72rem; color:var(--color-text-muted); margin-top:4px;">📝 ${escapeHtml(row.keterangan)}</div>` : ""}
                 ${imgTag}
               </div>`;
