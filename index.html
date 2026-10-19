@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!-- ============================================================
-     [KUNCI] SIAP WANAMSKA v3.25.0 - TERKUNCI (2026-10-13)
+     [KUNCI] SIAP WANAMSKA v3.26.0 - TERKUNCI (2026-10-15)
      Berkas  : index.html
      Fungsi  : Struktur halaman & antarmuka (PWA)
      Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -187,6 +187,13 @@
         <div class="menu-item role-restricted" id="menu-lulusan" style="display:none;" onclick="switchSection('section-profil-lulusan', this)">
           <span class="icon">&#127891;</span><span class="menu-label">Profil Lulusan</span>
         </div>
+        <!-- [v3.26.0] PENDAFTARAN CALON DEWAN PENGALANG (CDP) 2027 -->
+        <div class="menu-item role-restricted" id="menu-cdp-daftar" style="display:none;" onclick="switchSection('section-cdp', this)">
+          <span class="icon">&#128221;</span><span class="menu-label">Pendaftaran CDP</span>
+        </div>
+        <div class="menu-item role-restricted" id="menu-cdp-pantau" style="display:none;" onclick="switchSection('section-cdp-pantau', this)">
+          <span class="icon">&#128203;</span><span class="menu-label">Daftar Calon Dewan Penggalang</span>
+        </div>
         
         <div class="menu-item role-restricted" id="menu-users" onclick="switchSection('section-users', this)">
           <span class="icon">&#128101;</span><span class="menu-label">Kelola User</span>
@@ -259,6 +266,21 @@
               <h3>Saldo Kas</h3>
               <div class="val" style="font-size: 1.3rem;" id="dash-saldo-kas">Rp 0</div>
             </div>
+          </div>
+
+          <!-- [v3.26.0] HEADLINE PENDAFTARAN CDP + JUMLAH PENDAFTAR (setelah rilis; semua peran) -->
+          <div id="card-headline-cdp" style="display:none; cursor:pointer; margin:14px 0; border-radius:16px; overflow:hidden; box-shadow:var(--shadow-soft); background:linear-gradient(135deg,#5D4037 0%,#8A6D4F 55%,#D9A441 100%); color:#FFFFFF;">
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 16px;">
+              <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png" alt="" style="width:54px; height:54px; border-radius:12px; background:rgba(255,255,255,0.92); padding:4px; flex-shrink:0;">
+              <div style="flex:1;">
+                <div style="font-size:0.68rem; letter-spacing:1.5px; font-weight:700; color:#FFE3B0; text-transform:uppercase;">📢 Headline • Pendaftaran Dibuka</div>
+                <div style="font-size:1.02rem; font-weight:800; line-height:1.3; margin-top:2px; text-shadow:0 1px 2px rgba(0,0,0,0.35);">CALON DEWAN PENGALANG 2027 — Segera Daftarkan Diri Anda!</div>
+                <div style="font-size:0.75rem; opacity:0.92; margin-top:2px;">Ketuk untuk membuka menu Pendaftaran CDP →</div>
+              </div>
+            </div>
+          </div>
+          <div id="chip-jumlah-cdp" style="display:none; align-items:center; gap:6px; background:#FFFFFF; border:1.5px solid var(--color-accent-gold); border-radius:30px; padding:6px 14px; font-size:0.82rem; font-weight:700; color:#5D4037; margin:0 0 12px; box-shadow:var(--shadow-soft);">
+            👥 Pendaftar Calon Dewan Penggalang 2027: <span id="dash-jumlah-cdp">0</span>
           </div>
 
           <!-- [v3.10.0] STATISTIK PENGGUNA (KHUSUS ADMIN - tampil lewat setupRBACUI) -->
@@ -460,6 +482,7 @@
                   </span>
                 </span>
                 <button class="btn" id="btn-hapus-absen-terpilih" onclick="hapusAbsensiTerpilih()" style="display:none; padding:6px 12px; font-size:0.8rem; background:var(--color-danger-red); color:#FFFFFF;" title="Hapus semua riwayat yang dicentang (khusus Admin)">🗑 Hapus Terpilih</button>
+                <button class="btn" id="btn-hapus-absen-semua" onclick="hapusSemuaAbsensi()" style="display:none; padding:6px 12px; font-size:0.8rem; background:#7A1F1F; color:#FFFFFF;" title="Hapus SELURUH data absensi (khusus Admin)">🗑 Hapus Semua</button>
                 <input type="date" id="filter-absen-date" class="form-control" style="width: 200px;" onchange="loadAbsenHistory()">
               </span>
             </div>
@@ -487,6 +510,72 @@
             <div id="body-riwayat-absen-pribadi" style="display: flex; flex-direction: column; gap: 12px;">
               <p style="text-align: center; color: var(--color-text-muted);">Memuat riwayat pribadi...</p>
             </div>
+          </div>
+        </section>
+
+        <!-- [v3.26.0] SECTION: PENDAFTARAN CDP (form + panel rilis Admin) -->
+        <section id="section-cdp" class="app-section" style="display:none;">
+          <div class="section-header">
+            <h1>Pendaftaran CDP</h1>
+            <p style="font-size:0.85rem; color:var(--color-text-muted); margin-top:4px;">Pendaftaran Calon Dewan Penggalang (CDP) Tahun 2027 — Gudep Wanamska</p>
+          </div>
+
+          <div class="card" id="cdp-panel-admin" style="display:none; margin-bottom:18px;">
+            <h2 style="font-size:1.1rem; color:var(--color-primary); margin-bottom:8px;">🚀 Kelola Rilis Pendaftaran (Admin)</h2>
+            <p id="cdp-rilis-status" style="font-size:0.85rem; margin:6px 0 12px;">Status: memuat...</p>
+            <button class="btn btn-gold btn-full" id="btn-rilis-cdp" onclick="toggleRilisCdp()" style="display:none;">🚀 RILIS Pendaftaran CDP 2027</button>
+            <p style="font-size:0.75rem; color:var(--color-text-muted); margin-top:10px;">Setelah dirilis: menu <strong>Pendaftaran CDP</strong> tampil pada Penggalang & Dewan Penggalang; menu <strong>Daftar Calon Dewan Penggalang</strong> tampil pada Admin, Pembina & DGW20261-DGW20265; kartu headline & jumlah pendaftar tampil di dashboard seluruh pengguna.</p>
+          </div>
+
+          <div class="card" id="cdp-belum-rilis" style="display:none;">
+            <p style="text-align:center; color:var(--color-text-muted); font-size:0.9rem; padding:10px 0;">🔒 Pendaftaran Calon Dewan Penggalang 2027 <strong>belum dibuka</strong>. Menunggu rilis dari Admin.</p>
+          </div>
+
+          <div class="card" id="cdp-sudah-daftar" style="display:none;"></div>
+
+          <div class="card" id="cdp-kotak-form" style="display:none;">
+            <h2 style="font-size:1.1rem; color:var(--color-primary); margin-bottom:4px;">📋 Formulir Pendaftaran CDP 2027</h2>
+            <p id="cdp-catatan-peran" style="font-size:0.78rem; color:#8A6D4F; background:#FBF3E4; border-left:4px solid var(--color-accent-gold); padding:8px 10px; border-radius:6px; margin:8px 0;"></p>
+            <label style="font-size:0.8rem; font-weight:600;">User ID (otomatis dari akun Anda — TERKUNCI)</label>
+            <input type="text" id="cdp-user-id" class="form-control" value="" readonly style="background:#F3EDE4; color:#5D4037; font-weight:700;">
+            <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Nama Calon Dewan Penggalang *</label>
+            <input type="text" id="cdp-nama" class="form-control" placeholder="Nama lengkap calon">
+            <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Kelas *</label>
+            <select id="cdp-kelas" class="form-control"></select>
+            <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Alamat Lengkap *</label>
+            <textarea id="cdp-alamat" class="form-control" rows="2" placeholder="Alamat tempat tinggal lengkap"></textarea>
+            <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Nomor HP *</label>
+            <input type="tel" id="cdp-hp" class="form-control" placeholder="Contoh: 0812xxxxxxx">
+            <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Riwayat Sakit *</label>
+            <select id="cdp-riwayat" class="form-control" onchange="document.getElementById('cdp-sakit-wrap').style.display = (this.value==='Ya') ? 'block' : 'none';">
+              <option value="">— Pilih —</option>
+              <option value="Tidak">Tidak / tidak pernah sakit berat</option>
+              <option value="Ya">Ya / pernah / sedang sakit</option>
+            </select>
+            <div id="cdp-sakit-wrap" style="display:none; margin-top:8px;">
+              <label style="font-size:0.8rem; font-weight:600;">Sakit Yang Diderita *</label>
+              <input type="text" id="cdp-sakit" class="form-control" placeholder="Contoh: asma, maag, cedera lutut, dsb.">
+            </div>
+            <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:14px;">Foto 3×4 — WAJIB BAJU PRAMUKA (maks 2 MB, JPEG/JPG/PNG) *</label>
+            <div style="width:96px; height:128px; border:2px dashed var(--color-accent-gold); border-radius:8px; background:repeating-conic-gradient(#f3ede4 0% 25%, #ffffff 0% 50%) 50% / 14px 14px; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:6px;">
+              <img id="cdp-foto-img" src="" alt="Foto 3x4" style="width:100%; height:100%; object-fit:cover; display:none;">
+              <span id="cdp-foto-kosong" style="font-size:0.68rem; color:#8A6D4F; text-align:center;">3×4<br>frame</span>
+            </div>
+            <input type="file" id="cdp-foto" class="form-control" accept="image/jpeg,image/jpg,image/png" onchange="previewFotoCdp(event)">
+            <p style="font-size:0.72rem; color:var(--color-text-muted); margin-top:4px;">Foto harus PAS pada frame 3×4 (rasio 3:4, contoh 300×400 piksel). Kenakan seragam pramuka lengkap.</p>
+            <button class="btn btn-gold btn-full" style="margin-top:12px;" onclick="actionDaftarCdp()">📨 DAFTARKAN</button>
+          </div>
+        </section>
+
+        <!-- [v3.26.0] SECTION: DAFTAR CALON DEWAN PENGALANG (pantau/blangko/arsip) -->
+        <section id="section-cdp-pantau" class="app-section" style="display:none;">
+          <div class="section-header">
+            <h1>Daftar Calon Dewan Penggalang</h1>
+            <span class="badge badge-hadir" id="cdp-pantau-jumlah" style="margin-left:8px;">0 pendaftar</span>
+            <p style="font-size:0.85rem; color:var(--color-text-muted); margin-top:4px;">Blangko lengkap identitas Pendaftar Calon Dewan Penggalang 2027 — ketuk untuk membuka detail, unduh PDF/Word untuk arsip.</p>
+          </div>
+          <div id="cdp-daftar-kontainer" style="margin-top:12px;">
+            <p style="text-align:center; color:var(--color-text-muted);">Memuat data pendaftar...</p>
           </div>
         </section>
 
@@ -1718,7 +1807,7 @@
 // [v3.23.0] Sumber logo terkunci = emblem header aplikasi (transparan)
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script src="script.js?v=3.25.0"></script>
+<script src="script.js?v=3.26.0"></script>
 <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>  <!-- ============ [v3.17.0] MODAL PENDAFTARAN ALUMNI ============ -->
   <div id="modal-daftar-alumni" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#FFFFFF; border-radius:14px; max-width:420px; width:100%; max-height:92vh; overflow-y:auto; padding:20px;">
@@ -1767,5 +1856,5 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
 <script>
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4ac63dc0c8c3f87',t:'MTc5MjA0MTc4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4cbd11aede4b2f4',t:'MTc5MjM3MTMyMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
