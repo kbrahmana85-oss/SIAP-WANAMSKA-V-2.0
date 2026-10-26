@@ -1,5 +1,5 @@
 /* ============================================================
-   [KUNCI] SIAP WANAMSKA v3.27.0 - TERKUNCI (2026-10-19)
+   [KUNCI] SIAP WANAMSKA v3.28.0 - TERKUNCI (2026-10-26)
    Berkas  : style.css
    Fungsi  : Gaya tampilan seluruh modul
    Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -2240,4 +2240,27 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
     0 3px 0 #A3762F,
     0 4px 0 #7F5A22,
     0 6px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ============================================================
+   [v3.28.0] MENU MODULAR — modul utama (grup) + submenu
+   ============================================================ */
+.menu-group { margin: 2px 0; }
+.menu-group-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 10px; cursor: pointer;
+  font-weight: 700; font-size: 0.86rem; letter-spacing: 0.3px;
+  user-select: none; color: inherit; transition: background 0.2s ease;
+}
+.menu-group-head:hover { background: rgba(255, 255, 255, 0.08); }
+.menu-group-head .icon { font-size: 1.05rem; }
+.menu-group-head .chev { margin-left: auto; font-size: 0.8rem; opacity: 0.8; transition: transform 0.25s ease; }
+.menu-group.open .menu-group-head .chev { transform: rotate(180deg); }
+.menu-sub { max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.25s ease; }
+.menu-group.open .menu-sub { max-height: 400px; opacity: 1; }
+.menu-sub .menu-item { padding-left: 36px; font-size: 0.84rem; position: relative; }
+.menu-sub .menu-item::before {
+  content: ""; position: absolute; left: 21px; top: 50%;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor; opacity: 0.45; transform: translateY(-50%);
 }
