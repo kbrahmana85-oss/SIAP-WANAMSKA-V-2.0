@@ -1,11 +1,11 @@
 {
-  "versi": "3.27.0",
-  "tanggal_kunci": "2026-10-19",
+  "versi": "3.28.0",
+  "tanggal_kunci": "2026-10-26",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 263502,
-      "sha256": "173abd9279353d2353db667c0cf3abedc201bc4ee2b00dbd6cd26d5efe959ccb",
+      "ukuran_byte": 266617,
+      "sha256": "b4b217fcc8a9c143feaa18bc98f2f8210ae1af02821224e001014adef676721f",
       "jumlah_fungsi": 1,
       "fungsi": [
         "c"
@@ -13,16 +13,16 @@
     },
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
-      "ukuran_byte": 72598,
-      "sha256": "c56ec116ea2b45b619f6301cfa235f22a01266d7f90e7404307b48eb804e73bb",
+      "ukuran_byte": 73850,
+      "sha256": "4dbc069819ab4071894280567ce2adfad1f1a4b66cc1620f39a3d75538cb5787",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 211932,
-      "sha256": "355fabfb980825a4405431d89c991f85bc7268d5c4e25c3b5ad4be851a9187f1",
-      "jumlah_fungsi": 205,
+      "ukuran_byte": 213350,
+      "sha256": "5e8d5929408e48c4a06cbc2b7e352db50425c34275df66be6009637827c0335d",
+      "jumlah_fungsi": 207,
       "fungsi": [
         "absenBantuCekNama",
         "actionBantuDaftarCdp",
@@ -188,6 +188,7 @@
         "saveBase64AsDownload",
         "saveLaporanTemplate",
         "schedule",
+        "segarkanGrupMenu",
         "sendAbsenRequest",
         "setCachedDashboard",
         "setCameraSurfaceVisibility",
@@ -217,6 +218,7 @@
         "todayLocalInput",
         "toggleExportDropdown",
         "toggleKunciProfil",
+        "toggleMenuGroup",
         "togglePassword",
         "toggleSidebar",
         "triggerExport",
@@ -292,17 +294,17 @@
       ]
     },
     "sw.js": {
-      "keterangan": "Service worker: cache offline PWA (v38)",
+      "keterangan": "Service worker: cache offline PWA (v39)",
       "ukuran_byte": 2971,
-      "sha256": "42c9fdef7f6f53d6e1b9e6971a3f4dcde08c4fa4461f7d7d1af6d96dae173135",
+      "sha256": "fb75b301d0a51b530de8b03cbaa9ec0de5b3237d06e16898c8c5f83bf65052ce",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 398131,
-      "sha256": "d4e07e0b5013000b3d15b01d4db275d5ce75850e943822b393cf0e33ab937cb3",
-      "jumlah_fungsi": 162,
+      "ukuran_byte": 399239,
+      "sha256": "5f3759961c48e8551769b9819dce63d1f65d43d93bae5929019bae27ff664c76",
+      "jumlah_fungsi": 163,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
@@ -316,6 +318,7 @@
         "_cdpDirilis_",
         "_cdpKelasBoleh_",
         "_cdpPernahRilis_",
+        "_cdpSheet_",
         "_cleanCellText",
         "_collectLulusanSpec_",
         "_collectReport",
