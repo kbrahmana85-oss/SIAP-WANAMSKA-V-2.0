@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.26.0 - TERKUNCI (2026-10-15)
+// [KUNCI] SIAP WANAMSKA v3.27.0 - TERKUNCI (2026-10-19)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.26.0"; 
+const APP_VERSION = "3.27.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -696,6 +696,7 @@ function switchSection(sectionId, elementMenu) {
   // [v3.26.0] muat data CDP saat menu terkait dibuka
   if (sectionId === 'section-cdp') muatCdpForm();
   if (sectionId === 'section-cdp-pantau') muatCdpPantau();
+  if (sectionId === 'section-cdp-bantu') muatBantuCdpForm();  // [v3.27.0]
 
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.overlay');
@@ -3123,6 +3124,12 @@ function isCdpPemantau() {
     ["DGW20261", "DGW20262", "DGW20263", "DGW20264", "DGW20265"].indexOf(String(userId).toUpperCase()) !== -1;
 }
 
+// [v3.27.0] Petugas Bantu Daftar CDP (10 User ID yang ditunjuk Admin)
+const CDP_BANTU_IDS = ["DGW20261", "DGW20262", "DGW20263", "DGW20264", "DGW20265", "DGW20266", "DGW202613", "DGW202621", "DGW202629", "DGW202638"];
+function isCdpBantu() {
+  return CDP_BANTU_IDS.indexOf(String(userId).toUpperCase()) !== -1;
+}
+
 // Status rilis CDP: atur menu, kartu headline dashboard & jumlah pendaftar (semua peran)
 function muatStatusCdp() {
   if (userRole === "Alumni") return;
@@ -3133,10 +3140,13 @@ function muatStatusCdp() {
 
 function terapkanStatusCdp(st) {
   const dirilis = !!st.dirilis;
+  const pernah = !!st.pernah_rilis;
   const mForm = document.getElementById('menu-cdp-daftar');
   if (mForm) mForm.style.display = (userRole === "Admin" || ((userRole === "Penggalang" || userRole === "Dewan Penggalang") && dirilis)) ? 'flex' : 'none';
   const mPantau = document.getElementById('menu-cdp-pantau');
   if (mPantau) mPantau.style.display = (isCdpPemantau() && (userRole === "Admin" || dirilis)) ? 'flex' : 'none';
+  const mBantu = document.getElementById('menu-cdp-bantu');
+  if (mBantu) mBantu.style.display = (isCdpBantu() && dirilis) ? 'flex' : 'none';  // [v3.27.0]
   // Kartu headline berita + jumlah pendaftar di dashboard (semua peran, setelah rilis)
   const hl = document.getElementById('card-headline-cdp');
   if (hl) {
@@ -3149,13 +3159,16 @@ function terapkanStatusCdp(st) {
     if (chip) chip.style.display = dirilis ? 'inline-flex' : 'none';
     jumlahEl.innerText = st.jumlah !== undefined ? st.jumlah : 0;
   }
-  const tombolRilis = document.getElementById('btn-rilis-cdp');
-  if (tombolRilis && userRole === "Admin") {
-    tombolRilis.style.display = 'inline-block';
-    tombolRilis.textContent = dirilis ? "⬇ Tarik Rilis Pendaftaran" : "🚀 RILIS Pendaftaran CDP 2027";
+  if (userRole === "Admin") {
+    const tombolRilis = document.getElementById('btn-rilis-cdp');
+    const tombolTutup = document.getElementById('btn-tutup-cdp');  // [v3.27.0] tombol terpisah
+    if (tombolRilis) tombolRilis.style.display = dirilis ? 'none' : 'inline-block';
+    if (tombolTutup) tombolTutup.style.display = dirilis ? 'inline-block' : 'none';
     const stRilis = document.getElementById('cdp-rilis-status');
     if (stRilis) {
-      stRilis.textContent = dirilis ? "Status: SUDAH DIRILIS — Penggalang kelas 7 & Dewan Penggalang kelas 8 dapat mendaftar." : "Status: BELUM DIRILIS — formulir belum terlihat oleh pengguna.";
+      stRilis.textContent = dirilis
+        ? "Status: SEDANG DIBUKA — Penggalang kelas 7 & Dewan Penggalang kelas 8 dapat mendaftar."
+        : (pernah ? "Status: DITUTUP — menu pendaftaran tidak tampil pada pengguna mana pun. Buka kembali bila diperlukan." : "Status: BELUM DIRILIS — formulir belum terlihat oleh pengguna.");
       stRilis.style.color = dirilis ? "#03543F" : "#713F12";
     }
   }
@@ -3178,7 +3191,12 @@ function muatCdpForm() {
     const kotakForm = document.getElementById('cdp-kotak-form');
     if (kotakForm) kotakForm.style.display = (userRole === "Admin" || !(st && st.dirilis)) ? 'none' : 'block';
     const belumRilis = document.getElementById('cdp-belum-rilis');
-    if (belumRilis) belumRilis.style.display = (userRole !== "Admin" && !(st && st.dirilis)) ? 'block' : 'none';
+    if (belumRilis) {
+      belumRilis.style.display = (userRole !== "Admin" && !(st && st.dirilis)) ? 'block' : 'none';
+      belumRilis.innerHTML = (st && st.pernah_rilis)
+        ? '<p style="text-align:center; color:var(--color-text-muted); font-size:0.9rem; padding:10px 0;">🔒 Pendaftaran Calon Dewan Penggalang 2027 telah <strong>DITUTUP</strong>. Terima kasih atas partisipasi Anda.</p>'
+        : '<p style="text-align:center; color:var(--color-text-muted); font-size:0.9rem; padding:10px 0;">🔒 Pendaftaran Calon Dewan Penggalang 2027 <strong>belum dibuka</strong>. Menunggu rilis dari Admin.</p>';
+    }
     if (userRole === "Admin" || !(st && st.dirilis)) return;
     // Dropdown kelas sesuai peran: Penggalang = 7A-7G, Dewan Penggalang = 8A-8F
     const sel = document.getElementById('cdp-kelas');
@@ -3275,11 +3293,12 @@ function actionDaftarCdp() {
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
-// Rilis / tarik rilis — KHUSUS ADMIN
-function toggleRilisCdp() {
-  const jadiRilis = !(cdpStatus && cdpStatus.dirilis);
-  if (!confirm(jadiRilis ? "RILIS Pendaftaran Calon Dewan Penggalang 2027? Menu akan muncul pada Penggalang & Dewan Penggalang." : "Tarik rilis Pendaftaran CDP? Menu akan disembunyikan dari pengguna.")) return;
-  setLoader(true, "Menyimpan status rilis...");
+// Rilis / TUTUP pendaftaran — KHUSUS ADMIN (dua tombol terpisah) [v3.27.0]
+function rilisCdp(jadiRilis) {
+  if (!confirm(jadiRilis
+    ? "RILIS Pendaftaran Calon Dewan Penggalang 2027? Menu akan muncul pada Penggalang & Dewan Penggalang."
+    : "TUTUP Pendaftaran Calon Dewan Penggalang 2027? Menu pendaftaran akan HILANG dari seluruh pengguna.")) return;
+  setLoader(true, jadiRilis ? "Membuka pendaftaran..." : "Menutup pendaftaran...");
   callAPI('setRilisCdp', [sessionToken, jadiRilis], { cache: false })
     .then(res => {
       setLoader(false);
@@ -3346,6 +3365,96 @@ function unduhCdp(userIdTarget, format) {
         showToast(`✅ Blangko ${fmtName} berhasil diunduh ke perangkat Anda.`);
       } else {
         showToast((res && res.message) || "Gagal menyusun blangko.", true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// =========================================================
+// === [v3.27.0] BANTU DAFTAR CDP (10 petugas yang ditunjuk) ===
+// =========================================================
+// Formulir & alur sama seperti Pendaftaran CDP; User ID calon diisi petugas.
+let bdFotoBase64 = "", bdFotoDim = null;
+
+function muatBantuCdpForm() {
+  callAPI('getStatusCdp', [sessionToken], { cache: false }).then(st => {
+    if (st && st.success) { cdpStatus = st; terapkanStatusCdp(st); }
+    const kotak = document.getElementById('bd-kotak-form');
+    if (kotak) kotak.style.display = (st && st.dirilis) ? 'block' : 'none';
+    const tutup = document.getElementById('bd-ditutup');
+    if (tutup) tutup.style.display = (st && st.dirilis) ? 'none' : 'block';
+    if (!(st && st.dirilis)) return;
+    const sel = document.getElementById('bd-kelas');
+    if (sel && sel.options.length <= 1) {
+      sel.innerHTML = '<option value="">— Pilih Kelas —</option>' + KELAS_CDP_7.concat(KELAS_CDP_8).map(k => `<option value="${k}">${k}</option>`).join("");
+    }
+    const catatan = document.getElementById('bd-catatan');
+    if (catatan) catatan.textContent = "Kelas wajib sesuai peran calon: Penggalang = 7A-7G, Dewan Penggalang = 8A-8F (kelas 9 tidak dapat mendaftar). Sistem memeriksa otomatis.";
+  }).catch(() => {});
+}
+
+function previewFotoBantuCdp(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (["image/jpeg", "image/jpg", "image/png"].indexOf(file.type) === -1) {
+    showToast("Format foto harus JPEG/JPG/PNG.", true); event.target.value = ""; return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    showToast("Ukuran foto maksimal 2 MB. Kompres/foto ulang.", true); event.target.value = ""; return;
+  }
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const img = new Image();
+    img.onload = function () {
+      if (Math.abs((img.width / img.height) - 0.75) > 0.03) {
+        showToast("Foto harus pas pada frame 3x4 (rasio 3:4, contoh 300x400 piksel).", true);
+        event.target.value = ""; return;
+      }
+      bdFotoBase64 = e.target.result;
+      bdFotoDim = { w: img.width, h: img.height };
+      const im = document.getElementById('bd-foto-img');
+      im.src = bdFotoBase64; im.style.display = 'block'; im.style.objectFit = 'cover';
+      const sp = document.getElementById('bd-foto-kosong');
+      if (sp) sp.style.display = 'none';
+      showToast("Foto 3x4 pas di frame.");
+    };
+    img.onerror = function () { showToast("File gambar tidak dapat dibaca.", true); };
+    img.src = e.target.result;
+  };
+  reader.onerror = function () { showToast("Gagal membaca file foto.", true); };
+  reader.readAsDataURL(file);
+}
+
+function actionBantuDaftarCdp() {
+  const payload = {
+    user_id: (document.getElementById('bd-user-id').value || "").trim(),
+    nama_calon: (document.getElementById('bd-nama').value || "").trim(),
+    kelas: (document.getElementById('bd-kelas').value || "").trim(),
+    alamat_lengkap: (document.getElementById('bd-alamat').value || "").trim(),
+    no_hp: (document.getElementById('bd-hp').value || "").trim(),
+    riwayat_sakit: (document.getElementById('bd-riwayat').value || "").trim(),
+    sakit_diderita: (document.getElementById('bd-sakit').value || "").trim(),
+    foto_cdp: bdFotoBase64,
+    foto_cdp_dim: bdFotoDim
+  };
+  if (!payload.user_id) { showToast("User ID calon wajib diisi.", true); return; }
+  if (!payload.nama_calon) { showToast("Nama Calon Dewan Penggalang wajib diisi.", true); return; }
+  if (!payload.kelas) { showToast("Kelas wajib dipilih.", true); return; }
+  if (!payload.alamat_lengkap) { showToast("Alamat Lengkap wajib diisi.", true); return; }
+  if (!payload.no_hp) { showToast("Nomor HP wajib diisi.", true); return; }
+  if (!payload.foto_cdp) { showToast("Foto dengan baju pramuka WAJIB diunggah (frame 3x4, maks 2 MB).", true); return; }
+  setLoader(true, "Mendaftarkan calon (Bantu Daftar CDP)...");
+  callAPI('bantuDaftarCdp', [sessionToken, payload], { cache: false })
+    .then(res => {
+      setLoader(false);
+      showToast(res.message, !res.success);
+      if (res.success) {
+        ['bd-user-id', 'bd-nama', 'bd-alamat', 'bd-hp', 'bd-sakit'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        bdFotoBase64 = ""; bdFotoDim = null;
+        const im = document.getElementById('bd-foto-img'); if (im) { im.src = ""; im.style.display = "none"; }
+        const sp = document.getElementById('bd-foto-kosong'); if (sp) sp.style.display = "";
+        const fl = document.getElementById('bd-foto'); if (fl) fl.value = "";
+        muatStatusCdp();
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
