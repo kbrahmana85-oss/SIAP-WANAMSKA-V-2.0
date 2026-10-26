@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.28.0 - TERKUNCI (2026-10-26)
+// [KUNCI] SIAP WANAMSKA v3.29.0 - TERKUNCI (2026-10-26)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.28.0"; 
+const APP_VERSION = "3.29.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -4370,7 +4370,7 @@ function triggerExport(jenis, format) {
     .then(res => {
       setLoader(false);
       if (res.success && res.url) {
-        showToast("Ekspor Berhasil! Membuka unduhan...");
+        showToast(res.arsip ? "Ekspor Berhasil! Tersimpan di folder " + (res.arsip_folder || "SIAP WANAMSKA-Hasil Export") + " — membuka unduhan..." : "Ekspor Berhasil! Membuka unduhan...");
         const downloadLink = document.createElement('a');
         downloadLink.href = res.url;
         downloadLink.target = '_blank';
@@ -4440,7 +4440,7 @@ function triggerExportLaporan(modul, format) {
       if (res && res.success && res.base64) {
         setLoader(false);
         saveBase64AsDownload(res.base64, res.filename || ('Laporan_' + modul + '_' + todayLocalInput() + (format === 'xlsx' ? '.xlsx' : format === 'doc' ? '.docx' : '.pdf')), res.mime || '');
-        showToast(`✅ ${fmtName} berhasil diunduh ke perangkat Anda.`);
+        showToast(res.arsip ? `✅ ${fmtName} berhasil diunduh. Salinan tersimpan di folder ${res.arsip_folder || "SIAP WANAMSKA-Hasil Export"}.` : `✅ ${fmtName} berhasil diunduh ke perangkat Anda.`);
       } else {
         // 2) FALLBACK: pakai tautan export (bila backend versi lama / file sangat besar)
         openExportUrlFallback(modul, format, fmtName, (res && res.message) || '');
