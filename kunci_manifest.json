@@ -1,11 +1,11 @@
 {
-  "versi": "3.28.0",
+  "versi": "3.29.0",
   "tanggal_kunci": "2026-10-26",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
       "ukuran_byte": 266617,
-      "sha256": "b4b217fcc8a9c143feaa18bc98f2f8210ae1af02821224e001014adef676721f",
+      "sha256": "e63cffb636f63e29ecfe706145ae733966ad696355ab3036b9ae42dbd227ed5a",
       "jumlah_fungsi": 1,
       "fungsi": [
         "c"
@@ -14,14 +14,14 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 73850,
-      "sha256": "4dbc069819ab4071894280567ce2adfad1f1a4b66cc1620f39a3d75538cb5787",
+      "sha256": "0c407f2f79f2eb1000170134ad872d2cfeccf8b5baa81756fcfa6df5a4b78587",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 213350,
-      "sha256": "5e8d5929408e48c4a06cbc2b7e352db50425c34275df66be6009637827c0335d",
+      "ukuran_byte": 213615,
+      "sha256": "975226e1b9d646f5638d7be21e348e9ac2b02574efca4cdffa74a21b52d05fde",
       "jumlah_fungsi": 207,
       "fungsi": [
         "absenBantuCekNama",
@@ -236,7 +236,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "f36b98fc920eba6affcb97079d5418b7277d8cbc87e901810af08529e90b18c7",
+      "sha256": "c39b286bf72a6af32effe6d7830b456c7ac687ff4ff7894e0201460dca4a555a",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -294,22 +294,23 @@
       ]
     },
     "sw.js": {
-      "keterangan": "Service worker: cache offline PWA (v39)",
+      "keterangan": "Service worker: cache offline PWA (v40)",
       "ukuran_byte": 2971,
-      "sha256": "fb75b301d0a51b530de8b03cbaa9ec0de5b3237d06e16898c8c5f83bf65052ce",
+      "sha256": "92a8fe151b6b740136ca1d0b5c23bfb17a985b2b0373f336432cd3c1e8a72766",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 399239,
-      "sha256": "5f3759961c48e8551769b9819dce63d1f65d43d93bae5929019bae27ff664c76",
-      "jumlah_fungsi": 163,
+      "ukuran_byte": 401406,
+      "sha256": "9020c4cd9cea148c9e3ed14e9a5c8c4cd4737198e8743afa01aa3bb69bfd7966",
+      "jumlah_fungsi": 165,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
         "_allowedExportModuls",
         "_alumniFotoBelum_",
+        "_arsipExportAdmin_",
         "_barisUsulan_",
         "_blangkoCdpSheet_",
         "_bolehPantauCdp_",
@@ -330,6 +331,7 @@
         "_ensureLaporanTemplateSheet",
         "_fmtRp",
         "_folderCdp_",
+        "_folderExport_",
         "_folderFotoLulusan_",
         "_folderIndukLulusan_",
         "_getTemplateRow",
