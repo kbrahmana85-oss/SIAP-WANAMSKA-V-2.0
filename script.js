@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.27.0 - TERKUNCI (2026-10-19)
+// [KUNCI] SIAP WANAMSKA v3.28.0 - TERKUNCI (2026-10-26)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.27.0"; 
+const APP_VERSION = "3.28.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -676,6 +676,22 @@ function toggleSidebar() {
   document.body.classList.toggle('menu-open', sidebar.classList.contains('expanded'));
 }
 
+// [v3.28.0] Menu modular: buka/tutup grup modul utama
+function toggleMenuGroup(idGrup) {
+  const g = document.getElementById(idGrup);
+  if (g) g.classList.toggle('open');
+}
+
+// [v3.28.0] Grup menu disembunyikan bila SELURUH submenu-nya tersembunyi
+function segarkanGrupMenu() {
+  document.querySelectorAll('.menu-group').forEach(g => {
+    const sub = g.querySelector('.menu-sub');
+    if (!sub) return;
+    const adaTampil = Array.prototype.some.call(sub.querySelectorAll('.menu-item'), it => it.style.display !== 'none');
+    g.style.display = adaTampil ? '' : 'none';
+  });
+}
+
 function switchSection(sectionId, elementMenu) {
   const sections = document.querySelectorAll('.app-section');
   sections.forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
@@ -693,6 +709,8 @@ function switchSection(sectionId, elementMenu) {
   const menuItems = document.querySelectorAll('.menu-item');
   menuItems.forEach(item => item.classList.remove('active'));
   if (elementMenu) elementMenu.classList.add('active');
+  const grpAktif = elementMenu && elementMenu.closest ? elementMenu.closest('.menu-group') : null;
+  if (grpAktif) grpAktif.classList.add('open');  // [v3.28.0] pastikan grup terbuka
   // [v3.26.0] muat data CDP saat menu terkait dibuka
   if (sectionId === 'section-cdp') muatCdpForm();
   if (sectionId === 'section-cdp-pantau') muatCdpPantau();
@@ -1367,6 +1385,7 @@ function setupRBACUI(role) {
   // Sinkronkan visibilitas tombol export per modul sesuai hak peran
   applyExportActionUI();
   muatStatusCdp();  // [v3.26.0] atur menu CDP + kartu headline & jumlah pendaftar di dashboard
+  segarkanGrupMenu();  // [v3.28.0]
 }
 
 // =========================================================================
@@ -3115,7 +3134,7 @@ function loadAbsenHistory() {
 // === [v3.26.0] PENDAFTARAN CALON DEWAN PENGALANG (CDP) 2027            ===
 // =========================================================================
 const KELAS_CDP_7 = ["7A", "7B", "7C", "7D", "7E", "7F", "7G"];
-const KELAS_CDP_8 = ["8A", "8B", "8C", "8D", "8E", "8F"];
+const KELAS_CDP_8 = ["8A", "8B", "8C", "8D", "8E", "8F", "8G"];  // [v3.28.0] +8G
 let cdpFotoBase64 = "", cdpFotoDim = null;
 let cdpStatus = null; // hasil getStatusCdp terakhir
 
@@ -3172,6 +3191,7 @@ function terapkanStatusCdp(st) {
       stRilis.style.color = dirilis ? "#03543F" : "#713F12";
     }
   }
+  segarkanGrupMenu();  // [v3.28.0]
 }
 
 function bukaCdpDariHeadline() {
@@ -3207,7 +3227,7 @@ function muatCdpForm() {
     const catatan = document.getElementById('cdp-catatan-peran');
     if (catatan) {
       catatan.textContent = userRole === "Dewan Penggalang"
-        ? "Anda mendaftar sebagai Dewan Penggalang: isi kelas 8 (8A-8F). Dewan Penggalang kelas 9 tidak diperbolehkan mendaftar."
+        ? "Anda mendaftar sebagai Dewan Penggalang: isi kelas 8 (8A-8G). Dewan Penggalang kelas 9 tidak diperbolehkan mendaftar."
         : "Anda mendaftar sebagai Penggalang: isi kelas 7 (7A-7G).";
     }
     const uEl = document.getElementById('cdp-user-id');
@@ -3271,6 +3291,7 @@ function actionDaftarCdp() {
   const payload = {
     nama_calon: (document.getElementById('cdp-nama').value || "").trim(),
     kelas: (document.getElementById('cdp-kelas').value || "").trim(),
+    nta: (document.getElementById('cdp-nta').value || "").trim(),  // [v3.28.0]
     alamat_lengkap: (document.getElementById('cdp-alamat').value || "").trim(),
     no_hp: (document.getElementById('cdp-hp').value || "").trim(),
     riwayat_sakit: (document.getElementById('cdp-riwayat').value || "").trim(),
@@ -3280,6 +3301,7 @@ function actionDaftarCdp() {
   };
   if (!payload.nama_calon) { showToast("Nama Calon Dewan Penggalang wajib diisi.", true); return; }
   if (!payload.kelas) { showToast("Kelas wajib dipilih.", true); return; }
+  if (!payload.nta) { showToast("NTA wajib diisi — tulis - jika belum memiliki KTA.", true); return; }  // [v3.28.0]
   if (!payload.alamat_lengkap) { showToast("Alamat Lengkap wajib diisi.", true); return; }
   if (!payload.no_hp) { showToast("Nomor HP wajib diisi.", true); return; }
   if (!payload.foto_cdp) { showToast("Foto dengan baju pramuka WAJIB diunggah (frame 3x4, maks 2 MB).", true); return; }
@@ -3337,6 +3359,7 @@ function muatCdpPantau() {
               <tr><td style="padding:3px 0; color:var(--color-text-muted); width:42%;">User ID</td><td><strong>${escapeHtml(r.user_id)}</strong></td></tr>
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Nama Calon Dewan Penggalang</td><td><strong>${escapeHtml(r.nama_calon)}</strong></td></tr>
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Kelas</td><td>${escapeHtml(r.kelas)}</td></tr>
+              <tr><td style="padding:3px 0; color:var(--color-text-muted);">NTA (sesuai KTA)</td><td>${escapeHtml(r.nta || "-")}</td></tr>
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Alamat Lengkap</td><td>${escapeHtml(r.alamat_lengkap)}</td></tr>
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Nomor HP</td><td>${escapeHtml(r.no_hp)}</td></tr>
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Riwayat Sakit</td><td>${escapeHtml(r.riwayat_sakit)}</td></tr>
@@ -3389,7 +3412,7 @@ function muatBantuCdpForm() {
       sel.innerHTML = '<option value="">— Pilih Kelas —</option>' + KELAS_CDP_7.concat(KELAS_CDP_8).map(k => `<option value="${k}">${k}</option>`).join("");
     }
     const catatan = document.getElementById('bd-catatan');
-    if (catatan) catatan.textContent = "Kelas wajib sesuai peran calon: Penggalang = 7A-7G, Dewan Penggalang = 8A-8F (kelas 9 tidak dapat mendaftar). Sistem memeriksa otomatis.";
+    if (catatan) catatan.textContent = "Kelas wajib sesuai peran calon: Penggalang = 7A-7G, Dewan Penggalang = 8A-8G (kelas 9 tidak dapat mendaftar). Sistem memeriksa otomatis.";
   }).catch(() => {});
 }
 
@@ -3430,6 +3453,7 @@ function actionBantuDaftarCdp() {
     user_id: (document.getElementById('bd-user-id').value || "").trim(),
     nama_calon: (document.getElementById('bd-nama').value || "").trim(),
     kelas: (document.getElementById('bd-kelas').value || "").trim(),
+    nta: (document.getElementById('bd-nta').value || "").trim(),  // [v3.28.0]
     alamat_lengkap: (document.getElementById('bd-alamat').value || "").trim(),
     no_hp: (document.getElementById('bd-hp').value || "").trim(),
     riwayat_sakit: (document.getElementById('bd-riwayat').value || "").trim(),
@@ -3440,6 +3464,7 @@ function actionBantuDaftarCdp() {
   if (!payload.user_id) { showToast("User ID calon wajib diisi.", true); return; }
   if (!payload.nama_calon) { showToast("Nama Calon Dewan Penggalang wajib diisi.", true); return; }
   if (!payload.kelas) { showToast("Kelas wajib dipilih.", true); return; }
+  if (!payload.nta) { showToast("NTA wajib diisi — tulis - jika belum memiliki KTA.", true); return; }  // [v3.28.0]
   if (!payload.alamat_lengkap) { showToast("Alamat Lengkap wajib diisi.", true); return; }
   if (!payload.no_hp) { showToast("Nomor HP wajib diisi.", true); return; }
   if (!payload.foto_cdp) { showToast("Foto dengan baju pramuka WAJIB diunggah (frame 3x4, maks 2 MB).", true); return; }
@@ -3449,7 +3474,7 @@ function actionBantuDaftarCdp() {
       setLoader(false);
       showToast(res.message, !res.success);
       if (res.success) {
-        ['bd-user-id', 'bd-nama', 'bd-alamat', 'bd-hp', 'bd-sakit'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        ['bd-user-id', 'bd-nama', 'bd-kelas', 'bd-nta', 'bd-alamat', 'bd-hp', 'bd-sakit'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
         bdFotoBase64 = ""; bdFotoDim = null;
         const im = document.getElementById('bd-foto-img'); if (im) { im.src = ""; im.style.display = "none"; }
         const sp = document.getElementById('bd-foto-kosong'); if (sp) sp.style.display = "";
