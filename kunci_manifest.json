@@ -1,11 +1,11 @@
 {
-  "versi": "3.31.2",
+  "versi": "3.32.0",
   "tanggal_kunci": "2026-10-27",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 269854,
-      "sha256": "deb79fa710f818881ea3784d641f2b0417554a142e17b022eb736b20a57fc5c0",
+      "ukuran_byte": 270235,
+      "sha256": "279a7fe9cb81c6c6ef956bf0bfc31db0700b1b45e77a9cde31ea732daf7d6f75",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -14,15 +14,15 @@
     },
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
-      "ukuran_byte": 81180,
-      "sha256": "14596a4f7c0d1b5cf009cd7140a50a970971a615ca01422605bd0a075f829b16",
+      "ukuran_byte": 84000,
+      "sha256": "b6244822b693f4e6d19d28251f8bba5e144e4f4325791d2170d6beabb6652c2a",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 216103,
-      "sha256": "79b943bb7213ad0f863ddc9bba9b1790dda0da06755352cf3801a98e508b2d18",
+      "ukuran_byte": 217576,
+      "sha256": "8a103b681896c5ec76691e8bae63e61f396be4970a666907c4b53649e54c0000",
       "jumlah_fungsi": 208,
       "fungsi": [
         "absenBantuCekNama",
@@ -238,7 +238,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "8c4f082fbf2911c1b0a405bfa7304e988683261a40a5ed0ced8cd53b6eff7778",
+      "sha256": "e87e196d372bbb82144894ca3c31c2ba7445ce8de154f7f9dfc8a565161e10b4",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -298,15 +298,15 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "2b656b7291f58cd905fcc319f5cbde91b2eacdb1ed6bfe3e49c64be1f3d87264",
+      "sha256": "3faa64ae5d4dae108f5cda02f87ec32b4f1caf423bae96a3da17816933f15ab4",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 408239,
-      "sha256": "6d3df4fc0210df6e0f2067740e2ec67913d262bfc14f89499baff12d4ff6bf0f",
-      "jumlah_fungsi": 168,
+      "ukuran_byte": 409769,
+      "sha256": "21fc05f790d187b27fc87e11307e44394f031d482e138ad7f72e3c7b7edd3e63",
+      "jumlah_fungsi": 169,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
@@ -339,6 +339,7 @@
         "_folderIndukLulusan_",
         "_getTemplateRow",
         "_hitungIdAlumniBerikut_",
+        "_migrasiPwdCdp_",
         "_mimeExport",
         "_parseLahir_",
         "_pgBuatSoal_",
