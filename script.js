@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.31.2 - TERKUNCI (2026-10-27)
+// [KUNCI] SIAP WANAMSKA v3.32.0 - TERKUNCI (2026-10-27)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.31.2"; 
+const APP_VERSION = "3.32.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3139,7 +3139,8 @@ let cdpFotoBase64 = "", cdpFotoDim = null;
 let cdpStatus = null; // hasil getStatusCdp terakhir
 
 function isCdpPemantau() {
-  return userRole === "Admin" || userRole === "Pembina" ||
+  // [v3.32.0] seluruh 10 petugas Bantu Daftar CDP ikut dapat modul Daftar Calon
+  return userRole === "Admin" || userRole === "Pembina" || isCdpBantu() ||
     ["DGW20261", "DGW20262", "DGW20263", "DGW20264", "DGW20265"].indexOf(String(userId).toUpperCase()) !== -1;
 }
 
@@ -3161,7 +3162,8 @@ function terapkanStatusCdp(st) {
   const dirilis = !!st.dirilis;
   const pernah = !!st.pernah_rilis;
   const mForm = document.getElementById('menu-cdp-daftar');
-  if (mForm) mForm.style.display = (userRole === "Admin" || ((userRole === "Penggalang" || userRole === "Dewan Penggalang") && dirilis)) ? 'flex' : 'none';
+  const petugasCdp = isCdpBantu() && userRole !== "Admin";  // [v3.32.0] petugas: tanpa menu Pendaftaran CDP
+  if (mForm) mForm.style.display = ((userRole === "Admin" || ((userRole === "Penggalang" || userRole === "Dewan Penggalang") && dirilis)) && !petugasCdp) ? 'flex' : 'none';
   const mPantau = document.getElementById('menu-cdp-pantau');
   if (mPantau) mPantau.style.display = (isCdpPemantau() && (userRole === "Admin" || dirilis)) ? 'flex' : 'none';
   const mBantu = document.getElementById('menu-cdp-bantu');
@@ -3195,7 +3197,7 @@ function terapkanStatusCdp(st) {
 }
 
 function bukaCdpDariHeadline() {
-  if (isCdpPemantau() && !(userRole === "Penggalang" || userRole === "Dewan Penggalang")) {
+  if ((isCdpPemantau() && !(userRole === "Penggalang" || userRole === "Dewan Penggalang")) || (isCdpBantu() && userRole !== "Admin")) {  // [v3.32.0] petugas -> Daftar Calon
     switchSection('section-cdp-pantau', document.getElementById('menu-cdp-pantau'));
   } else {
     switchSection('section-cdp', document.getElementById('menu-cdp-daftar'));
@@ -3209,7 +3211,7 @@ function muatCdpForm() {
     const panelAdmin = document.getElementById('cdp-panel-admin');
     if (panelAdmin) panelAdmin.style.display = userRole === "Admin" ? 'block' : 'none';
     const kotakForm = document.getElementById('cdp-kotak-form');
-    if (kotakForm) kotakForm.style.display = (userRole === "Admin" || !(st && st.dirilis)) ? 'none' : 'block';
+    if (kotakForm) kotakForm.style.display = (userRole === "Admin" || !(st && st.dirilis) || (isCdpBantu() && userRole !== "Admin")) ? 'none' : 'block';  // [v3.32.0] petugas tanpa formulir mandiri
     const belumRilis = document.getElementById('cdp-belum-rilis');
     if (belumRilis) {
       belumRilis.style.display = (userRole !== "Admin" && !(st && st.dirilis)) ? 'block' : 'none';
@@ -3344,6 +3346,20 @@ function muatCdpPantau() {
       terapkanStatusCdp(res);
       const chip = document.getElementById('cdp-pantau-jumlah');
       if (chip) chip.innerText = res.jumlah + " pendaftar";
+      const grid = document.getElementById('cdp-kartu-grid');  // [v3.32.0] kartu nama + foto
+      if (grid) {
+        if (!res.list.length) { grid.style.display = "none"; grid.innerHTML = ""; }
+        else {
+          grid.style.display = "grid";
+          grid.innerHTML = res.list.map((r) => `
+            <div class="cdp-kartu">
+              ${r.foto ? `<img src="${r.foto}" alt="Foto ${escapeHtml(r.nama_calon)}" onclick="viewFullImage('${r.foto}')">` : `<div class="cdp-kartu-inisial">${escapeHtml((r.nama_calon || "?").substring(0, 1).toUpperCase())}</div>`}
+              <div class="cdp-kartu-nama">${escapeHtml(r.nama_calon)}</div>
+              <div class="cdp-kartu-sub">Kelas ${escapeHtml(r.kelas)} • ${escapeHtml(r.user_id)}</div>
+              ${r.akun_cdp ? `<div class="cdp-kartu-pwd" title="Password otomatis & terkunci">🔑 ${escapeHtml(r.password_awal || "12345678")} (terkunci)</div>` : ""}
+            </div>`).join("");
+        }
+      }
       if (!res.list.length) {
         kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada pendaftar Calon Dewan Penggalang 2027.</p>';
         return;
@@ -3365,6 +3381,7 @@ function muatCdpPantau() {
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Riwayat Sakit</td><td>${escapeHtml(r.riwayat_sakit)}</td></tr>
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Sakit Yang Diderita</td><td>${escapeHtml(r.sakit_diderita || "-")}</td></tr>
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Foto (baju pramuka)</td><td>${r.foto ? `<img src="${r.foto}" alt="Foto" style="width:60px; height:80px; object-fit:cover; border-radius:6px; border:2px solid var(--color-accent-gold); cursor:pointer;" onclick="viewFullImage('${r.foto}')">` : "Tidak ada"}</td></tr>
+              ${r.akun_cdp ? `<tr><td style="padding:3px 0; color:var(--color-text-muted);">Password Awal (terkunci)</td><td><strong>${escapeHtml(r.password_awal || "12345678")}</strong></td></tr>` : ""}
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Waktu Daftar</td><td>${escapeHtml((r.waktu_daftar || "").replace("T", " ").substring(0, 16))}</td></tr>
             </table>
             <div style="display:flex; gap:8px; margin-top:10px;">
@@ -3474,21 +3491,21 @@ function actionBantuDaftarCdp() {
   };
   if (modeBaru) {
     // [v3.30.0] Mekanisme pendaftaran alumni: profil lengkap -> akun CDP2026xx dibuat otomatis
-    payload.password_awal = (document.getElementById('bd-password') ? document.getElementById('bd-password').value : "");
+    // [v3.32.0] password awal OTOMATIS & TERKUNCI di sisi server (12345678) — tidak lagi diisi petugas
     if (!payload.nama_calon) { showToast("Nama Calon Dewan Penggalang wajib diisi.", true); return; }
     if (!payload.nta) { showToast("NTA wajib diisi — tulis - jika belum memiliki KTA.", true); return; }
     if (!payload.kelas) { showToast("Kelas wajib dipilih.", true); return; }
     if (!payload.alamat_lengkap) { showToast("Alamat Lengkap wajib diisi.", true); return; }
     if (!payload.no_hp) { showToast("Nomor HP wajib diisi.", true); return; }
     if (!payload.foto_cdp) { showToast("Foto dengan baju pramuka WAJIB diunggah (frame 3x4, maks 2 MB).", true); return; }
-    if (!payload.password_awal || payload.password_awal.length < 6) { showToast("Password awal calon wajib diisi (minimal 6 karakter).", true); return; }
+    // [v3.32.0] password OTOMATIS & TERKUNCI di sisi server — tanpa validasi isian password
     setLoader(true, "Membuatkan akun & mendaftarkan calon (CDP2026xx)...");
     callAPI('bantuDaftarCdpAkun', [sessionToken, payload], { cache: false })
       .then(res => {
         setLoader(false);
         showToast(res.message, !res.success);
         if (res.success) {
-          ['bd-nama', 'bd-kelas', 'bd-nta', 'bd-alamat', 'bd-hp', 'bd-sakit', 'bd-password'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+          ['bd-nama', 'bd-kelas', 'bd-nta', 'bd-alamat', 'bd-hp', 'bd-sakit'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
           bdFotoBase64 = ""; bdFotoDim = null;
           const im = document.getElementById('bd-foto-img'); if (im) { im.src = ""; im.style.display = "none"; }
           const sp = document.getElementById('bd-foto-kosong'); if (sp) sp.style.display = "";
