@@ -1,5 +1,5 @@
 /* ============================================================
-   [KUNCI] SIAP WANAMSKA v3.31.2 - TERKUNCI (2026-10-27)
+   [KUNCI] SIAP WANAMSKA v3.32.0 - TERKUNCI (2026-10-27)
    Berkas  : style.css
    Fungsi  : Gaya tampilan seluruh modul
    Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -2431,4 +2431,53 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
 }
 @media (prefers-reduced-motion: reduce) {
   .login-sapaan, .logo-maju, .login-title-gold .hj, .login-subgold, .login-slogan, #login-screen .login-box { animation: none !important; }
+}
+
+
+/* ================================================================
+   [v3.32.0] TEMA BIRU OCEAN — seluruh halaman aplikasi (DI LUAR LOGIN)
+   Seluruh rule di-scope ke #app-container, sehingga halaman login
+   (#login-screen) TIDAK berubah sama sekali (aturan Admin).
+   ================================================================ */
+:root { --biru-ocean: #0E7490; --biru-ocean-tua: #155E75; --biru-ocean-muda: #67E8F9; --biru-ocean-tint: #E0F2FE; }
+
+/* Header aplikasi: gradasi coklat -> biru ocean + garis bawah ocean */
+#app-container > header {
+  background: linear-gradient(135deg, #4E342E 0%, #6F4E37 45%, #0E7490 100%) !important;
+  border-bottom: 3px solid rgba(103, 232, 249, 0.75) !important;
+}
+#app-container .user-badge { background: linear-gradient(120deg, var(--biru-ocean) 0%, var(--biru-ocean-tua) 100%); color: #FFFFFF; }
+
+/* Menu samping: aksen ocean pada item aktif & hover */
+#app-container .menu-item:hover, #app-container .menu-item.active { color: var(--biru-ocean-tua); background: var(--biru-ocean-tint); }
+#app-container .menu-item.active::before { background: var(--biru-ocean); }
+
+/* Panel & kartu konten: garis aksen ocean */
+#app-container .section-header { border-left: 5px solid var(--biru-ocean); }
+#app-container .section-header h1 { border-bottom: 2px solid rgba(14, 116, 144, 0.35); }
+#app-container .stat-card { border-top: 3px solid var(--biru-ocean); }
+#app-container .welcome-box { border-left: 5px solid var(--biru-ocean); }
+#app-container .form-control:focus { border-color: var(--biru-ocean) !important; box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.15) !important; }
+
+/* [v3.32.0] Kartu calon (nama lengkap + foto profil) modul Daftar Calon Dewan Penggalang */
+.cdp-kartu {
+  background: #FFFFFF; border-radius: 12px; box-shadow: var(--shadow-soft);
+  border-top: 4px solid var(--biru-ocean); padding: 12px 10px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.cdp-kartu img, .cdp-kartu .cdp-kartu-inisial {
+  width: 72px; height: 96px; object-fit: cover; border-radius: 8px;
+  border: 2px solid var(--color-accent-gold); cursor: pointer;
+}
+.cdp-kartu .cdp-kartu-inisial {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; font-weight: 800; color: #FFFFFF; cursor: default;
+  background: linear-gradient(140deg, var(--biru-ocean) 0%, var(--biru-ocean-tua) 100%);
+}
+.cdp-kartu .cdp-kartu-nama { font-weight: 700; font-size: 0.86rem; color: var(--color-text-dark); line-height: 1.25; }
+.cdp-kartu .cdp-kartu-sub { font-size: 0.72rem; color: var(--color-text-muted); }
+.cdp-kartu .cdp-kartu-pwd {
+  font-size: 0.68rem; font-weight: 700; color: var(--biru-ocean-tua);
+  background: var(--biru-ocean-tint); border: 1px solid rgba(14, 116, 144, 0.4);
+  border-radius: 20px; padding: 3px 10px;
 }
