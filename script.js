@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.32.0 - TERKUNCI (2026-10-27)
+// [KUNCI] SIAP WANAMSKA v3.33.0 - TERKUNCI (2026-10-27)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.32.0"; 
+const APP_VERSION = "3.33.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3346,6 +3346,8 @@ function muatCdpPantau() {
       terapkanStatusCdp(res);
       const chip = document.getElementById('cdp-pantau-jumlah');
       if (chip) chip.innerText = res.jumlah + " pendaftar";
+      const expAksi = document.getElementById('cdp-export-aksi');  // [v3.33.0] export khusus Admin
+      if (expAksi) expAksi.style.display = (userRole === "Admin") ? "flex" : "none";
       const grid = document.getElementById('cdp-kartu-grid');  // [v3.32.0] kartu nama + foto
       if (grid) {
         if (!res.list.length) { grid.style.display = "none"; grid.innerHTML = ""; }
@@ -3405,6 +3407,29 @@ function unduhCdp(userIdTarget, format) {
         showToast(`✅ Blangko ${fmtName} berhasil diunduh ke perangkat Anda.`);
       } else {
         showToast((res && res.message) || "Gagal menyusun blangko.", true);
+      }
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// [v3.33.0] Export daftar calon CDP — KHUSUS Admin; hasil diarsipkan ke folder "SIAP WANAMSKA - Export CDP"
+function exportCdp(format) {
+  const fmtLabel = (format === 'pdf') ? 'PDF' : 'Excel (XLSX)';
+  setLoader(true, `Mengekspor Daftar Calon Dewan Penggalang ke ${fmtLabel}...`);
+  callAPI('exportCdpList', [sessionToken, format], { cache: false })
+    .then(res => {
+      setLoader(false);
+      if (res && res.success && res.url) {
+        showToast(`✅ Export ${fmtLabel} (${res.jumlah || 0} pendaftar) BERHASIL — tersimpan di folder "${res.arsip_folder || 'SIAP WANAMSKA - Export CDP'}". Membuka unduhan...`);
+        const a = document.createElement('a');
+        a.href = res.url;
+        a.target = '_blank';
+        a.setAttribute('download', res.filename || ('Export_CDP.' + (format === 'pdf' ? 'pdf' : 'xlsx')));
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+        showToast((res && res.message) || "Gagal mengekspor daftar calon.", true);
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
