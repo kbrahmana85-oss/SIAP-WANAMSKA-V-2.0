@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.31.0 - TERKUNCI (2026-10-26)
+// [KUNCI] SIAP WANAMSKA v3.31.2 - TERKUNCI (2026-10-27)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.31.0"; 
+const APP_VERSION = "3.31.2"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
