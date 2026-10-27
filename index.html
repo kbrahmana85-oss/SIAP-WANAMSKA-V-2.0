@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!-- ============================================================
-     [KUNCI] SIAP WANAMSKA v3.30.0 - TERKUNCI (2026-10-26)
+     [KUNCI] SIAP WANAMSKA v3.31.0 - TERKUNCI (2026-10-26)
      Berkas  : index.html
      Fungsi  : Struktur halaman & antarmuka (PWA)
      Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -65,12 +65,18 @@
       <span class="lfloat lf-6"></span>
       <span class="lfloat lf-7"></span>
       <span class="lfloat lf-8"></span>
+      <span class="lfloat lf-9"></span>
+      <span class="lfloat lf-10"></span>
+      <span class="lfloat lf-11"></span>
     </div>
 
     <div class="login-box">
-      <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png" class="logo" id="login-logo" alt="Logo SIAP WANAMSKA" style="width: 80px; height: auto;">
-      <h1>SIAP WANAMSKA</h1>
-      <p style="color: var(--color-text-dark); margin-bottom: 25px; font-size: 0.85rem;">Sistem Informasi &amp; Absensi Penggalang Wanamska</p>
+      <!-- [v3.31.0] Sapaan emas bergerak naik-turun DI ATAS logo -->
+      <div class="login-sapaan">SELAMAT DATANG</div>
+      <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png" class="logo logo-maju" id="login-logo" alt="Logo SIAP WANAMSKA" style="width: 92px; height: auto;">
+      <!-- [v3.31.0] Judul gold animatif — siluet biru di belakang tiap huruf -->
+      <h1 class="login-title-gold" aria-label="SIAP WANAMSKA"><span class="hj" style="--i:0">S</span><span class="hj" style="--i:1">I</span><span class="hj" style="--i:2">A</span><span class="hj" style="--i:3">P</span> <span class="hj" style="--i:4">W</span><span class="hj" style="--i:5">A</span><span class="hj" style="--i:6">N</span><span class="hj" style="--i:7">A</span><span class="hj" style="--i:8">M</span><span class="hj" style="--i:9">S</span><span class="hj" style="--i:10">K</span><span class="hj" style="--i:11">A</span></h1>
+      <p class="login-subgold" style="margin-bottom: 22px; font-size: 0.85rem;">Sistem Informasi dan Absensi Penggalang <strong>SMP NEGERI 26 KOTA SURAKARTA</strong></p>
       
       <div class="form-group">
         <label for="userId">User ID</label>
@@ -87,7 +93,7 @@
       
       <!-- [v3.17.0] Pendaftaran mandiri Alumni (visibilitas diatur JS: tersembunyi bagi perangkat user terdata non-Admin) -->
       <button type="button" id="btn-daftar-alumni" class="btn" style="display:none; width:100%; margin-top:12px; background:#F3F4F6; color:var(--color-primary); border:1px dashed var(--color-light-brown); font-weight:600;" onclick="bukaModalDaftarAlumni()">📝 Daftar Sebagai Alumni</button>
-      <div id="akun-tersimpan-info" style="display:none; margin-top:10px; font-size:0.72rem; color:#666; background:#FAF4EE; padding:8px 10px; border-radius:8px;"></div>
+      <div id="akun-tersimpan-info" style="display:none; margin-top:10px; font-size:0.72rem; color:#F7E8C9; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); padding:8px 10px; border-radius:8px;"></div>
 
       <!-- [FIX-4] Login + ikon sidik jari berdampingan (ID & fungsi tetap sama) -->
       <div class="login-actions">
@@ -103,9 +109,8 @@
         </button>
       </div>
 
-      <div style="text-align:center; margin-top: 20px;">
-        <h3 style="font-size: 0.95rem; color: var(--color-primary);">SELAMAT DATANG</h3>
-        <p style="font-size: 0.8rem; color:#666;">MARI MENJADI PENGGALANG YANG SIAP BERDIGITALISASI</p>
+      <div style="text-align:center; margin-top: 18px;">
+        <p class="login-slogan" style="font-size: 0.8rem;">MARI MENJADI PENGGALANG YANG SIAP BERDIGITALISASI</p>
       </div>
 
       <!-- KOLOM KEPEMILIKAN APLIKASI -->
@@ -1906,7 +1911,23 @@
 // [v3.23.0] Sumber logo terkunci = emblem header aplikasi (transparan)
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script src="script.js?v=3.30.0"></script>
+<script src="script.js?v=3.31.0"></script>
+<script>
+/* [v3.31.0] Parallax interaktif: ikon mengambang mengikuti gerak pointer/jari */
+(function () {
+  var sc = document.getElementById('login-screen');
+  var ly = document.querySelector('.login-float-layer');
+  if (!sc || !ly) return;
+  function gerak(x, y) {
+    var r = sc.getBoundingClientRect();
+    ly.style.setProperty('--mx', ((x - r.left) / r.width - 0.5).toFixed(3));
+    ly.style.setProperty('--my', ((y - r.top) / r.height - 0.5).toFixed(3));
+  }
+  sc.addEventListener('pointermove', function (e) { gerak(e.clientX, e.clientY); }, { passive: true });
+  sc.addEventListener('pointerdown', function (e) { gerak(e.clientX, e.clientY); }, { passive: true });
+  sc.addEventListener('pointerleave', function () { ly.style.setProperty('--mx', 0); ly.style.setProperty('--my', 0); });
+})();
+</script>
 <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3728d6fe802de76',t:'MTc4ODc1MDk2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>  <!-- ============ [v3.17.0] MODAL PENDAFTARAN ALUMNI ============ -->
   <div id="modal-daftar-alumni" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#FFFFFF; border-radius:14px; max-width:420px; width:100%; max-height:92vh; overflow-y:auto; padding:20px;">
@@ -1955,5 +1976,5 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
 <script>
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50df1c28c9cce51',t:'MTc5MzA2NDcxOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50e2e18ff64ff93',t:'MTc5MzA2NzE5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
