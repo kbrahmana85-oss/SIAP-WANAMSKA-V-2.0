@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.29.0 - TERKUNCI (2026-10-26)
+// [KUNCI] SIAP WANAMSKA v3.30.0 - TERKUNCI (2026-10-26)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.29.0"; 
+const APP_VERSION = "3.30.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3399,6 +3399,16 @@ function unduhCdp(userIdTarget, format) {
 // Formulir & alur sama seperti Pendaftaran CDP; User ID calon diisi petugas.
 let bdFotoBase64 = "", bdFotoDim = null;
 
+// [v3.30.0] Mode formulir Bantu Daftar CDP: lama = calon sudah punya akun (User ID); baru = buatkan akun CDP2026xx
+let bdCdpMode = "lama";
+function bantuCdpMode(mode) {
+  bdCdpMode = (mode === "baru") ? "baru" : "lama";
+  const wrapLama = document.getElementById('bd-user-id-wrap');
+  const wrapBaru = document.getElementById('bd-akun-wrap');
+  if (wrapLama) wrapLama.style.display = (bdCdpMode === "lama") ? "" : "none";
+  if (wrapBaru) wrapBaru.style.display = (bdCdpMode === "baru") ? "" : "none";
+}
+
 function muatBantuCdpForm() {
   callAPI('getStatusCdp', [sessionToken], { cache: false }).then(st => {
     if (st && st.success) { cdpStatus = st; terapkanStatusCdp(st); }
@@ -3449,6 +3459,7 @@ function previewFotoBantuCdp(event) {
 }
 
 function actionBantuDaftarCdp() {
+  const modeBaru = (typeof bdCdpMode !== "undefined" && bdCdpMode === "baru");  // [v3.30.0]
   const payload = {
     user_id: (document.getElementById('bd-user-id').value || "").trim(),
     nama_calon: (document.getElementById('bd-nama').value || "").trim(),
@@ -3461,6 +3472,33 @@ function actionBantuDaftarCdp() {
     foto_cdp: bdFotoBase64,
     foto_cdp_dim: bdFotoDim
   };
+  if (modeBaru) {
+    // [v3.30.0] Mekanisme pendaftaran alumni: profil lengkap -> akun CDP2026xx dibuat otomatis
+    payload.password_awal = (document.getElementById('bd-password') ? document.getElementById('bd-password').value : "");
+    if (!payload.nama_calon) { showToast("Nama Calon Dewan Penggalang wajib diisi.", true); return; }
+    if (!payload.nta) { showToast("NTA wajib diisi — tulis - jika belum memiliki KTA.", true); return; }
+    if (!payload.kelas) { showToast("Kelas wajib dipilih.", true); return; }
+    if (!payload.alamat_lengkap) { showToast("Alamat Lengkap wajib diisi.", true); return; }
+    if (!payload.no_hp) { showToast("Nomor HP wajib diisi.", true); return; }
+    if (!payload.foto_cdp) { showToast("Foto dengan baju pramuka WAJIB diunggah (frame 3x4, maks 2 MB).", true); return; }
+    if (!payload.password_awal || payload.password_awal.length < 6) { showToast("Password awal calon wajib diisi (minimal 6 karakter).", true); return; }
+    setLoader(true, "Membuatkan akun & mendaftarkan calon (CDP2026xx)...");
+    callAPI('bantuDaftarCdpAkun', [sessionToken, payload], { cache: false })
+      .then(res => {
+        setLoader(false);
+        showToast(res.message, !res.success);
+        if (res.success) {
+          ['bd-nama', 'bd-kelas', 'bd-nta', 'bd-alamat', 'bd-hp', 'bd-sakit', 'bd-password'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+          bdFotoBase64 = ""; bdFotoDim = null;
+          const im = document.getElementById('bd-foto-img'); if (im) { im.src = ""; im.style.display = "none"; }
+          const sp = document.getElementById('bd-foto-kosong'); if (sp) sp.style.display = "";
+          const fl = document.getElementById('bd-foto'); if (fl) fl.value = "";
+          muatStatusCdp();
+        }
+      })
+      .catch(err => { setLoader(false); showToast(err.message, true); });
+    return;
+  }
   if (!payload.user_id) { showToast("User ID calon wajib diisi.", true); return; }
   if (!payload.nama_calon) { showToast("Nama Calon Dewan Penggalang wajib diisi.", true); return; }
   if (!payload.kelas) { showToast("Kelas wajib dipilih.", true); return; }
