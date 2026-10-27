@@ -1,5 +1,5 @@
 /* ============================================================
-   [KUNCI] SIAP WANAMSKA v3.32.0 - TERKUNCI (2026-10-27)
+   [KUNCI] SIAP WANAMSKA v3.33.1 - TERKUNCI (2026-10-27)
    Berkas  : style.css
    Fungsi  : Gaya tampilan seluruh modul
    Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -2480,4 +2480,22 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
   font-size: 0.68rem; font-weight: 700; color: var(--biru-ocean-tua);
   background: var(--biru-ocean-tint); border: 1px solid rgba(14, 116, 144, 0.4);
   border-radius: 20px; padding: 3px 10px;
+}
+
+
+/* ================================================================
+   [v3.33.1] TAGLINE LOGIN DUA BARIS + HURUF KAPITAL
+   Baris 1: SISTEM INFORMASI DAN ABSENSI PENGGALANG
+   Baris 2: SMP NEGERI 26 KOTA SURAKARTA
+   (pemisah <br> di index.html; gaya gold mengalir bersiluet
+   biru dari v3.31.0 tetap dipertahankan)
+   ================================================================ */
+.login-subgold {
+  text-transform: uppercase;
+  /* [v3.33.1] pastikan persis 2 baris: tiap segmen (dipisah <br>) satu baris penuh */
+  max-width: none !important;
+  white-space: nowrap;
+  font-size: clamp(0.58rem, 2.7vw, 0.78rem) !important;
+  letter-spacing: 0.2px;
+  line-height: 1.55;
 }
