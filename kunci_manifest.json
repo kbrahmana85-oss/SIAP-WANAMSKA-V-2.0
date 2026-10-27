@@ -1,11 +1,11 @@
 {
-  "versi": "3.32.0",
+  "versi": "3.33.0",
   "tanggal_kunci": "2026-10-27",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 270235,
-      "sha256": "279a7fe9cb81c6c6ef956bf0bfc31db0700b1b45e77a9cde31ea732daf7d6f75",
+      "ukuran_byte": 271014,
+      "sha256": "492ff1fef7a19fac6e2a0108c6c14b079abd860be41b8534030898e72cff93aa",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -21,9 +21,9 @@
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 217576,
-      "sha256": "8a103b681896c5ec76691e8bae63e61f396be4970a666907c4b53649e54c0000",
-      "jumlah_fungsi": 208,
+      "ukuran_byte": 218876,
+      "sha256": "e51525031c872dda6342ba47cc0be951b3663097d67d57eda0782c8f41dc3159",
+      "jumlah_fungsi": 209,
       "fungsi": [
         "absenBantuCekNama",
         "actionBantuDaftarCdp",
@@ -85,6 +85,7 @@
         "editAbsensi",
         "ensurePreviewCanvas",
         "escapeHtml",
+        "exportCdp",
         "fillLaporanModulSelect",
         "flipCamera",
         "fmtJamAbsen",
@@ -238,7 +239,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "e87e196d372bbb82144894ca3c31c2ba7445ce8de154f7f9dfc8a565161e10b4",
+      "sha256": "c52c46114a481761ac431e4d7ae95f224a8a80cfd6503ffebf7111c83ab4303b",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -298,15 +299,15 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "3faa64ae5d4dae108f5cda02f87ec32b4f1caf423bae96a3da17816933f15ab4",
+      "sha256": "c639745b1d5d2cae560b6597043bcce004e1d0108468d477245aadb4563d8c9d",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 409769,
-      "sha256": "21fc05f790d187b27fc87e11307e44394f031d482e138ad7f72e3c7b7edd3e63",
-      "jumlah_fungsi": 169,
+      "ukuran_byte": 412587,
+      "sha256": "e828669f17ec403a60910153a5e442b3f218d8cfc3e371cae9368212b6aca2d6",
+      "jumlah_fungsi": 171,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
@@ -334,6 +335,7 @@
         "_ensureLaporanTemplateSheet",
         "_fmtRp",
         "_folderCdp_",
+        "_folderExportCdp_",
         "_folderExport_",
         "_folderFotoLulusan_",
         "_folderIndukLulusan_",
@@ -387,6 +389,7 @@
         "enkode",
         "ensureSheet_",
         "ensureSubFolder",
+        "exportCdpList",
         "exportLaporan",
         "exportLaporanDownload",
         "exportToDOC",
