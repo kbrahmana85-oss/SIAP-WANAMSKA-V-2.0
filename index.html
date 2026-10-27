@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!-- ============================================================
-     [KUNCI] SIAP WANAMSKA v3.32.0 - TERKUNCI (2026-10-27)
+     [KUNCI] SIAP WANAMSKA v3.33.0 - TERKUNCI (2026-10-27)
      Berkas  : index.html
      Fungsi  : Struktur halaman & antarmuka (PWA)
      Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -24,7 +24,7 @@
   <meta name="apple-mobile-web-app-title" content="PRADESKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.32.0">
+    <link rel="stylesheet" href="style.css?v=3.33.0">
 </head>
 <body>
 
@@ -621,6 +621,12 @@
             <h1>Daftar Calon Dewan Penggalang</h1>
             <span class="badge badge-hadir" id="cdp-pantau-jumlah" style="margin-left:8px;">0 pendaftar</span>
             <p style="font-size:0.85rem; color:var(--color-text-muted); margin-top:4px;">Blangko lengkap identitas Pendaftar Calon Dewan Penggalang 2027 — ketuk untuk membuka detail, unduh PDF/Word untuk arsip.</p>
+          </div>
+          <!-- [v3.33.0] Export daftar calon — KHUSUS Admin; hasil diarsipkan ke folder "SIAP WANAMSKA - Export CDP" -->
+          <div id="cdp-export-aksi" style="display:none; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;">
+            <button class="btn" id="btn-export-cdp-xlsx" style="padding:7px 14px; font-size:0.82rem; background:#0E7490; color:#FFFFFF;" onclick="exportCdp('xlsx')">📊 Export Excel</button>
+            <button class="btn" id="btn-export-cdp-pdf" style="padding:7px 14px; font-size:0.82rem; background:#155E75; color:#FFFFFF;" onclick="exportCdp('pdf')">📄 Export PDF</button>
+            <span style="font-size:0.72rem; color:var(--color-text-muted);">Hasil tersimpan di folder "SIAP WANAMSKA - Export CDP"</span>
           </div>
           <!-- [v3.32.0] Kartu NAMA + FOTO pendaftar -->
           <div id="cdp-kartu-grid" aria-live="polite" style="display:none; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; margin-top:14px;"></div>
@@ -1915,7 +1921,7 @@
 // [v3.23.0] Sumber logo terkunci = emblem header aplikasi (transparan)
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script src="script.js?v=3.32.0"></script>
+<script src="script.js?v=3.33.0"></script>
 <script>
 /* [v3.31.0] Parallax interaktif: ikon mengambang mengikuti gerak pointer/jari */
 (function () {
@@ -1980,5 +1986,5 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
 <script>
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a510239989f85fd3',t:'MTc5MzA4NzczMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a510704709193e24',t:'MTc5MzA5MDg3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
