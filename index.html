@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!-- ============================================================
-     [KUNCI] SIAP WANAMSKA v3.31.0 - TERKUNCI (2026-10-26)
+     [KUNCI] SIAP WANAMSKA v3.31.2 - TERKUNCI (2026-10-27)
      Berkas  : index.html
      Fungsi  : Struktur halaman & antarmuka (PWA)
      Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -24,7 +24,7 @@
   <meta name="apple-mobile-web-app-title" content="PRADESKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.16.1">
+    <link rel="stylesheet" href="style.css?v=3.31.2">
 </head>
 <body>
 
@@ -71,16 +71,16 @@
     </div>
 
     <div class="login-box">
-      <!-- [v3.31.0] Sapaan emas bergerak naik-turun DI ATAS logo -->
-      <div class="login-sapaan">SELAMAT DATANG</div>
+      <!-- [v3.31.2] Logo icon di TENGAH kartu; sapaan "Selamat Datang" ber-border merah tepat di bawahnya, di tengah -->
       <img src="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/main/icon.png" class="logo logo-maju" id="login-logo" alt="Logo SIAP WANAMSKA" style="width: 92px; height: auto;">
+      <div class="login-sapaan">Selamat Datang</div>
       <!-- [v3.31.0] Judul gold animatif — siluet biru di belakang tiap huruf -->
       <h1 class="login-title-gold" aria-label="SIAP WANAMSKA"><span class="hj" style="--i:0">S</span><span class="hj" style="--i:1">I</span><span class="hj" style="--i:2">A</span><span class="hj" style="--i:3">P</span> <span class="hj" style="--i:4">W</span><span class="hj" style="--i:5">A</span><span class="hj" style="--i:6">N</span><span class="hj" style="--i:7">A</span><span class="hj" style="--i:8">M</span><span class="hj" style="--i:9">S</span><span class="hj" style="--i:10">K</span><span class="hj" style="--i:11">A</span></h1>
       <p class="login-subgold" style="margin-bottom: 22px; font-size: 0.85rem;">Sistem Informasi dan Absensi Penggalang <strong>SMP NEGERI 26 KOTA SURAKARTA</strong></p>
       
       <div class="form-group">
         <label for="userId">User ID</label>
-        <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID (Bebas Huruf Besar/Kecil)" required>
+        <input type="text" id="userId" class="form-control" placeholder="Masukkan User ID" required>
       </div>
       
       <div class="form-group">
@@ -91,8 +91,6 @@
         </div>
       </div>
       
-      <!-- [v3.17.0] Pendaftaran mandiri Alumni (visibilitas diatur JS: tersembunyi bagi perangkat user terdata non-Admin) -->
-      <button type="button" id="btn-daftar-alumni" class="btn" style="display:none; width:100%; margin-top:12px; background:#F3F4F6; color:var(--color-primary); border:1px dashed var(--color-light-brown); font-weight:600;" onclick="bukaModalDaftarAlumni()">📝 Daftar Sebagai Alumni</button>
       <div id="akun-tersimpan-info" style="display:none; margin-top:10px; font-size:0.72rem; color:#F7E8C9; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); padding:8px 10px; border-radius:8px;"></div>
 
       <!-- [FIX-4] Login + ikon sidik jari berdampingan (ID & fungsi tetap sama) -->
@@ -108,6 +106,10 @@
           </svg>
         </button>
       </div>
+
+      <!-- [v3.17.0 -> v3.31.2] Pendaftaran mandiri Alumni dipindah ke BAWAH tombol Login + ikon sidik jari;
+           warna kontras dgn halaman login (biru tua, teks putih). Visibilitas tetap diatur JS. -->
+      <button type="button" id="btn-daftar-alumni" class="btn" style="display:none; width:100%; margin-top:14px; background:linear-gradient(120deg,#1E3A8A,#2B4EDB); color:#FFFFFF; border:1px solid rgba(255,255,255,0.35); border-radius:10px; font-weight:700; letter-spacing:0.3px; box-shadow:0 6px 18px rgba(0,0,0,0.35);" onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter=''" onclick="bukaModalDaftarAlumni()">📝 Daftar Sebagai Alumni</button>
 
       <div style="text-align:center; margin-top: 18px;">
         <p class="login-slogan" style="font-size: 0.8rem;">MARI MENJADI PENGGALANG YANG SIAP BERDIGITALISASI</p>
@@ -1911,7 +1913,7 @@
 // [v3.23.0] Sumber logo terkunci = emblem header aplikasi (transparan)
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script src="script.js?v=3.31.0"></script>
+<script src="script.js?v=3.31.2"></script>
 <script>
 /* [v3.31.0] Parallax interaktif: ikon mengambang mengikuti gerak pointer/jari */
 (function () {
@@ -1976,5 +1978,5 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
 <script>
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50e2e18ff64ff93',t:'MTc5MzA2NzE5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a50f11d868f76d3b',t:'MTc5MzA3NjUxOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
