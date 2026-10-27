@@ -1,5 +1,5 @@
 /* ============================================================
-   [KUNCI] SIAP WANAMSKA v3.31.0 - TERKUNCI (2026-10-26)
+   [KUNCI] SIAP WANAMSKA v3.31.2 - TERKUNCI (2026-10-27)
    Berkas  : style.css
    Fungsi  : Gaya tampilan seluruh modul
    Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -2266,65 +2266,64 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
 }
 
 /* ================================================================
-   [v3.31.0] HALAMAN LOGIN MODERN — kartu kaca transparan, judul gold
-   animatif bersiluet biru, sapaan emas naik-turun, ikon lebih dinamis
+   [v3.31.0 -> v3.31.2] HALAMAN LOGIN MODERN — kartu TANPA LATAR penuh
+   (transparan, tanpa blur/border/cincin), judul gold animatif bersiluet
+   biru, sapaan ber-BORDER MERAH di tengah bawah logo, slogan bold-miring lambat
    ================================================================ */
 @property --ringA { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 
-/* -- KARTU KACA TRANSPARAN + cincin gradient emas-biru berputar -- */
+/* -- [v3.31.1] KARTU TANPA LATAR SAMA SEKALI: transparan penuh — tanpa
+      kaca, tanpa blur, tanpa border, tanpa cincin; isi login langsung
+      tampil di atas foto latar -- */
 #login-screen .login-box {
-  background: linear-gradient(155deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.07) 55%, rgba(255,255,255,0.12) 100%) !important;
-  background-color: rgba(255,255,255,0.10) !important;
-  backdrop-filter: blur(16px) saturate(1.25);
-  -webkit-backdrop-filter: blur(16px) saturate(1.25);
-  border: 1px solid rgba(255,255,255,0.38) !important;
-  border-top: 1px solid rgba(255,255,255,0.38) !important;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none !important;
+  border-top: none !important;
+  box-shadow: none !important;
   animation: loginCardIn 0.65s cubic-bezier(0.22, 0.9, 0.3, 1.2) both;
 }
-#login-screen .login-box::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  z-index: -1;
-  border-radius: 22px;
-  padding: 2.5px;
-  background: conic-gradient(from var(--ringA),
-    rgba(247,215,116,0.95), rgba(30,58,138,0.85), rgba(201,150,46,0.95),
-    rgba(30,58,138,0.85), rgba(247,215,116,0.95));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-          mask-composite: exclude;
-  animation: loginRingSpin 8s linear infinite;
-  pointer-events: none;
-}
+#login-screen .login-box::before { content: none !important; }
 @keyframes loginRingSpin { to { --ringA: 360deg; } }
 @keyframes loginCardIn {
   from { opacity: 0; transform: translateY(16px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-#login-screen .login-box:hover { box-shadow: 0 28px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.3) !important; }
+#login-screen .login-box:hover { box-shadow: none !important; }
 
-/* -- SAPAAN "SELAMAT DATANG": emas kecoklatan, border hitam, bayangan
-      biru keemasan, bergerak naik-turun -- */
+/* -- [v3.31.2] LOGO persis di TENGAH kartu (block + margin auto);
+      SAPAAN "Selamat Datang" tepat di bawah logo, di tengah kartu,
+      tulisan emas bersiluet biru + BORDER MERAH, tetap naik-turun -- */
+#login-screen #login-logo {
+  display: block;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-top: 2px;
+}
 .login-sapaan {
-  display: inline-block;
-  margin: -6px auto 10px;
-  padding: 7px 22px;
-  border: 2px solid #000000;
-  border-radius: 999px;
-  background: linear-gradient(120deg, #F7D774 0%, #D9A93C 45%, #A8763E 100%);
-  color: #3B2206;
+  display: block;
+  width: fit-content;
+  margin: -2px auto 10px;
+  padding: 5px 18px;
+  border: 2.5px solid #C0392B;
+  border-radius: 14px;
+  box-shadow: 0 0 16px rgba(192,57,43,0.45), 0 0 4px rgba(192,57,43,0.55);
+  background: linear-gradient(100deg, #8A5A19 0%, #F7D774 30%, #C9962E 58%, #F7D774 82%, #8A5A19 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
   font-weight: 800;
-  font-size: 0.95rem;
-  letter-spacing: 2.5px;
-  box-shadow: 0 8px 22px rgba(30,58,138,0.55), 0 4px 12px rgba(201,150,46,0.55);
-  animation: sapaanNaik 2.6s ease-in-out infinite;
+  font-size: 1.02rem;
+  letter-spacing: 3.5px;
+  filter: drop-shadow(1px 2px 0 rgba(30,58,138,0.85)) drop-shadow(0 3px 6px rgba(0,0,0,0.40));
+  animation: sapaanNaik 2.6s ease-in-out infinite, goldAlir 5.2s linear infinite;
 }
 @keyframes sapaanNaik {
-  0%, 100% { transform: translateY(0);    box-shadow: 0 8px 22px rgba(30,58,138,0.55), 0 4px 12px rgba(201,150,46,0.55); }
-  50%      { transform: translateY(-7px); box-shadow: 0 14px 30px rgba(30,58,138,0.65), 0 8px 18px rgba(201,150,46,0.65); }
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
 }
 .logo-maju { filter: drop-shadow(0 6px 14px rgba(30,58,138,0.5)); animation: logoMaju 3.4s ease-in-out infinite; }
 @keyframes logoMaju {
@@ -2380,7 +2379,23 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
 
 /* -- Teks pendukung agar terbaca di kartu kaca -- */
 #login-screen .form-group label { color: #F7E8C9 !important; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
-.login-slogan { color: #F2E3C4; font-weight: 600; letter-spacing: 0.4px; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+.login-slogan {
+  /* [v3.31.1] slogan: BOLD + MIRING + animasi perlahan (kilau emas 7 dtk) */
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.6px;
+  background: linear-gradient(100deg, #EFD9A8 0%, #F7D774 30%, #FFF3D6 50%, #F7D774 70%, #EFD9A8 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.55));
+  animation: sloganAlun 7s ease-in-out infinite;
+}
+@keyframes sloganAlun {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
 
 /* -- IKON MENGMAMBANG LEBIH DINAMIS (amplitudo, rotasi, denyut) + parallax -- */
 .login-float-layer { --mx: 0; --my: 0; }
@@ -2415,5 +2430,5 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
   .lf-9, .lf-10, .lf-11 { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .login-sapaan, .logo-maju, .login-title-gold .hj, .login-subgold, #login-screen .login-box { animation: none !important; }
+  .login-sapaan, .logo-maju, .login-title-gold .hj, .login-subgold, .login-slogan, #login-screen .login-box { animation: none !important; }
 }
