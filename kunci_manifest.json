@@ -1,11 +1,11 @@
 {
-  "versi": "3.33.0",
+  "versi": "3.33.1",
   "tanggal_kunci": "2026-10-27",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 271014,
-      "sha256": "492ff1fef7a19fac6e2a0108c6c14b079abd860be41b8534030898e72cff93aa",
+      "ukuran_byte": 270997,
+      "sha256": "7c575d50a1472f3492c5e3cc2136d9fabbac28281d9035874d912d858c863efc",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -14,15 +14,15 @@
     },
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
-      "ukuran_byte": 84000,
-      "sha256": "b6244822b693f4e6d19d28251f8bba5e144e4f4325791d2170d6beabb6652c2a",
+      "ukuran_byte": 84680,
+      "sha256": "dc6daa1514af31c02965116fa1a6d9dfb1c8b3f5af43ed7a698dcb60e5b9924c",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
       "ukuran_byte": 218876,
-      "sha256": "e51525031c872dda6342ba47cc0be951b3663097d67d57eda0782c8f41dc3159",
+      "sha256": "2e8e67d0d037cef5c50b251cbf2d1c09320619285354418b603cd2899049751e",
       "jumlah_fungsi": 209,
       "fungsi": [
         "absenBantuCekNama",
@@ -239,7 +239,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "c52c46114a481761ac431e4d7ae95f224a8a80cfd6503ffebf7111c83ab4303b",
+      "sha256": "60947a8a155b54872318a177c56b836d6ef5740c69430f3c7929c2e8d805215f",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -299,14 +299,14 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "c639745b1d5d2cae560b6597043bcce004e1d0108468d477245aadb4563d8c9d",
+      "sha256": "e6685574c366fd69a8df968aadc5e05e457af50d5dd633e159ad146199575131",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
       "ukuran_byte": 412587,
-      "sha256": "e828669f17ec403a60910153a5e442b3f218d8cfc3e371cae9368212b6aca2d6",
+      "sha256": "60a998704025058e72bade7d62857e249ff2b325071dc597cad5822f188106b8",
       "jumlah_fungsi": 171,
       "fungsi": [
         "_absenJam_",
