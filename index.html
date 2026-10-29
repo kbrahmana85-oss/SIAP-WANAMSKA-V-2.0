@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!-- ============================================================
-     [KUNCI] SIAP WANAMSKA v3.34.0 - TERKUNCI (2026-10-27)
+     [KUNCI] SIAP WANAMSKA v3.34.1 - TERKUNCI (2026-10-29)
      Berkas  : index.html
      Fungsi  : Struktur halaman & antarmuka (PWA)
      Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -24,7 +24,7 @@
   <meta name="apple-mobile-web-app-title" content="PRADESKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.34.0">
+    <link rel="stylesheet" href="style.css?v=3.34.1">
 </head>
 <body>
 
@@ -217,8 +217,7 @@
               <span class="icon">&#128209;</span><span class="menu-label">Daftar Calon Dewan Penggalang</span>
             </div>
             <div class="menu-item role-restricted" id="menu-seleksi-master" style="display:none;" onclick="switchSection('section-seleksi-master', this)">
-              <span class="menu-icon">🏆</span>
-              <span class="menu-text">Master Seleksi</span>
+              <span class="icon">🏆</span><span class="menu-label">Master Seleksi</span>
             </div>
             <div class="menu-item role-restricted" id="menu-cdp-bantu" style="display:none;" onclick="switchSection('section-cdp-bantu', this)">
               <span class="icon">&#129309;</span><span class="menu-label">Bantu Daftar CDP</span>
@@ -593,6 +592,8 @@
             <input type="text" id="cdp-user-id" class="form-control" value="" readonly style="background:#F3EDE4; color:#5D4037; font-weight:700;">
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Nama Calon Dewan Penggalang *</label>
             <input type="text" id="cdp-nama" class="form-control" placeholder="Nama lengkap calon">
+            <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Nama Panggilan *</label>
+            <input type="text" id="cdp-panggilan" class="form-control" placeholder="cth. Eko — dipakai nama folder seleksi calon">
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Kelas *</label>
             <select id="cdp-kelas" class="form-control"></select>
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">NTA — Nomor Tanda Anggota (sesuai KTA) *</label>
@@ -671,6 +672,8 @@
             </div>
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Nama Calon Dewan Penggalang *</label>
             <input type="text" id="bd-nama" class="form-control" placeholder="Nama lengkap calon">
+            <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Nama Panggilan *</label>
+            <input type="text" id="bd-panggilan" class="form-control" placeholder="cth. Fajar — dipakai nama folder seleksi calon">
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Kelas *</label>
             <select id="bd-kelas" class="form-control"></select>
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">NTA — Nomor Tanda Anggota (sesuai KTA) *</label>
@@ -2009,7 +2012,7 @@
 // [v3.23.0] Sumber logo terkunci = emblem header aplikasi (transparan)
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script src="script.js?v=3.34.0"></script>
+<script src="script.js?v=3.34.1"></script>
 <script>
 /* [v3.31.0] Parallax interaktif: ikon mengambang mengikuti gerak pointer/jari */
 (function () {
@@ -2074,5 +2077,5 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
 <script>
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5210fab3c881f9f',t:'MTc5MzI2NTE3NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
