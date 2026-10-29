@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.34.1 - TERKUNCI (2026-10-29)
+// [KUNCI] SIAP WANAMSKA v3.35.0 - TERKUNCI (2026-10-29)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.34.1"; 
+const APP_VERSION = "3.35.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -720,6 +720,7 @@ function switchSection(sectionId, elementMenu) {
   if (sectionId === 'section-cdp-pantau') muatCdpPantau();
   if (sectionId === 'section-cdp-bantu') muatBantuCdpForm();  // [v3.27.0]
   if (sectionId === 'section-seleksi-master') muatSeleksiMaster();  // [v3.34.0]
+  if (sectionId === 'section-seleksi-nilai') muatNilaiSeleksi();  // [v3.35.0]
 
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.overlay');
@@ -3211,6 +3212,8 @@ function terapkanStatusCdp(st) {
   if (mBantu) mBantu.style.display = (isCdpBantu() && dirilis) ? 'flex' : 'none';  // [v3.27.0]
   const mMaster = document.getElementById('menu-seleksi-master');  // [v3.34.0]
   if (mMaster) mMaster.style.display = isPenetapSeleksi() ? 'flex' : 'none';
+  const mNilai = document.getElementById('menu-seleksi-nilai');  // [v3.35.0]
+  if (mNilai) mNilai.style.display = isPenetapSeleksi() ? 'flex' : 'none';
   // Kartu headline berita + jumlah pendaftar di dashboard (semua peran, setelah rilis)
   const hl = document.getElementById('card-headline-cdp');
   if (hl) {
@@ -3395,16 +3398,18 @@ function muatCdpPantau() {
         return;
       }
       terapkanStatusCdp(res);
+      const rkHasil = (window.__seleksiRekap && window.__seleksiRekap.hasil) || {};  // [v3.35.0]
+      const aktif = res.list.filter(r => { const h = rkHasil[r.user_id]; return !(h && h.hasil === "TIDAK_LOLOS"); });  // tidak lolos = dihapus dari tampilan
       const chip = document.getElementById('cdp-pantau-jumlah');
-      if (chip) chip.innerText = res.jumlah + " pendaftar";
+      if (chip) chip.innerText = aktif.length + " pendaftar";
       const expAksi = document.getElementById('cdp-export-aksi');  // [v3.33.0] export khusus Admin
       if (expAksi) expAksi.style.display = (userRole === "Admin") ? "flex" : "none";
       const grid = document.getElementById('cdp-kartu-grid');  // [v3.32.0] kartu nama + foto
       if (grid) {
-        if (!res.list.length) { grid.style.display = "none"; grid.innerHTML = ""; }
+        if (!aktif.length) { grid.style.display = "none"; grid.innerHTML = ""; }
         else {
           grid.style.display = "grid";
-          grid.innerHTML = res.list.map((r) => `
+          grid.innerHTML = aktif.map((r) => `
             <div class="cdp-kartu">
               ${r.foto ? `<img src="${r.foto}" alt="Foto ${escapeHtml(r.nama_calon)}" onclick="viewFullImage('${r.foto}')">` : `<div class="cdp-kartu-inisial">${escapeHtml((r.nama_calon || "?").substring(0, 1).toUpperCase())}</div>`}
               <div class="cdp-kartu-nama">${escapeHtml(r.nama_calon)}</div>
@@ -3414,11 +3419,11 @@ function muatCdpPantau() {
             </div>`).join("");
         }
       }
-      if (!res.list.length) {
+      if (!aktif.length) {
         kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada pendaftar Calon Dewan Penggalang 2027.</p>';
         return;
       }
-      kotak.innerHTML = res.list.map((r, i) => `
+      kotak.innerHTML = aktif.map((r, i) => `
         <details class="cdp-detail" style="background:#FFFFFF; border-radius:12px; box-shadow:var(--shadow-soft); margin-bottom:10px; overflow:hidden;">
           <summary style="padding:12px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; list-style:none;">
             <span><strong>${i + 1}. ${escapeHtml(r.nama_calon)}</strong> <span class="badge badge-hadir" style="margin-left:6px;">Kelas ${escapeHtml(r.kelas)}</span></span>
@@ -3494,14 +3499,11 @@ function exportCdp(format) {
 // =========================================================
 function badgeSeleksiHtml(uid) {
   const rk = (window.__seleksiRekap && window.__seleksiRekap.hasil) ? window.__seleksiRekap.hasil[uid] : null;
-  if (!rk) return "";
-  if (rk.hasil === "LOLOS") return `<div class="cdp-kartu-hasil lulus">🎉 LOLOS Tahap ${escapeHtml(String(rk.tahap))} — ${escapeHtml(rk.mata_uji)}</div>`;
-  return `<div class="cdp-kartu-hasil gugur">💪 TIDAK LOLOS Tahap ${escapeHtml(String(rk.tahap))} — ${escapeHtml(rk.mata_uji)}</div>`;
+  if (!rk || rk.hasil !== "LOLOS") return "";  // [v3.35.0] hanya LOLOS — TIDAK LOLOS disembunyikan dari daftar
+  return `<div class="cdp-kartu-hasil lulus">🎉 LOLOS Tahap ${escapeHtml(String(rk.tahap))} — ${escapeHtml(rk.mata_uji)}</div>`;
 }
 function seleksiAksiHtml(uid, nama) {
-  const rk = (window.__seleksiRekap && window.__seleksiRekap.hasil) ? window.__seleksiRekap.hasil[uid] : null;
-  if (rk && rk.hasil === "TIDAK_LOLOS") return `<span class="cdp-seleksi-gugur">💪 TIDAK LOLOS Tahap ${escapeHtml(String(rk.tahap))} (${escapeHtml(rk.mata_uji)}) — tidak diikutkan tahap selanjutnya; berkas & foto tetap tersimpan.</span>`;
-  return `<button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#B45309; color:#FFF;" onclick="bukaModalSeleksi('${escapeHtml(uid)}', '${escapeHtml(nama)}')">🏆 Tetapkan Hasil Seleksi</button>`;
+  return `<button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#B45309; color:#FFF;" onclick="bukaModalNilai('${escapeHtml(uid)}', '${escapeHtml(nama)}')">🎯 Input Nilai Uji Seleksi</button>`;  // [v3.35.0]
 }
 
 function muatSeleksiMaster() {
@@ -3519,8 +3521,8 @@ function muatSeleksiMaster() {
       window.__seleksiMaster = res.master || [];
       if (!res.master.length) { kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada tahapan seleksi — tambahkan lewat formulir di atas.</p>'; return; }
       kotak.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; background:#FFF; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);">
-        <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Tahap</th><th style="padding:8px 10px; text-align:left;">Nama Kegiatan Seleksi</th><th style="padding:8px 10px; text-align:left;">Nilai</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
-        ${res.master.map(m => `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px; font-weight:700; color:#155E75;">Tahap ${escapeHtml(String(m.tahap))}</td><td style="padding:8px 10px; font-weight:600;">${escapeHtml(m.nama_kegiatan)}</td><td style="padding:8px 10px;">${escapeHtml(String(m.nilai || "-"))}</td><td style="padding:8px 10px;">${escapeHtml(String(m.keterangan || "-"))}</td><td style="padding:8px 10px; text-align:center;"><button class="btn" style="padding:4px 10px; font-size:0.75rem; background:var(--color-danger-red); color:#FFF;" onclick="hapusSeleksiMaster('${escapeHtml(m.id)}')">Hapus</button></td></tr>`).join("")}
+        <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Tahap</th><th style="padding:8px 10px; text-align:left;">Nama Kegiatan Seleksi</th><th style="padding:8px 10px; text-align:left;">Nilai</th><th style="padding:8px 10px; text-align:left;">KKM (Ketuntasan)</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
+        ${res.master.map(m => `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px; font-weight:700; color:#155E75;">Tahap ${escapeHtml(String(m.tahap))}</td><td style="padding:8px 10px; font-weight:600;">${escapeHtml(m.nama_kegiatan)}</td><td style="padding:8px 10px;">${escapeHtml(String(m.nilai || "-"))}</td><td style="padding:8px 10px; font-weight:800; color:#B45309;">${escapeHtml(String(m.kkm !== undefined && m.kkm !== "" ? m.kkm : "-"))}</td><td style="padding:8px 10px;">${escapeHtml(String(m.keterangan || "-"))}</td><td style="padding:8px 10px; text-align:center;"><button class="btn" style="padding:4px 10px; font-size:0.75rem; background:var(--color-danger-red); color:#FFF;" onclick="hapusSeleksiMaster('${escapeHtml(m.id)}')">Hapus</button></td></tr>`).join("")}
       </table></div>`;
     })
     .catch(err => { kotak.innerHTML = `<p style="text-align:center; color:var(--color-danger-red);">${escapeHtml(err.message || "Gagal memuat.")}</p>`; });
@@ -3530,14 +3532,17 @@ function simpanSeleksiMaster() {
   const tahap = document.getElementById('sm-tahap') ? document.getElementById('sm-tahap').value : "";
   const nama = document.getElementById('sm-nama') ? document.getElementById('sm-nama').value.trim() : "";
   const nilai = document.getElementById('sm-nilai') ? document.getElementById('sm-nilai').value.trim() : "";
+  const kkm = document.getElementById('sm-kkm') ? document.getElementById('sm-kkm').value.trim() : "";
   const ket = document.getElementById('sm-ket') ? document.getElementById('sm-ket').value.trim() : "";
   if (!tahap) { showToast("Tahap wajib dipilih (1-5).", true); return; }
   if (!nama) { showToast("Nama Kegiatan Seleksi wajib diisi.", true); return; }
-  callAPI('simpanSeleksiMaster', [sessionToken, { tahap: tahap, nama_kegiatan: nama, nilai: nilai, keterangan: ket }], { cache: false })
+  const kkmN = parseFloat(kkm);  // [v3.35.0]
+  if (isNaN(kkmN) || kkmN < 0 || kkmN > 100) { showToast("Nilai Ketuntasan (KKM) wajib diisi angka 0-100 — dasar kelulusan otomatis.", true); return; }
+  callAPI('simpanSeleksiMaster', [sessionToken, { tahap: tahap, nama_kegiatan: nama, nilai: nilai, kkm: kkmN, keterangan: ket }], { cache: false })
     .then(res => {
       showToast(res.message || "Gagal menyimpan.", !res.success);
       if (res.success) {
-        ["sm-nama", "sm-nilai", "sm-ket"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        ["sm-nama", "sm-nilai", "sm-kkm", "sm-ket"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
         muatSeleksiMaster();
       }
     })
@@ -3550,8 +3555,8 @@ function hapusSeleksiMaster(id) {
     .catch(err => showToast(err.message, true));
 }
 
-// --- Modal penetapan hasil ---
-function bukaModalSeleksi(uid, nama) {
+// --- Modal INPUT NILAI uji seleksi (hasil otomatis via KKM) [v3.35.0] ---
+function bukaModalNilai(uid, nama) {
   const ov = document.getElementById('modal-seleksi-overlay');
   if (!ov) return;
   document.getElementById('ms-user-id').value = uid;
@@ -3563,9 +3568,7 @@ function bukaModalSeleksi(uid, nama) {
   const siapMaster = (window.__seleksiMaster && window.__seleksiMaster.length)
     ? Promise.resolve()
     : callAPI('getSeleksiMaster', [sessionToken], { cache: false }).then(res => { if (res && res.success) window.__seleksiMaster = res.master || []; }).catch(() => {});
-  siapMaster.then(() => gantiMataUjiModal());  // [v3.34.0] modal bisa dibuka dari Pantau CDP tanpa membuka Master dulu
-  document.querySelector('input[name="ms-hasil"][value="LOLOS"]').checked = true;
-  document.getElementById('ms-tanggal-wrap').style.display = "block";
+  siapMaster.then(() => gantiMataUjiModal());  // modal bisa dibuka dari Pantau CDP tanpa membuka Master dulu
   ["ms-nilai", "ms-ket", "ms-tanggal"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
   ov.style.display = "flex";
 }
@@ -3578,28 +3581,107 @@ function gantiMataUjiModal() {
   const selM = document.getElementById('ms-mata');
   const master = (window.__seleksiMaster || []).filter(m => String(m.tahap) === String(tahap));
   selM.innerHTML = master.length
-    ? master.map(m => `<option value="${escapeHtml(m.nama_kegiatan)}">${escapeHtml(m.nama_kegiatan)}${m.nilai ? " (Nilai: " + escapeHtml(String(m.nilai)) + ")" : ""}</option>`).join("")
+    ? master.map(m => `<option value="${escapeHtml(m.nama_kegiatan)}">${escapeHtml(m.nama_kegiatan)}${(m.kkm !== undefined && m.kkm !== "") ? " (KKM: " + escapeHtml(String(m.kkm)) + ")" : ""}</option>`).join("")
     : '<option value="">— Belum ada mata uji di Master Seleksi —</option>';
+  perbaruiInfoKkm();
 }
-function hasilSeleksiToggle() {
-  const lolos = document.querySelector('input[name="ms-hasil"]:checked').value === "LOLOS";
-  document.getElementById('ms-tanggal-wrap').style.display = lolos ? "block" : "none";
+function perbaruiInfoKkm() {  // [v3.35.0] tampilkan KKM mata uji terpilih
+  const info = document.getElementById('ms-kkm');
+  if (!info) return;
+  const tahap = document.getElementById('ms-tahap').value;
+  const mata = document.getElementById('ms-mata').value;
+  const m = (window.__seleksiMaster || []).find(x => String(x.tahap) === String(tahap) && x.nama_kegiatan === mata);
+  if (!m || m.kkm === undefined || m.kkm === "") { info.innerHTML = '<span style="color:#B45309;">⚠ KKM belum ditetapkan — lengkapi Master Seleksi dahulu.</span>'; return; }
+  info.innerHTML = `Nilai Ketuntasan (KKM): <strong style="color:#B45309;">${escapeHtml(String(m.kkm))}</strong> — sistem otomatis menetapkan <strong>LOLOS</strong> bila nilai ≥ ${escapeHtml(String(m.kkm))}, <strong>TIDAK LOLOS</strong> bila di bawahnya.`;
 }
-function simpanHasilSeleksi() {
+function simpanNilaiSeleksi() {
   const payload = {
     user_id: document.getElementById('ms-user-id').value,
     tahap: document.getElementById('ms-tahap').value,
     mata_uji: document.getElementById('ms-mata').value,
-    hasil: document.querySelector('input[name="ms-hasil"]:checked').value,
     nilai: document.getElementById('ms-nilai').value.trim(),
     keterangan: document.getElementById('ms-ket').value.trim(),
     tanggal_tahap_berikut: document.getElementById('ms-tanggal').value.trim()
   };
   if (!payload.mata_uji) { showToast("Mata uji belum tersedia — lengkapi Master Seleksi dahulu.", true); return; }
-  callAPI('tetapkanHasilSeleksi', [sessionToken, payload], { cache: false })
+  const n = parseFloat(payload.nilai);
+  if (isNaN(n) || n < 0 || n > 100) { showToast("Nilai wajib diisi angka 0-100.", true); return; }
+  callAPI('inputNilaiSeleksi', [sessionToken, payload], { cache: false })  // [v3.35.0] hasil otomatis via KKM
     .then(res => {
-      showToast(res.message || "Gagal menetapkan hasil.", !res.success);
+      showToast(res.message || "Gagal menyimpan nilai.", !res.success);
       if (res.success) { tutupModalSeleksi(); muatCdpPantau(); }
+    })
+    .catch(err => showToast(err.message, true));
+}
+
+// --- [v3.35.0] MENU INPUT NILAI SELEKSI (Admin, DGW20261, DGW20262) ---
+function muatNilaiSeleksi() {
+  const kotak = document.getElementById('sn-tabel');
+  if (!kotak) return;
+  kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Memuat data seleksi...</p>';
+  const masterP = callAPI('getSeleksiMaster', [sessionToken], { cache: false }).then(r => (r && r.success) ? (window.__seleksiMaster = r.master || []) : []).catch(() => []);
+  const rekapP = callAPI('getSeleksiRekap', [sessionToken], { cache: false }).then(r => (r && r.success) ? r : { master: [], hasil: {}, riwayat: [], folder: {} }).catch(() => ({ master: [], hasil: {}, riwayat: [], folder: {} }));
+  const cdpP = callAPI('getCdpList', [sessionToken], { cache: false }).then(r => (r && r.success) ? r.list : []).catch(() => []);
+  Promise.all([masterP, rekapP, cdpP]).then(([m, rk, lst]) => {
+    window.__seleksiRekap = rk;
+    window.__seleksiRiwayat = rk.riwayat || [];  // [v3.35.0] status dinilai per tahap & mata uji
+    window.__cdpSemua = lst;
+    const sel = document.getElementById('sn-tahap');
+    const master = window.__seleksiMaster || [];
+    if (!master.length) {
+      sel.innerHTML = '<option value="">— Master Seleksi masih kosong —</option>';
+      kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Tetapkan dahulu tahap & mata uji (dengan KKM) di menu <strong>Master Seleksi</strong>.</p>';
+      return;
+    }
+    const tahapTerpilih = sel.value || "";  // [v3.35.0] jaga pilihan tahap setelah simpan nilai
+    sel.innerHTML = master.map(m => `<option value="${escapeHtml(String(m.tahap))}|${escapeHtml(m.nama_kegiatan)}">Tahap ${escapeHtml(String(m.tahap))} — ${escapeHtml(m.nama_kegiatan)} (KKM: ${escapeHtml(String(m.kkm !== undefined && m.kkm !== "" ? m.kkm : "?"))})</option>`).join("");
+    if (tahapTerpilih && Array.prototype.some.call(sel.options, function (o) { return o.value === tahapTerpilih; })) sel.value = tahapTerpilih;
+    renderNilaiTahap();
+  });
+}
+function renderNilaiTahap() {
+  const kotak = document.getElementById('sn-tabel');
+  const sel = document.getElementById('sn-tahap');
+  if (!kotak || !sel || !sel.value) return;
+  const bagian = sel.value.split("|");
+  const tahap = bagian[0];
+  const mata = bagian.slice(1).join("|");
+  const m = (window.__seleksiMaster || []).find(x => String(x.tahap) === String(tahap) && x.nama_kegiatan === mata);
+  const hasil = (window.__seleksiRekap && window.__seleksiRekap.hasil) || {};
+  const aktif = ((window.__cdpSemua = window.__cdpSemua || []), window.__cdpSemua).filter(r => { const h = hasil[r.user_id]; return !(h && h.hasil === "TIDAK_LOLOS"); });
+  if (!aktif.length) { kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Tidak ada calon aktif untuk dinilai.</p>'; return; }
+  kotak.innerHTML = `<p style="font-size:0.84rem; color:var(--color-text-muted); margin:0 0 10px;">Mata uji: <strong>${escapeHtml(mata)}</strong> (Tahap ${escapeHtml(tahap)}) — KKM <strong style="color:#B45309;">${escapeHtml(String(m && m.kkm !== undefined && m.kkm !== "" ? m.kkm : "?"))}</strong>. Nilai ≥ KKM otomatis <strong>LOLOS</strong>; di bawah KKM otomatis <strong>TIDAK LOLOS</strong> (nama dihapus dari daftar; berkas tetap tersimpan).</p>
+    <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; background:#FFF; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);">
+      <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Calon</th><th style="padding:8px 10px; text-align:left;">Nilai (0-100)</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
+      ${aktif.map(r => {
+        const h = hasil[r.user_id];
+        const rv = (window.__seleksiRiwayat || []).find(w => String(w.user_id) === String(r.user_id) && parseInt(w.tahap, 10) === parseInt(tahap, 10) && String(w.mata_uji || "") === mata);  // [v3.35.0] cek riwayat per tahap+mata
+        const sudah = rv || (h && parseInt(h.tahap, 10) === parseInt(tahap, 10) && h.mata_uji === mata);
+        const info = rv || h;
+        if (sudah) return `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px;"><strong>${escapeHtml(r.nama_calon)}</strong><br><span style="font-size:0.74rem; color:var(--color-text-muted);">${escapeHtml(r.user_id)}</span></td><td colspan="3" style="padding:8px 10px;">✅ Sudah dinilai: nilai <strong>${escapeHtml(String(info && info.nilai !== undefined && info.nilai !== "" ? info.nilai : "-"))}</strong> — <strong style="color:${info && info.hasil === "LOLOS" ? "#065F46" : "#155E75"};">${info && info.hasil === "LOLOS" ? "🎉 LOLOS" : "💪 TIDAK LOLOS"}</strong></td></tr>`;
+        return `<tr style="border-top:1px solid #F0E7DC;">
+          <td style="padding:8px 10px;"><strong>${escapeHtml(r.nama_calon)}</strong><br><span style="font-size:0.74rem; color:var(--color-text-muted);">${escapeHtml(r.user_id)} • Kelas ${escapeHtml(r.kelas)}</span></td>
+          <td style="padding:8px 10px;"><input type="number" min="0" max="100" id="sn-nilai-${escapeHtml(r.user_id)}" placeholder="cth. 80" style="width:100px; padding:8px; border-radius:8px; border:1.5px solid #D8CFC0; font-family:inherit;"></td>
+          <td style="padding:8px 10px;"><input type="text" id="sn-ket-${escapeHtml(r.user_id)}" placeholder="keterangan" style="width:100%; min-width:120px; padding:8px; border-radius:8px; border:1.5px solid #D8CFC0; font-family:inherit;"></td>
+          <td style="padding:8px 10px; text-align:center;"><button class="btn btn-primary" style="padding:6px 12px; font-size:0.78rem;" onclick="simpanNilaiBaris('${escapeHtml(r.user_id)}', '${escapeHtml(tahap)}')">💾 Simpan</button></td>
+        </tr>`;
+      }).join("")}
+    </table></div>`;
+}
+function simpanNilaiBaris(uid, tahap) {
+  const sel = document.getElementById('sn-tahap');
+  if (!sel || !sel.value) return;
+  const bagian = sel.value.split("|");
+  const mata = bagian.slice(1).join("|");
+  const elNilai = document.getElementById('sn-nilai-' + uid);
+  const elKet = document.getElementById('sn-ket-' + uid);
+  const nilai = elNilai ? elNilai.value.trim() : "";
+  const n = parseFloat(nilai);
+  if (isNaN(n) || n < 0 || n > 100) { showToast("Nilai wajib diisi angka 0-100.", true); return; }
+  callAPI('inputNilaiSeleksi', [sessionToken, { user_id: uid, tahap: tahap, mata_uji: mata, nilai: n, keterangan: elKet ? elKet.value.trim() : "" }], { cache: false })
+    .then(res => {
+      showToast(res.message || "Gagal menyimpan nilai.", !res.success);
+      if (res.success) muatNilaiSeleksi();
     })
     .catch(err => showToast(err.message, true));
 }
