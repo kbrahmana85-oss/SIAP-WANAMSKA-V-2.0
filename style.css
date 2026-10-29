@@ -1,5 +1,5 @@
 /* ============================================================
-   [KUNCI] SIAP WANAMSKA v3.33.1 - TERKUNCI (2026-10-27)
+   [KUNCI] SIAP WANAMSKA v3.34.1 - TERKUNCI (2026-10-29)
    Berkas  : style.css
    Fungsi  : Gaya tampilan seluruh modul
    Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -2577,3 +2577,7 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
   max-height: 88vh;
   overflow-y: auto;
 }
+
+/* [v3.34.1] Dock ter-minimize: kelas label non-standar ikut disembunyikan agar
+   tidak ada teks terpotong di rail ikon (perbaikan tampilan minimize) */
+.sidebar:not(.expanded) .menu-text { display: none; }
