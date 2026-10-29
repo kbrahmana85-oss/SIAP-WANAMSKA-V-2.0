@@ -2499,3 +2499,81 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
   letter-spacing: 0.2px;
   line-height: 1.55;
 }
+
+/* ================================================================
+   [v3.34.0] SELESI CDP — banner pengumuman (berkedip), badge hasil
+   di kartu pendaftar, modal penetapan hasil
+   ================================================================ */
+.banner-seleksi {
+  display: none;
+  position: relative;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.55;
+  box-shadow: var(--shadow-soft);
+  animation: seleksiBlink 1.15s ease-in-out infinite;
+}
+.banner-seleksi .bs-ikon { display: block; font-size: 1.7rem; margin-bottom: 4px; }
+.banner-seleksi.lulus {
+  background: linear-gradient(135deg, #FDE68A 0%, #FCD34D 45%, #34D399 100%);
+  color: #143D2B;
+  border: 2px solid #059669;
+}
+.banner-seleksi.gugur {
+  background: linear-gradient(135deg, #CFFAFE 0%, #A5F3FC 45%, #67E8F9 100%);
+  color: #134E4A;
+  border: 2px solid #0E7490;
+}
+@keyframes seleksiBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .banner-seleksi { animation: none; }
+}
+.cdp-kartu-hasil {
+  margin-top: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+}
+.cdp-kartu-hasil.lulus { background: #D1FAE5; color: #065F46; border: 1px solid #059669; }
+.cdp-kartu-hasil.gugur { background: #CFFAFE; color: #155E75; border: 1px solid #0E7490; }
+.cdp-seleksi-gugur {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #155E75;
+  background: #CFFAFE;
+  border: 1px solid #0E7490;
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+.modal-seleksi-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 42, 72, 0.55);
+  backdrop-filter: blur(3px);
+  z-index: 1200;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+.modal-seleksi {
+  background: #FFFBF5;
+  border-radius: 20px;
+  border: 2px solid #0E7490;
+  box-shadow: 0 24px 60px rgba(15, 42, 72, 0.35);
+  padding: 20px;
+  width: min(520px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+}
