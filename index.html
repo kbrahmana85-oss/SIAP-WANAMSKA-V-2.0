@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!-- ============================================================
-     [KUNCI] SIAP WANAMSKA v3.34.1 - TERKUNCI (2026-10-29)
+     [KUNCI] SIAP WANAMSKA v3.35.0 - TERKUNCI (2026-10-29)
      Berkas  : index.html
      Fungsi  : Struktur halaman & antarmuka (PWA)
      Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -24,7 +24,7 @@
   <meta name="apple-mobile-web-app-title" content="PRADESKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.34.1">
+    <link rel="stylesheet" href="style.css?v=3.35.0">
 </head>
 <body>
 
@@ -218,6 +218,9 @@
             </div>
             <div class="menu-item role-restricted" id="menu-seleksi-master" style="display:none;" onclick="switchSection('section-seleksi-master', this)">
               <span class="icon">🏆</span><span class="menu-label">Master Seleksi</span>
+            </div>
+            <div class="menu-item role-restricted" id="menu-seleksi-nilai" style="display:none;" onclick="switchSection('section-seleksi-nilai', this)">
+              <span class="icon">&#128221;</span><span class="menu-label">Input Nilai Seleksi</span>
             </div>
             <div class="menu-item role-restricted" id="menu-cdp-bantu" style="display:none;" onclick="switchSection('section-cdp-bantu', this)">
               <span class="icon">&#129309;</span><span class="menu-label">Bantu Daftar CDP</span>
@@ -733,6 +736,10 @@
                 <input type="text" id="sm-nilai" placeholder="cth. 70-100" style="width:100%; padding:9px 10px; border-radius:10px; border:1.5px solid #D8CFC0; font-family:inherit;">
               </div>
               <div>
+                <label style="font-size:0.78rem; font-weight:700; color:var(--color-text);">Nilai Ketuntasan / KKM *</label>
+                <input type="number" id="sm-kkm" min="0" max="100" placeholder="cth. 70" style="width:100%; padding:9px 10px; border-radius:10px; border:1.5px solid #D8CFC0; font-family:inherit;">
+              </div>
+              <div>
                 <label style="font-size:0.78rem; font-weight:700; color:var(--color-text);">Keterangan</label>
                 <input type="text" id="sm-ket" placeholder="keterangan tambahan" style="width:100%; padding:9px 10px; border-radius:10px; border:1.5px solid #D8CFC0; font-family:inherit;">
               </div>
@@ -740,6 +747,21 @@
             <button class="btn btn-primary" style="margin-top:12px;" onclick="simpanSeleksiMaster()">💾 Simpan Tahap Seleksi</button>
           </div>
           <div id="seleksi-master-tabel"></div>
+        </section>
+
+        <!-- SECTION: INPUT NILAI SELEKSI CDP [v3.35.0] (Admin, DGW20261, DGW20262) -->
+        <section id="section-seleksi-nilai" class="app-section" style="display:none;">
+          <div class="section-header">
+            <h1>Input Nilai Seleksi</h1>
+            <p style="font-size:0.85rem; color:var(--color-text-muted); margin-top:4px;">Masukkan nilai uji tiap calon — sistem otomatis menetapkan LOLOS / TIDAK LOLOS berdasar KKM; calon tidak lolos otomatis dihapus dari daftar (berkas tetap tersimpan)</p>
+          </div>
+          <div class="card" style="margin-bottom:16px;">
+            <label style="font-size:0.8rem; font-weight:700; color:var(--color-text);">Pilih Tahap &amp; Mata Uji</label>
+            <select id="sn-tahap" onchange="renderNilaiTahap()" style="width:100%; padding:10px; border-radius:10px; border:1.5px solid #D8CFC0; font-family:inherit; margin-top:6px;">
+              <option value="">— Memuat... —</option>
+            </select>
+          </div>
+          <div id="sn-tabel"></div>
         </section>
 
         <!-- SECTION 4: DOKUMENTASI KEGIATAN -->
@@ -1963,7 +1985,7 @@
   <!-- [v3.34.0] Modal penetapan hasil seleksi CDP -->
   <div id="modal-seleksi-overlay" class="modal-seleksi-overlay" onclick="if(event.target===this) tutupModalSeleksi();">
     <div class="modal-seleksi">
-      <h3 style="margin:0 0 6px; color:var(--color-deep-teal);">🏆 Tetapkan Hasil Seleksi</h3>
+      <h3 style="margin:0 0 6px; color:var(--color-deep-teal);">🎯 Input Nilai Uji Seleksi</h3>
       <p id="ms-info" style="margin:0 0 14px; font-weight:700; font-size:0.9rem; color:var(--color-text);"></p>
       <input type="hidden" id="ms-user-id">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
@@ -1978,18 +2000,15 @@
           <select id="ms-mata" style="width:100%; padding:9px 10px; border-radius:10px; border:1.5px solid #D8CFC0; font-family:inherit;"></select>
         </div>
       </div>
-      <div style="display:flex; gap:18px; margin-bottom:10px; font-size:0.88rem;">
-        <label style="display:flex; align-items:center; gap:6px;"><input type="radio" name="ms-hasil" value="LOLOS" onchange="hasilSeleksiToggle()" checked> 🎉 LOLOS</label>
-        <label style="display:flex; align-items:center; gap:6px;"><input type="radio" name="ms-hasil" value="TIDAK_LOLOS" onchange="hasilSeleksiToggle()"> 💪 TIDAK LOLOS</label>
-      </div>
+      <p id="ms-kkm" style="margin:0 0 10px; font-size:0.82rem; color:var(--color-text); background:#FEF3C7; border:1.5px solid #D97706; border-radius:10px; padding:8px 10px;">Memuat KKM...</p>
       <div id="ms-tanggal-wrap" style="margin-bottom:10px;">
-        <label style="font-size:0.78rem; font-weight:700;">Tanggal seleksi tahap selanjutnya (ditentukan manual, kosongkan bila belum)</label>
+        <label style="font-size:0.78rem; font-weight:700;">Tanggal seleksi tahap selanjutnya (ditentukan manual bila LOLOS, kosongkan bila belum)</label>
         <input type="text" id="ms-tanggal" placeholder="cth. 12 Desember 2026" style="width:100%; padding:9px 10px; border-radius:10px; border:1.5px solid #D8CFC0; font-family:inherit;">
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
         <div>
-          <label style="font-size:0.78rem; font-weight:700;">Nilai</label>
-          <input type="text" id="ms-nilai" placeholder="nilai calon" style="width:100%; padding:9px 10px; border-radius:10px; border:1.5px solid #D8CFC0; font-family:inherit;">
+          <label style="font-size:0.78rem; font-weight:700;">Nilai Uji (0-100) *</label>
+          <input type="number" id="ms-nilai" min="0" max="100" placeholder="cth. 80" style="width:100%; padding:9px 10px; border-radius:10px; border:1.5px solid #D8CFC0; font-family:inherit;">
         </div>
         <div>
           <label style="font-size:0.78rem; font-weight:700;">Keterangan</label>
@@ -1998,7 +2017,7 @@
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end;">
         <button class="btn" style="background:#6B7280; color:#FFF;" onclick="tutupModalSeleksi()">Batal</button>
-        <button class="btn btn-primary" onclick="simpanHasilSeleksi()">✔ Simpan Hasil</button>
+        <button class="btn btn-primary" onclick="simpanNilaiSeleksi()">💾 Simpan Nilai</button>
       </div>
     </div>
   </div>
@@ -2012,7 +2031,7 @@
 // [v3.23.0] Sumber logo terkunci = emblem header aplikasi (transparan)
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script src="script.js?v=3.34.1"></script>
+<script src="script.js?v=3.35.0"></script>
 <script>
 /* [v3.31.0] Parallax interaktif: ikon mengambang mengikuti gerak pointer/jari */
 (function () {
@@ -2077,5 +2096,5 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
 <script>
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5210fab3c881f9f',t:'MTc5MzI2NTE3NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a521590fcb41ff7d',t:'MTc5MzI2ODE4MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
