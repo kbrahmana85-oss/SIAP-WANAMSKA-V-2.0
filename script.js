@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.33.1 - TERKUNCI (2026-10-27)
+// [KUNCI] SIAP WANAMSKA v3.34.0 - TERKUNCI (2026-10-27)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.33.1"; 
+const APP_VERSION = "3.34.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -278,7 +278,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('user-display-name').innerText = currentUser.nama_lengkap;
     document.getElementById('user-display-role').innerText = userRole;
 
+    window.__profilWajib = sessionStorage.getItem('profil_wajib') === '1';  // [v3.34.0] restore gerbang user baru
     setupRBACUI(userRole);
+    try { terapkanGateProfilBaru(); } catch (eTG) {}
     showPage('dashboard-page');
   } else {
     showPage('login-page');
@@ -512,6 +514,7 @@ async function handlePasskeyLogin() {
         currentUser = res.user;
         userRole = res.user.role;
         userId = res.user.user_id;
+        hitungProfilWajib(res);  // [v3.34.0] gerbang user baru
 
         localStorage.setItem("last_passkey_user_id", userId.toLowerCase());
         localStorage.setItem("saved_passkey_cred_" + userId.toLowerCase(), credIdUsed);
@@ -525,6 +528,7 @@ async function handlePasskeyLogin() {
           __skipNextDashboardFetch = true;
         }
         setupRBACUI(res.user.role);
+        try { terapkanGateProfilBaru(); } catch (eTG) {}  // [v3.34.0]
         showPage('dashboard-page');
         try {
           if (res.dashboard && res.dashboard.success) renderDashboardData(res.dashboard);
@@ -715,6 +719,7 @@ function switchSection(sectionId, elementMenu) {
   if (sectionId === 'section-cdp') muatCdpForm();
   if (sectionId === 'section-cdp-pantau') muatCdpPantau();
   if (sectionId === 'section-cdp-bantu') muatBantuCdpForm();  // [v3.27.0]
+  if (sectionId === 'section-seleksi-master') muatSeleksiMaster();  // [v3.34.0]
 
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.overlay');
@@ -832,6 +837,7 @@ function handleLogin() {
         currentUser = res.user;
         userRole = res.user.role;
         userId = res.user.user_id;
+        hitungProfilWajib(res);  // [v3.34.0] gerbang user baru
 
         localStorage.setItem("last_passkey_user_id", userId.toLowerCase());
         localStorage.setItem("pradeska_role_terakhir", res.user.role);  // [v3.17.0] dasar aturan tampil tombol daftar alumni
@@ -846,6 +852,7 @@ function handleLogin() {
           // Render setelah halaman tampil (showPage di bawah memicu loadDashboard)
         }
         setupRBACUI(res.user.role);
+        try { terapkanGateProfilBaru(); } catch (eTG) {}  // [v3.34.0]
         showPage('dashboard-page');
         try {
           if (res.dashboard && res.dashboard.success) renderDashboardData(res.dashboard);
@@ -1386,6 +1393,7 @@ function setupRBACUI(role) {
   applyExportActionUI();
   muatStatusCdp();  // [v3.26.0] atur menu CDP + kartu headline & jumlah pendaftar di dashboard
   segarkanGrupMenu();  // [v3.28.0]
+  try { terapkanGateProfilBaru(); } catch (eTGP) {}  // [v3.34.0] gerbang user baru diterapkan di SETIAP penyegaran RBAC
 }
 
 // =========================================================================
@@ -3150,6 +3158,39 @@ function isCdpBantu() {
   return CDP_BANTU_IDS.indexOf(String(userId).toUpperCase()) !== -1;
 }
 
+// [v3.34.0] Penetap hasil seleksi CDP: Admin, DGW20261, DGW20262
+const SELEKSI_PENETAP_IDS = ["DGW20261", "DGW20262"];
+function isPenetapSeleksi() {
+  return userRole === "Admin" || SELEKSI_PENETAP_IDS.indexOf(String(userId).toUpperCase()) !== -1;
+}
+
+// [v3.34.0] GERBANG USER BARU: akun CDP2026xx dengan profil belum lengkap
+// hanya melihat menu Dashboard & Profil Diri (aturan sheet/alur lain tak berubah).
+function hitungProfilWajib(res) {
+  const u = (res && res.user) || {};
+  window.__profilWajib = !!(res && res.profil_lengkap === false &&
+    /^CDP2026/i.test(String(u.user_id || "")) &&
+    (u.role === "Penggalang" || u.role === "Dewan Penggalang"));
+  try { sessionStorage.setItem('profil_wajib', window.__profilWajib ? '1' : '0'); } catch (e) {}
+  return window.__profilWajib;
+}
+function terapkanGateProfilBaru() {
+  const wajib = !!window.__profilWajib;
+  document.querySelectorAll('.menu-item').forEach(mi => {
+    const oc = mi.getAttribute('onclick') || "";
+    const tetap = /section-dashboard|section-profile|actionLogout/.test(oc);
+    if (wajib && !tetap) {
+      if (!mi.hasAttribute('data-rbac')) mi.setAttribute('data-rbac', mi.style.display || "");
+      mi.style.display = 'none';
+    } else if (!wajib && mi.hasAttribute('data-rbac')) {
+      mi.style.display = mi.getAttribute('data-rbac');
+      mi.removeAttribute('data-rbac');
+    }
+  });
+  const np = document.getElementById('notice-profil-wajib');
+  if (np) np.style.display = wajib ? 'block' : 'none';
+}
+
 // Status rilis CDP: atur menu, kartu headline dashboard & jumlah pendaftar (semua peran)
 function muatStatusCdp() {
   if (userRole === "Alumni") return;
@@ -3168,6 +3209,8 @@ function terapkanStatusCdp(st) {
   if (mPantau) mPantau.style.display = (isCdpPemantau() && (userRole === "Admin" || dirilis)) ? 'flex' : 'none';
   const mBantu = document.getElementById('menu-cdp-bantu');
   if (mBantu) mBantu.style.display = (isCdpBantu() && dirilis) ? 'flex' : 'none';  // [v3.27.0]
+  const mMaster = document.getElementById('menu-seleksi-master');  // [v3.34.0]
+  if (mMaster) mMaster.style.display = isPenetapSeleksi() ? 'flex' : 'none';
   // Kartu headline berita + jumlah pendaftar di dashboard (semua peran, setelah rilis)
   const hl = document.getElementById('card-headline-cdp');
   if (hl) {
@@ -3180,6 +3223,7 @@ function terapkanStatusCdp(st) {
     if (chip) chip.style.display = dirilis ? 'inline-flex' : 'none';
     jumlahEl.innerText = st.jumlah !== undefined ? st.jumlah : 0;
   }
+  try { terapkanGateProfilBaru(); } catch (eTG2) {}  // [v3.34.0] menu CDP diatur asinkron — terapkan ulang gerbang user baru
   if (userRole === "Admin") {
     const tombolRilis = document.getElementById('btn-rilis-cdp');
     const tombolTutup = document.getElementById('btn-tutup-cdp');  // [v3.27.0] tombol terpisah
@@ -3337,6 +3381,11 @@ function muatCdpPantau() {
   const kotak = document.getElementById('cdp-daftar-kontainer');
   if (!kotak) return;
   kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Memuat data pendaftar...</p>';
+  const siapRekap = isPenetapSeleksi()  // [v3.34.0] rekap seleksi dulu utk penetap
+    ? callAPI('getSeleksiRekap', [sessionToken], { cache: false }).then(r => (r && r.success) ? r : { master: [], hasil: {}, folder: {} }).catch(() => ({ master: [], hasil: {}, folder: {} }))
+    : Promise.resolve({ master: [], hasil: {}, folder: {} });
+  siapRekap.then(rk => {
+    window.__seleksiRekap = rk || { master: [], hasil: {}, folder: {} };
   callAPI('getCdpList', [sessionToken], { cache: false })
     .then(res => {
       if (!res || !res.success) {
@@ -3359,6 +3408,7 @@ function muatCdpPantau() {
               <div class="cdp-kartu-nama">${escapeHtml(r.nama_calon)}</div>
               <div class="cdp-kartu-sub">Kelas ${escapeHtml(r.kelas)} • ${escapeHtml(r.user_id)}</div>
               ${r.akun_cdp ? `<div class="cdp-kartu-pwd" title="Password otomatis & terkunci">🔑 ${escapeHtml(r.password_awal || "12345678")} (terkunci)</div>` : ""}
+              ${badgeSeleksiHtml(r.user_id)}
             </div>`).join("");
         }
       }
@@ -3386,7 +3436,8 @@ function muatCdpPantau() {
               ${r.akun_cdp ? `<tr><td style="padding:3px 0; color:var(--color-text-muted);">Password Awal (terkunci)</td><td><strong>${escapeHtml(r.password_awal || "12345678")}</strong></td></tr>` : ""}
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Waktu Daftar</td><td>${escapeHtml((r.waktu_daftar || "").replace("T", " ").substring(0, 16))}</td></tr>
             </table>
-            <div style="display:flex; gap:8px; margin-top:10px;">
+            <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;">
+              ${isPenetapSeleksi() ? seleksiAksiHtml(r.user_id, r.nama_calon) : ""}
               <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#1E429F; color:#FFF;" onclick="unduhCdp('${escapeHtml(r.user_id)}', 'pdf')">📄 Unduh PDF (A4)</button>
               <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#03543F; color:#FFF;" onclick="unduhCdp('${escapeHtml(r.user_id)}', 'doc')">📝 Unduh Word</button>
             </div>
@@ -3394,6 +3445,7 @@ function muatCdpPantau() {
         </details>`).join("");
     })
     .catch(err => { kotak.innerHTML = `<p style="text-align:center; color:var(--color-danger-red);">${escapeHtml(err.message || "Gagal memuat.")}</p>`; });
+  });  // [v3.34.0] akhir rangkaian rekap seleksi
 }
 
 function unduhCdp(userIdTarget, format) {
@@ -3433,6 +3485,141 @@ function exportCdp(format) {
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// =========================================================
+// === [v3.34.0] SELEKSI CDP: MASTER, HASIL (LOLOS/TIDAK), BANNER ===
+// =========================================================
+function badgeSeleksiHtml(uid) {
+  const rk = (window.__seleksiRekap && window.__seleksiRekap.hasil) ? window.__seleksiRekap.hasil[uid] : null;
+  if (!rk) return "";
+  if (rk.hasil === "LOLOS") return `<div class="cdp-kartu-hasil lulus">🎉 LOLOS Tahap ${escapeHtml(String(rk.tahap))} — ${escapeHtml(rk.mata_uji)}</div>`;
+  return `<div class="cdp-kartu-hasil gugur">💪 TIDAK LOLOS Tahap ${escapeHtml(String(rk.tahap))} — ${escapeHtml(rk.mata_uji)}</div>`;
+}
+function seleksiAksiHtml(uid, nama) {
+  const rk = (window.__seleksiRekap && window.__seleksiRekap.hasil) ? window.__seleksiRekap.hasil[uid] : null;
+  if (rk && rk.hasil === "TIDAK_LOLOS") return `<span class="cdp-seleksi-gugur">💪 TIDAK LOLOS Tahap ${escapeHtml(String(rk.tahap))} (${escapeHtml(rk.mata_uji)}) — tidak diikutkan tahap selanjutnya; berkas & foto tetap tersimpan.</span>`;
+  return `<button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#B45309; color:#FFF;" onclick="bukaModalSeleksi('${escapeHtml(uid)}', '${escapeHtml(nama)}')">🏆 Tetapkan Hasil Seleksi</button>`;
+}
+
+function muatSeleksiMaster() {
+  const kotak = document.getElementById('seleksi-master-tabel');
+  if (!kotak) return;
+  kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Memuat Master Seleksi...</p>';
+  callAPI('getSeleksiMaster', [sessionToken], { cache: false })
+    .then(res => {
+      const kotakForm = document.getElementById('seleksi-master-form');
+      if (kotakForm) kotakForm.style.display = (res && res.success) ? 'block' : 'none';
+      if (!res || !res.success) {
+        kotak.innerHTML = `<p style="text-align:center; color:var(--color-danger-red);">${escapeHtml((res && res.message) || "Gagal memuat.")}</p>`;
+        return;
+      }
+      window.__seleksiMaster = res.master || [];
+      if (!res.master.length) { kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada tahapan seleksi — tambahkan lewat formulir di atas.</p>'; return; }
+      kotak.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; background:#FFF; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);">
+        <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Tahap</th><th style="padding:8px 10px; text-align:left;">Nama Kegiatan Seleksi</th><th style="padding:8px 10px; text-align:left;">Nilai</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
+        ${res.master.map(m => `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px; font-weight:700; color:#155E75;">Tahap ${escapeHtml(String(m.tahap))}</td><td style="padding:8px 10px; font-weight:600;">${escapeHtml(m.nama_kegiatan)}</td><td style="padding:8px 10px;">${escapeHtml(String(m.nilai || "-"))}</td><td style="padding:8px 10px;">${escapeHtml(String(m.keterangan || "-"))}</td><td style="padding:8px 10px; text-align:center;"><button class="btn" style="padding:4px 10px; font-size:0.75rem; background:var(--color-danger-red); color:#FFF;" onclick="hapusSeleksiMaster('${escapeHtml(m.id)}')">Hapus</button></td></tr>`).join("")}
+      </table></div>`;
+    })
+    .catch(err => { kotak.innerHTML = `<p style="text-align:center; color:var(--color-danger-red);">${escapeHtml(err.message || "Gagal memuat.")}</p>`; });
+}
+
+function simpanSeleksiMaster() {
+  const tahap = document.getElementById('sm-tahap') ? document.getElementById('sm-tahap').value : "";
+  const nama = document.getElementById('sm-nama') ? document.getElementById('sm-nama').value.trim() : "";
+  const nilai = document.getElementById('sm-nilai') ? document.getElementById('sm-nilai').value.trim() : "";
+  const ket = document.getElementById('sm-ket') ? document.getElementById('sm-ket').value.trim() : "";
+  if (!tahap) { showToast("Tahap wajib dipilih (1-5).", true); return; }
+  if (!nama) { showToast("Nama Kegiatan Seleksi wajib diisi.", true); return; }
+  callAPI('simpanSeleksiMaster', [sessionToken, { tahap: tahap, nama_kegiatan: nama, nilai: nilai, keterangan: ket }], { cache: false })
+    .then(res => {
+      showToast(res.message || "Gagal menyimpan.", !res.success);
+      if (res.success) {
+        ["sm-nama", "sm-nilai", "sm-ket"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        muatSeleksiMaster();
+      }
+    })
+    .catch(err => showToast(err.message, true));
+}
+
+function hapusSeleksiMaster(id) {
+  callAPI('hapusSeleksiMaster', [sessionToken, id], { cache: false })
+    .then(res => { showToast(res.message || "Gagal menghapus.", !res.success); if (res.success) muatSeleksiMaster(); })
+    .catch(err => showToast(err.message, true));
+}
+
+// --- Modal penetapan hasil ---
+function bukaModalSeleksi(uid, nama) {
+  const ov = document.getElementById('modal-seleksi-overlay');
+  if (!ov) return;
+  document.getElementById('ms-user-id').value = uid;
+  document.getElementById('ms-info').innerText = uid + " — " + nama;
+  const rk = (window.__seleksiRekap && window.__seleksiRekap.hasil) ? window.__seleksiRekap.hasil[uid] : null;
+  const tahapDefault = rk ? Math.min(5, parseInt(rk.tahap, 10) + 1) : 1;
+  const selT = document.getElementById('ms-tahap');
+  selT.value = String(tahapDefault);
+  const siapMaster = (window.__seleksiMaster && window.__seleksiMaster.length)
+    ? Promise.resolve()
+    : callAPI('getSeleksiMaster', [sessionToken], { cache: false }).then(res => { if (res && res.success) window.__seleksiMaster = res.master || []; }).catch(() => {});
+  siapMaster.then(() => gantiMataUjiModal());  // [v3.34.0] modal bisa dibuka dari Pantau CDP tanpa membuka Master dulu
+  document.querySelector('input[name="ms-hasil"][value="LOLOS"]').checked = true;
+  document.getElementById('ms-tanggal-wrap').style.display = "block";
+  ["ms-nilai", "ms-ket", "ms-tanggal"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+  ov.style.display = "flex";
+}
+function tutupModalSeleksi() {
+  const ov = document.getElementById('modal-seleksi-overlay');
+  if (ov) ov.style.display = "none";
+}
+function gantiMataUjiModal() {
+  const tahap = document.getElementById('ms-tahap').value;
+  const selM = document.getElementById('ms-mata');
+  const master = (window.__seleksiMaster || []).filter(m => String(m.tahap) === String(tahap));
+  selM.innerHTML = master.length
+    ? master.map(m => `<option value="${escapeHtml(m.nama_kegiatan)}">${escapeHtml(m.nama_kegiatan)}${m.nilai ? " (Nilai: " + escapeHtml(String(m.nilai)) + ")" : ""}</option>`).join("")
+    : '<option value="">— Belum ada mata uji di Master Seleksi —</option>';
+}
+function hasilSeleksiToggle() {
+  const lolos = document.querySelector('input[name="ms-hasil"]:checked').value === "LOLOS";
+  document.getElementById('ms-tanggal-wrap').style.display = lolos ? "block" : "none";
+}
+function simpanHasilSeleksi() {
+  const payload = {
+    user_id: document.getElementById('ms-user-id').value,
+    tahap: document.getElementById('ms-tahap').value,
+    mata_uji: document.getElementById('ms-mata').value,
+    hasil: document.querySelector('input[name="ms-hasil"]:checked').value,
+    nilai: document.getElementById('ms-nilai').value.trim(),
+    keterangan: document.getElementById('ms-ket').value.trim(),
+    tanggal_tahap_berikut: document.getElementById('ms-tanggal').value.trim()
+  };
+  if (!payload.mata_uji) { showToast("Mata uji belum tersedia — lengkapi Master Seleksi dahulu.", true); return; }
+  callAPI('tetapkanHasilSeleksi', [sessionToken, payload], { cache: false })
+    .then(res => {
+      showToast(res.message || "Gagal menetapkan hasil.", !res.success);
+      if (res.success) { tutupModalSeleksi(); muatCdpPantau(); }
+    })
+    .catch(err => showToast(err.message, true));
+}
+
+// --- Banner pengumuman di dashboard (berkedip; tampil setiap kali user masuk) ---
+function muatBannerSeleksi() {
+  const el = document.getElementById('banner-seleksi');
+  if (!el) return;
+  callAPI('getStatusSeleksiSaya', [sessionToken], { cache: false })
+    .then(res => {
+      if (!res || !res.success || !res.ada) { el.style.display = "none"; return; }
+      const nama = res.nama || "Calon";
+      if (res.hasil === "LOLOS") {
+        el.className = "banner-seleksi lulus";
+        el.innerHTML = `<span class="bs-ikon">🎉</span>SELAMAT (${escapeHtml(nama)}) ANDA LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)}, SELANJUTNYA SIAPKAN DIRI UNTUK MENGIKUTI SELEKSI TAHAP SELANJUTNYA PADA TANGGAL ${escapeHtml(res.tanggal_tahap_berikut || "-")}`;
+      } else {
+        el.className = "banner-seleksi gugur";
+        el.innerHTML = `<span class="bs-ikon">💪</span>MOHON MAAF (${escapeHtml(nama)}) ANDA TIDAK LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)} DAN TERIMA KASIH TELAH BERPARTISIPASI, SEMANGAT DAN COBA LAGI SELAMA MASIH ADA KESEMPATAN`;
+      }
+      el.style.display = "block";
+    })
+    .catch(() => { el.style.display = "none"; });
 }
 
 // =========================================================
@@ -3625,6 +3812,7 @@ function loadDashboard() {
     try { muatUcapanUlangTahun(); } catch (e) {}
     return;
   }
+  try { muatBannerSeleksi(); } catch (eSB) {}  // [v3.34.0] pengumuman seleksi (berkedip, tiap masuk aplikasi)
   // [FIX-3] Tampilkan cache instan dulu (jika ada), lalu segarkan dari server
   try {
     var cached = getCachedDashboard();
@@ -4084,7 +4272,7 @@ function terapkanKunciProfil(terbuka, isAdmin, alumniTerkunci) {
   profilTerbuka = terbuka;
   alumniProfilTerkunci = !!alumniTerkunci;  // [v3.24.0]
   // [v3.24.0] profil alumni yang sudah LENGKAP terkunci walau status global terbuka (Admin tetap bisa lewat jalur Admin)
-  const bolehEdit = (terbuka || isAdmin) && !alumniProfilTerkunci;
+  const bolehEdit = (terbuka || isAdmin || window.__profilWajib === true) && !alumniProfilTerkunci;  // [v3.34.0] user baru wajib lengkapi profil
   ['prof-nta', 'prof-nama', 'prof-tempat-lahir', 'prof-tanggal-lahir', 'prof-jk',
    'prof-golongan', 'prof-regu', 'prof-alamat', 'prof-hp',
    'prof-tahun-lulus', 'prof-sekolah', 'prof-foto-lulusan'].forEach(id => {
@@ -4275,6 +4463,13 @@ function actionSaveProfile() {
       showToast(res.message);
       loadProfileDiri();
       if (userRole === "Alumni" && res.success) periksaGateAlumni();  // [v3.22.0] buka kunci bila foto telah diisi
+      if (res.success && window.__profilWajib && res.profil_lengkap) {  // [v3.34.0] profil lengkap: seluruh menu terbuka
+        window.__profilWajib = false;
+        try { sessionStorage.setItem('profil_wajib', '0'); } catch (e) {}
+        try { setupRBACUI(userRole); } catch (e) {}
+        try { terapkanGateProfilBaru(); } catch (e) {}
+        showToast("Profil lengkap! Seluruh menu telah terbuka. 🎉");
+      }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); if (err && err.message && String(err.message).indexOf("TERKUNCI") !== -1) loadProfileDiri(); });  // [v3.24.0] sinkron status kunci
 }
