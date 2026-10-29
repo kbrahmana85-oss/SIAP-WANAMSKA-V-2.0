@@ -1,12 +1,12 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.34.1 - TERKUNCI (2026-10-29)
+// [KUNCI] SIAP WANAMSKA v3.35.0 - TERKUNCI (2026-10-29)
 // Berkas  : sw.js
 // Fungsi  : Service worker: cache offline PWA (v16)
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
 //           Integritas berkas tercatat di KUNCI_SCRIPT_v3.10.2.md
 //           (verifikasi: verifikasi_kunci.py)
 // ============================================================
-const CACHE_NAME = 'wanamska-v2-cache-v49';
+const CACHE_NAME = 'wanamska-v2-cache-v50';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
