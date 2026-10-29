@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.34.0 - TERKUNCI (2026-10-27)
+// [KUNCI] SIAP WANAMSKA v3.34.1 - TERKUNCI (2026-10-29)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.34.0"; 
+const APP_VERSION = "3.34.1"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3336,6 +3336,7 @@ function previewFotoCdp(event) {
 function actionDaftarCdp() {
   const payload = {
     nama_calon: (document.getElementById('cdp-nama').value || "").trim(),
+    nama_panggilan: (document.getElementById('cdp-panggilan') ? document.getElementById('cdp-panggilan').value || "" : "").trim(),  // [v3.34.1]
     kelas: (document.getElementById('cdp-kelas').value || "").trim(),
     nta: (document.getElementById('cdp-nta').value || "").trim(),  // [v3.28.0]
     alamat_lengkap: (document.getElementById('cdp-alamat').value || "").trim(),
@@ -3346,6 +3347,7 @@ function actionDaftarCdp() {
     foto_cdp_dim: cdpFotoDim
   };
   if (!payload.nama_calon) { showToast("Nama Calon Dewan Penggalang wajib diisi.", true); return; }
+  if (!payload.nama_panggilan) { showToast("Nama Panggilan wajib diisi (dipakai untuk nama folder seleksi calon).", true); return; }  // [v3.34.1]
   if (!payload.kelas) { showToast("Kelas wajib dipilih.", true); return; }
   if (!payload.nta) { showToast("NTA wajib diisi — tulis - jika belum memiliki KTA.", true); return; }  // [v3.28.0]
   if (!payload.alamat_lengkap) { showToast("Alamat Lengkap wajib diisi.", true); return; }
@@ -3692,6 +3694,7 @@ function actionBantuDaftarCdp() {
   const payload = {
     user_id: (document.getElementById('bd-user-id').value || "").trim(),
     nama_calon: (document.getElementById('bd-nama').value || "").trim(),
+    nama_panggilan: (document.getElementById('bd-panggilan') ? document.getElementById('bd-panggilan').value || "" : "").trim(),  // [v3.34.1]
     kelas: (document.getElementById('bd-kelas').value || "").trim(),
     nta: (document.getElementById('bd-nta').value || "").trim(),  // [v3.28.0]
     alamat_lengkap: (document.getElementById('bd-alamat').value || "").trim(),
@@ -3717,7 +3720,7 @@ function actionBantuDaftarCdp() {
         setLoader(false);
         showToast(res.message, !res.success);
         if (res.success) {
-          ['bd-nama', 'bd-kelas', 'bd-nta', 'bd-alamat', 'bd-hp', 'bd-sakit'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+          ['bd-nama', 'bd-panggilan', 'bd-kelas', 'bd-nta', 'bd-alamat', 'bd-hp', 'bd-sakit'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
           bdFotoBase64 = ""; bdFotoDim = null;
           const im = document.getElementById('bd-foto-img'); if (im) { im.src = ""; im.style.display = "none"; }
           const sp = document.getElementById('bd-foto-kosong'); if (sp) sp.style.display = "";
@@ -3730,6 +3733,7 @@ function actionBantuDaftarCdp() {
   }
   if (!payload.user_id) { showToast("User ID calon wajib diisi.", true); return; }
   if (!payload.nama_calon) { showToast("Nama Calon Dewan Penggalang wajib diisi.", true); return; }
+  if (!payload.nama_panggilan) { showToast("Nama Panggilan wajib diisi (dipakai untuk nama folder seleksi calon).", true); return; }  // [v3.34.1]
   if (!payload.kelas) { showToast("Kelas wajib dipilih.", true); return; }
   if (!payload.nta) { showToast("NTA wajib diisi — tulis - jika belum memiliki KTA.", true); return; }  // [v3.28.0]
   if (!payload.alamat_lengkap) { showToast("Alamat Lengkap wajib diisi.", true); return; }
@@ -3741,7 +3745,7 @@ function actionBantuDaftarCdp() {
       setLoader(false);
       showToast(res.message, !res.success);
       if (res.success) {
-        ['bd-user-id', 'bd-nama', 'bd-kelas', 'bd-nta', 'bd-alamat', 'bd-hp', 'bd-sakit'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        ['bd-user-id', 'bd-nama', 'bd-panggilan', 'bd-kelas', 'bd-nta', 'bd-alamat', 'bd-hp', 'bd-sakit'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
         bdFotoBase64 = ""; bdFotoDim = null;
         const im = document.getElementById('bd-foto-img'); if (im) { im.src = ""; im.style.display = "none"; }
         const sp = document.getElementById('bd-foto-kosong'); if (sp) sp.style.display = "";
