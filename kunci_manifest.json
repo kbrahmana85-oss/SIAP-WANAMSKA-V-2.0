@@ -1,11 +1,11 @@
 {
-  "versi": "3.34.1",
+  "versi": "3.35.0",
   "tanggal_kunci": "2026-10-29",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 278286,
-      "sha256": "2b0f7a13eadcb4ba1b9b37380036bb88a9902d42fbe2c160ebf17f96f40dc4ca",
+      "ukuran_byte": 279755,
+      "sha256": "70427998d2937c0481f3844da5e83a793364ef57ec9ef3a13d7e74568f3fa51e",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -14,16 +14,16 @@
     },
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
-      "ukuran_byte": 87009,
-      "sha256": "fb3aa0b14669879d3f46c71058cb745cdb0ceb13285b2c13ba5088a756a0d47c",
+      "ukuran_byte": 87192,
+      "sha256": "43753e852f7917e764db4811fafccf6f9fdabe42895b7629800508bf023d7f2d",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 232385,
-      "sha256": "ebaa287be19db57213b46ae79bde1fc9abdc7ae4b3ac9957c5ffdc91f768b726",
-      "jumlah_fungsi": 223,
+      "ukuran_byte": 240339,
+      "sha256": "d3f82931e2212c7cd953c379e98c7a69fb8663acf2668c44459914810bc5b410",
+      "jumlah_fungsi": 226,
       "fungsi": [
         "absenBantuCekNama",
         "actionBantuDaftarCdp",
@@ -58,7 +58,7 @@
         "bukaAngkatanLulusan",
         "bukaCdpDariHeadline",
         "bukaModalDaftarAlumni",
-        "bukaModalSeleksi",
+        "bukaModalNilai",
         "bukaProfilDariGate",
         "calculateKedaiTotalPembayaran",
         "callAPI",
@@ -107,7 +107,6 @@
         "hapusCacheAbsensi",
         "hapusSeleksiMaster",
         "hapusSemuaAbsensi",
-        "hasilSeleksiToggle",
         "hentikanTimerStatistik",
         "hitungProfilWajib",
         "initCreativeCalendar",
@@ -145,6 +144,7 @@
         "muatCdpPantau",
         "muatDashboardLembut",
         "muatLeaderboardPotensi",
+        "muatNilaiSeleksi",
         "muatPesanAlumni",
         "muatProfilLulusan",
         "muatSeleksiMaster",
@@ -173,6 +173,7 @@
         "openTambahKedaiModal",
         "openTambahMateriModal",
         "openUserModal",
+        "perbaruiInfoKkm",
         "periksaGateAlumni",
         "populateSelectBarangOptions",
         "previewAndResizeProfilePhoto",
@@ -190,6 +191,7 @@
         "renderKopLulusan",
         "renderLaporanModulStatus",
         "renderLeaderboardPotensi",
+        "renderNilaiTahap",
         "renderProfilLulusan",
         "renderStatistikPengguna",
         "renderUcapanUlangTahun",
@@ -212,7 +214,8 @@
         "setupRBACUI",
         "showPage",
         "showToast",
-        "simpanHasilSeleksi",
+        "simpanNilaiBaris",
+        "simpanNilaiSeleksi",
         "simpanSeleksiMaster",
         "sinkronTombolAlumni",
         "startCamera",
@@ -253,7 +256,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "892506e325f325261485420846b7fa1f27db68a327929639fd8761e209623937",
+      "sha256": "a40e84be3a7dfa6a71420f960ae46a7338c9fcc10808a661ff45236dbeb1a0b4",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -313,15 +316,15 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "96c9d09a72238411541b0a7835111612ffcb4ab04ac2e8c1112d0301155c9dc0",
+      "sha256": "eeb251eea1b18d556c4eb21f821cf50a4e7766f29dd8ec1287929b436ac0d095",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 427772,
-      "sha256": "1a32a761d008d8ff228d6561d9d48c0a82bb831ad063cbea9e3b9df1ba8e3e2c",
-      "jumlah_fungsi": 184,
+      "ukuran_byte": 433023,
+      "sha256": "2d36ee5f9bac028ee75889d0370892b54c451a5d7029671c8e24bcdc990cb7f2",
+      "jumlah_fungsi": 185,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
@@ -464,6 +467,7 @@
         "hapusSeleksiMaster",
         "hashPassword",
         "initializeDatabase",
+        "inputNilaiSeleksi",
         "isKasAuthorizedUser",
         "isKedaiManager",
         "isKedaiSeller",
