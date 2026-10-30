@@ -1,11 +1,11 @@
 {
-  "versi": "3.35.0",
+  "versi": "3.36.0",
   "tanggal_kunci": "2026-10-29",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 279755,
-      "sha256": "70427998d2937c0481f3844da5e83a793364ef57ec9ef3a13d7e74568f3fa51e",
+      "ukuran_byte": 280940,
+      "sha256": "a51042a5bd8f2a441f1339b9bb0684d2bda403ec9c2c260f1ebeb9f00b5156b4",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -15,15 +15,15 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 87192,
-      "sha256": "43753e852f7917e764db4811fafccf6f9fdabe42895b7629800508bf023d7f2d",
+      "sha256": "0100dc73fb91c32066f461e98137f31b327fa4e87c2a4d1a9dfe08744a648426",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 240339,
-      "sha256": "d3f82931e2212c7cd953c379e98c7a69fb8663acf2668c44459914810bc5b410",
-      "jumlah_fungsi": 226,
+      "ukuran_byte": 242372,
+      "sha256": "e42dff414105979317494618e31322e2460c3196fc13565c685acd0786757dca",
+      "jumlah_fungsi": 227,
       "fungsi": [
         "absenBantuCekNama",
         "actionBantuDaftarCdp",
@@ -121,6 +121,7 @@
         "isPenetapSeleksi",
         "isWriteFunc",
         "kembaliDaftarAngkatan",
+        "keputusanFinalCdp",
         "laporanLabel",
         "loadAbsenHistory",
         "loadAgenda",
@@ -256,7 +257,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "a40e84be3a7dfa6a71420f960ae46a7338c9fcc10808a661ff45236dbeb1a0b4",
+      "sha256": "c56a0aa9812948c5a64da92865790c123f04cc435f1c4124059189d300526619",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -316,15 +317,15 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "eeb251eea1b18d556c4eb21f821cf50a4e7766f29dd8ec1287929b436ac0d095",
+      "sha256": "3329f78d801cec5bf583962284f4a12cd482996492babc78ee86805f97960896",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 433023,
-      "sha256": "2d36ee5f9bac028ee75889d0370892b54c451a5d7029671c8e24bcdc990cb7f2",
-      "jumlah_fungsi": 185,
+      "ukuran_byte": 436133,
+      "sha256": "72223d3a49d8d8b11ab73cd532f934083d241455705bbc610546a602f582d8a4",
+      "jumlah_fungsi": 188,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
@@ -333,10 +334,12 @@
         "_arsipExportAdmin_",
         "_barisUsulan_",
         "_blangkoCdpSheet_",
+        "_blokirFinalCdp_",
         "_bolehPantauCdp_",
         "_buildDashboardForSession",
         "_cdpBantu_",
         "_cdpDirilis_",
+        "_cdpFinal_",
         "_cdpIdBerikut_",
         "_cdpKelasBoleh_",
         "_cdpPernahRilis_",
@@ -473,6 +476,7 @@
         "isKedaiSeller",
         "isKedaiSpecialUser",
         "kembalikanBarang",
+        "keputusanFinalCdp",
         "kirimPesanAlumni",
         "kurangiStokKedai",
         "loginUser",
