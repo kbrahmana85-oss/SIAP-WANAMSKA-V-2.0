@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.35.0 - TERKUNCI (2026-10-29)
+// [KUNCI] SIAP WANAMSKA v3.36.0 - TERKUNCI (2026-10-29)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.35.0"; 
+const APP_VERSION = "3.36.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3203,27 +3203,28 @@ function muatStatusCdp() {
 function terapkanStatusCdp(st) {
   const dirilis = !!st.dirilis;
   const pernah = !!st.pernah_rilis;
+  const blokirFinal = !!st.final && isPenetapSeleksi() && userRole !== "Admin";  // [v3.36.0] hanya DGW20261 & DGW20262 (Admin tetap)
   const mForm = document.getElementById('menu-cdp-daftar');
   const petugasCdp = isCdpBantu() && userRole !== "Admin";  // [v3.32.0] petugas: tanpa menu Pendaftaran CDP
-  if (mForm) mForm.style.display = ((userRole === "Admin" || ((userRole === "Penggalang" || userRole === "Dewan Penggalang") && dirilis)) && !petugasCdp) ? 'flex' : 'none';
+  if (mForm) mForm.style.display = ((userRole === "Admin" || ((userRole === "Penggalang" || userRole === "Dewan Penggalang") && dirilis)) && !petugasCdp && !blokirFinal) ? 'flex' : 'none';
   const mPantau = document.getElementById('menu-cdp-pantau');
-  if (mPantau) mPantau.style.display = (isCdpPemantau() && (userRole === "Admin" || dirilis)) ? 'flex' : 'none';
+  if (mPantau) mPantau.style.display = (isCdpPemantau() && (userRole === "Admin" || dirilis) && !blokirFinal) ? 'flex' : 'none';
   const mBantu = document.getElementById('menu-cdp-bantu');
-  if (mBantu) mBantu.style.display = (isCdpBantu() && dirilis) ? 'flex' : 'none';  // [v3.27.0]
+  if (mBantu) mBantu.style.display = (isCdpBantu() && dirilis && !blokirFinal) ? 'flex' : 'none';  // [v3.27.0]
   const mMaster = document.getElementById('menu-seleksi-master');  // [v3.34.0]
-  if (mMaster) mMaster.style.display = isPenetapSeleksi() ? 'flex' : 'none';
+  if (mMaster) mMaster.style.display = (isPenetapSeleksi() && !blokirFinal) ? 'flex' : 'none';
   const mNilai = document.getElementById('menu-seleksi-nilai');  // [v3.35.0]
-  if (mNilai) mNilai.style.display = isPenetapSeleksi() ? 'flex' : 'none';
+  if (mNilai) mNilai.style.display = (isPenetapSeleksi() && !blokirFinal) ? 'flex' : 'none';
   // Kartu headline berita + jumlah pendaftar di dashboard (semua peran, setelah rilis)
   const hl = document.getElementById('card-headline-cdp');
   if (hl) {
-    hl.style.display = dirilis ? 'block' : 'none';
-    if (dirilis) hl.onclick = bukaCdpDariHeadline;
+    hl.style.display = (dirilis && !blokirFinal) ? 'block' : 'none';
+    if (dirilis && !blokirFinal) hl.onclick = bukaCdpDariHeadline;
   }
   const jumlahEl = document.getElementById('dash-jumlah-cdp');
   if (jumlahEl) {
     const chip = document.getElementById('chip-jumlah-cdp');
-    if (chip) chip.style.display = dirilis ? 'inline-flex' : 'none';
+    if (chip) chip.style.display = (dirilis && !blokirFinal) ? 'inline-flex' : 'none';
     jumlahEl.innerText = st.jumlah !== undefined ? st.jumlah : 0;
   }
   try { terapkanGateProfilBaru(); } catch (eTG2) {}  // [v3.34.0] menu CDP diatur asinkron — terapkan ulang gerbang user baru
@@ -3249,6 +3250,23 @@ function bukaCdpDariHeadline() {
   } else {
     switchSection('section-cdp', document.getElementById('menu-cdp-daftar'));
   }
+}
+
+// [v3.36.0] KEPUTUSAN FINAL Calon Dewan Penggalang — khusus Admin; satu arah.
+// Setelah ditetapkan, seluruh menu & fitur terkait CDP dihapus dari DGW20261 & DGW20262.
+function keputusanFinalCdp() {
+  if (userRole !== "Admin") return;
+  if (!confirm("Tetapkan KEPUTUSAN FINAL Calon Dewan Penggalang?\n\nSetelah ditetapkan, seluruh menu & fitur terkait Calon Dewan Penggalang (pendaftaran, daftar calon, bantu daftar, Master Seleksi, Input Nilai) dihapus dari DGW20261 & DGW20262 — penentu nilai & KKM bersama Admin. Tindakan ini satu arah.")) return;
+  callAPI('keputusanFinalCdp', [sessionToken], { cache: false })
+    .then(res => {
+      showToast(res.message || "Keputusan final gagal ditetapkan.", !(res && res.success));
+      if (res && res.success) {
+        cdpStatus = Object.assign({}, cdpStatus || {}, { final: true });
+        terapkanStatusCdp(cdpStatus);
+        muatCdpPantau();
+      }
+    })
+    .catch(err => showToast(err.message, true));
 }
 
 // Formulir pendaftaran (Penggalang/DGW setelah rilis; Admin melihat panel kelola)
@@ -3404,6 +3422,17 @@ function muatCdpPantau() {
       if (chip) chip.innerText = aktif.length + " pendaftar";
       const expAksi = document.getElementById('cdp-export-aksi');  // [v3.33.0] export khusus Admin
       if (expAksi) expAksi.style.display = (userRole === "Admin") ? "flex" : "none";
+      const fk = document.getElementById('cdp-final-kotak');  // [v3.36.0] keputusan final khusus Admin
+      if (fk) fk.style.display = (userRole === "Admin") ? "block" : "none";
+      const fb = document.getElementById('btn-keputusan-final');
+      if (fb) fb.style.display = (res.final && userRole === "Admin") ? "none" : "inline-block";
+      const fst = document.getElementById('cdp-final-status');
+      if (fst) {
+        fst.textContent = res.final
+          ? "🏁 KEPUTUSAN FINAL telah ditetapkan — seluruh menu & fitur Calon Dewan Penggalang telah dihapus dari DGW20261 & DGW20262 (Admin tetap)."
+          : "Belum ditetapkan — DGW20261 & DGW20262 masih menangani Master Seleksi & Input Nilai bersama Admin.";
+        fst.style.color = res.final ? "#03543F" : "#713F12";
+      }
       const grid = document.getElementById('cdp-kartu-grid');  // [v3.32.0] kartu nama + foto
       if (grid) {
         if (!aktif.length) { grid.style.display = "none"; grid.innerHTML = ""; }
