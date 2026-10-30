@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.36.0 - TERKUNCI (2026-10-29)
+// [KUNCI] SIAP WANAMSKA v3.37.0 - TERKUNCI (2026-10-29)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -11,8 +11,8 @@
 // =========================================================================
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
-const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.36.0"; 
+const API_URL = "http://127.0.0.1:8000";
+const APP_VERSION = "3.37.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3550,8 +3550,8 @@ function muatSeleksiMaster() {
       window.__seleksiMaster = res.master || [];
       if (!res.master.length) { kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada tahapan seleksi — tambahkan lewat formulir di atas.</p>'; return; }
       kotak.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; background:#FFF; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);">
-        <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Tahap</th><th style="padding:8px 10px; text-align:left;">Nama Kegiatan Seleksi</th><th style="padding:8px 10px; text-align:left;">Nilai</th><th style="padding:8px 10px; text-align:left;">KKM (Ketuntasan)</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
-        ${res.master.map(m => `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px; font-weight:700; color:#155E75;">Tahap ${escapeHtml(String(m.tahap))}</td><td style="padding:8px 10px; font-weight:600;">${escapeHtml(m.nama_kegiatan)}</td><td style="padding:8px 10px;">${escapeHtml(String(m.nilai || "-"))}</td><td style="padding:8px 10px; font-weight:800; color:#B45309;">${escapeHtml(String(m.kkm !== undefined && m.kkm !== "" ? m.kkm : "-"))}</td><td style="padding:8px 10px;">${escapeHtml(String(m.keterangan || "-"))}</td><td style="padding:8px 10px; text-align:center;"><button class="btn" style="padding:4px 10px; font-size:0.75rem; background:var(--color-danger-red); color:#FFF;" onclick="hapusSeleksiMaster('${escapeHtml(m.id)}')">Hapus</button></td></tr>`).join("")}
+        <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Tahap</th><th style="padding:8px 10px; text-align:left;">Nama Kegiatan Seleksi</th><th style="padding:8px 10px; text-align:left;">Nilai</th><th style="padding:8px 10px; text-align:left;">KKM (Ketuntasan)</th><th style="padding:8px 10px; text-align:left;">Tanggal Pelaksanaan</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
+        ${res.master.map(m => `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px; font-weight:700; color:#155E75;">Tahap ${escapeHtml(String(m.tahap))}</td><td style="padding:8px 10px; font-weight:600;">${escapeHtml(m.nama_kegiatan)}</td><td style="padding:8px 10px;">${escapeHtml(String(m.nilai || "-"))}</td><td style="padding:8px 10px; font-weight:800; color:#B45309;">${escapeHtml(String(m.kkm !== undefined && m.kkm !== "" ? m.kkm : "-"))}</td><td style="padding:8px 10px; font-weight:600; color:#155E75;">${escapeHtml(String(m.tanggal_pelaksanaan || "-"))}</td><td style="padding:8px 10px;">${escapeHtml(String(m.keterangan || "-"))}</td><td style="padding:8px 10px; text-align:center;"><button class="btn" style="padding:4px 10px; font-size:0.75rem; background:var(--color-danger-red); color:#FFF;" onclick="hapusSeleksiMaster('${escapeHtml(m.id)}')">Hapus</button></td></tr>`).join("")}
       </table></div>`;
     })
     .catch(err => { kotak.innerHTML = `<p style="text-align:center; color:var(--color-danger-red);">${escapeHtml(err.message || "Gagal memuat.")}</p>`; });
@@ -3563,15 +3563,17 @@ function simpanSeleksiMaster() {
   const nilai = document.getElementById('sm-nilai') ? document.getElementById('sm-nilai').value.trim() : "";
   const kkm = document.getElementById('sm-kkm') ? document.getElementById('sm-kkm').value.trim() : "";
   const ket = document.getElementById('sm-ket') ? document.getElementById('sm-ket').value.trim() : "";
+  const tgl = document.getElementById('sm-tanggal') ? document.getElementById('sm-tanggal').value.trim() : "";  // [v3.37.0]
   if (!tahap) { showToast("Tahap wajib dipilih (1-5).", true); return; }
   if (!nama) { showToast("Nama Kegiatan Seleksi wajib diisi.", true); return; }
   const kkmN = parseFloat(kkm);  // [v3.35.0]
   if (isNaN(kkmN) || kkmN < 0 || kkmN > 100) { showToast("Nilai Ketuntasan (KKM) wajib diisi angka 0-100 — dasar kelulusan otomatis.", true); return; }
-  callAPI('simpanSeleksiMaster', [sessionToken, { tahap: tahap, nama_kegiatan: nama, nilai: nilai, kkm: kkmN, keterangan: ket }], { cache: false })
+  if (!tgl) { showToast("Tanggal Pelaksanaan wajib diisi — akan tampil pada pengumuman di dashboard calon.", true); return; }  // [v3.37.0]
+  callAPI('simpanSeleksiMaster', [sessionToken, { tahap: tahap, nama_kegiatan: nama, nilai: nilai, kkm: kkmN, keterangan: ket, tanggal_pelaksanaan: tgl }], { cache: false })  // [v3.37.0]
     .then(res => {
       showToast(res.message || "Gagal menyimpan.", !res.success);
       if (res.success) {
-        ["sm-nama", "sm-nilai", "sm-kkm", "sm-ket"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        ["sm-nama", "sm-nilai", "sm-kkm", "sm-ket", "sm-tanggal"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
         muatSeleksiMaster();
       }
     })
@@ -3725,10 +3727,12 @@ function muatBannerSeleksi() {
       const nama = res.nama || "Calon";
       if (res.hasil === "LOLOS") {
         el.className = "banner-seleksi lulus";
-        el.innerHTML = `<span class="bs-ikon">🎉</span>SELAMAT (${escapeHtml(nama)}) ANDA LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)}, SELANJUTNYA SIAPKAN DIRI UNTUK MENGIKUTI SELEKSI TAHAP SELANJUTNYA PADA TANGGAL ${escapeHtml(res.tanggal_tahap_berikut || "-")}`;
+        const tglP = res.tanggal_pelaksanaan ? ` YANG DILAKSANAKAN PADA TANGGAL ${escapeHtml(res.tanggal_pelaksanaan)}` : "";  // [v3.37.0]
+        el.innerHTML = `<span class="bs-ikon">🎉</span>SELAMAT (${escapeHtml(nama)}) ANDA LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)}${tglP}, SELANJUTNYA SIAPKAN DIRI UNTUK MENGIKUTI SELEKSI TAHAP SELANJUTNYA PADA TANGGAL ${escapeHtml(res.tanggal_tahap_berikut || "-")}`;
       } else {
         el.className = "banner-seleksi gugur";
-        el.innerHTML = `<span class="bs-ikon">💪</span>MOHON MAAF (${escapeHtml(nama)}) ANDA TIDAK LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)} DAN TERIMA KASIH TELAH BERPARTISIPASI, SEMANGAT DAN COBA LAGI SELAMA MASIH ADA KESEMPATAN`;
+        const tglP2 = res.tanggal_pelaksanaan ? ` YANG DILAKSANAKAN PADA TANGGAL ${escapeHtml(res.tanggal_pelaksanaan)}` : "";  // [v3.37.0]
+        el.innerHTML = `<span class="bs-ikon">💪</span>MOHON MAAF (${escapeHtml(nama)}) ANDA TIDAK LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)}${tglP2} DAN TERIMA KASIH TELAH BERPARTISIPASI, SEMANGAT DAN COBA LAGI SELAMA MASIH ADA KESEMPATAN`;
       }
       el.style.display = "block";
     })
