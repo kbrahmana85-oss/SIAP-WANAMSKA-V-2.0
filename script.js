@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.38.0 - TERKUNCI (2026-10-31)
+// [KUNCI] SIAP WANAMSKA v3.39.0 - TERKUNCI (2026-10-31)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.38.0"; 
+const APP_VERSION = "3.39.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -1298,7 +1298,7 @@ function setupRBACUI(role) {
   // [v3.12.0] Tab Bantu Absen hanya untuk Admin/Pembina/Dewan Penggalang
   const tabsAbsen = document.getElementById('absen-mode-tabs');
   if (tabsAbsen) {
-    const bolehBantu = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(role) !== -1;
+    const bolehBantu = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(role) !== -1 && !(typeof isCdp2027 === "function" && isCdp2027());  // [v3.39.0] user CDP2027xx tanpa Absensi Bantu
     tabsAbsen.style.display = bolehBantu ? 'flex' : 'none';
     if (!bolehBantu) switchAbsenMode('mandiri');
   }
@@ -3203,7 +3203,9 @@ function terapkanMenuCdp2027() {
   if (!isCdp2027()) { window.__cdpMenu2027 = false; return; }
   if (window.__profilWajib) { window.__cdpMenu2027 = true; return; }  // [v3.38.0] gerbang profil wajib (Profil Diri harus tetap tampil)
   window.__cdpMenu2027 = true;
-  const boleh = ["Dashboard", "Pendaftaran CDP", "Kenali Potensimu", "Materi Kegiatan", "Absensi Mandiri", "Keluar Sesi"];
+  // [v3.39.0] izin Admin 2026-10-31: modul wajib user CDP = Profil Diri, Materi Kegiatan,
+  // Dokumentasi Kegiatan, Absensi Mandiri (TANPA Absensi Bantu), Dashboard + Pendaftaran CDP (Export PDF Identitas)
+  const boleh = ["Dashboard", "Pendaftaran CDP", "Profil Diri", "Materi Kegiatan", "Dokumentasi Kegiatan", "Absensi Mandiri", "Keluar Sesi"];
   document.querySelectorAll('.menu-item').forEach(mi => {
     const t = (mi.textContent || "").trim();
     if (!boleh.some(b => t.indexOf(b) !== -1)) {
@@ -3213,6 +3215,11 @@ function terapkanMenuCdp2027() {
   });
   const mM27 = document.getElementById('menu-materi');
   if (mM27) mM27.style.display = 'flex';  // [v3.38.0] Materi Kepramukaan wajib tampak utk user baru CDP2027xx
+  // [v3.39.0] Absensi MURNI mandiri: tab & panel Bantu Absen dipaksa tersembunyi utk seluruh user CDP2027xx
+  const tabs27 = document.getElementById('absen-mode-tabs');
+  if (tabs27) { tabs27.style.display = 'none'; try { switchAbsenMode('mandiri'); } catch (eA27) {} }
+  const panel27 = document.getElementById('absen-bantu-panel');
+  if (panel27) panel27.style.display = 'none';
   try { segarkanGrupMenu(); } catch (eG27) {}
 }
 
@@ -4612,7 +4619,7 @@ function actionSaveProfile() {
         try { sessionStorage.setItem('profil_wajib', '0'); } catch (e) {}
         try { setupRBACUI(userRole); } catch (e) {}
         try { terapkanGateProfilBaru(); } catch (e) {}
-        showToast(window.__cdpMenu2027 ? "Profil lengkap! Menu Pendaftaran Calon Dewan Penggalang telah terbuka. 🎉 [v3.38.0]" : "Profil lengkap! Seluruh menu telah terbuka. 🎉");  // [v3.38.0] menu ketat user baru CDP2027
+        showToast(window.__cdpMenu2027 ? "Profil lengkap! Menu Pendaftaran Calon Dewan Penggalang telah terbuka. 🎉 [v3.39.0]" : "Profil lengkap! Seluruh menu telah terbuka. 🎉");  // [v3.38.0] menu ketat user baru CDP2027
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); if (err && err.message && String(err.message).indexOf("TERKUNCI") !== -1) loadProfileDiri(); });  // [v3.24.0] sinkron status kunci
