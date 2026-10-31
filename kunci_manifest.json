@@ -1,11 +1,11 @@
 {
-  "versi": "3.38.0",
+  "versi": "3.39.0",
   "tanggal_kunci": "2026-10-31",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
       "ukuran_byte": 281424,
-      "sha256": "d77b93071a80d2d6dd0be3ce6768a7805d343d72f57ce5c32bf9fbe2317b4395",
+      "sha256": "cb7ee5e44a6ee49d4ce19f3b090146e1ae2d29667b32e1f69b638156e013e6e5",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -15,14 +15,14 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 87192,
-      "sha256": "c30eab56d0d11ce10b2f2d25540e019da8e265883cac51f5be7547f209193335",
+      "sha256": "2028c083e2ac57d825d4f4af6023334e47dfc0fad115a9270f9b66536d678d51",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 245041,
-      "sha256": "f3dea542471cad00eefd6727429a1d35b1dc714219c25bfe75586f94c450504b",
+      "ukuran_byte": 245752,
+      "sha256": "16e0d0eed79ccae713e46dfaa411ce7e6f1d0bbc18637776ec70a42415975e55",
       "jumlah_fungsi": 229,
       "fungsi": [
         "absenBantuCekNama",
@@ -259,7 +259,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "a3a9ebd458974a915a2645c872b208e4ec1af65ab004359dce8497e5ee85da8e",
+      "sha256": "d03acb8cbe88c0200dc94b2799e4a93f398f17b68b4558e95628652d320ac9cb",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -319,14 +319,14 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "28200572028a63ce69b516dd85e549f5155b472ee996eeb1f2f2ce4d663038ef",
+      "sha256": "8cbf54d86a714ca7fa9d97810b8d9f817b62f2a1fadc5c82fe162b0b8f55e66d",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
       "ukuran_byte": 437862,
-      "sha256": "56160ae0e976bb1a71dc142d8f75b64512612b7312bfc95491e4b7f5490e9003",
+      "sha256": "3e850ef12c0f77ba7ba295607d0c950241e6f5e14f007bf9ba097dd9331778ba",
       "jumlah_fungsi": 188,
       "fungsi": [
         "_absenJam_",
