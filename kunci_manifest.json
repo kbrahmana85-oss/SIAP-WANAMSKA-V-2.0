@@ -1,11 +1,11 @@
 {
-  "versi": "3.39.0",
+  "versi": "3.40.0",
   "tanggal_kunci": "2026-10-31",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 281424,
-      "sha256": "cb7ee5e44a6ee49d4ce19f3b090146e1ae2d29667b32e1f69b638156e013e6e5",
+      "ukuran_byte": 282881,
+      "sha256": "edffc66095b0e7fd4f4539123860f653eeb2dafced083139a6edc947c660effb",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -15,15 +15,15 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 87192,
-      "sha256": "2028c083e2ac57d825d4f4af6023334e47dfc0fad115a9270f9b66536d678d51",
+      "sha256": "c4fad072f2bbc7cb0969d735e4ca963e51ea98b3c1737c53f424fd7287f3ecfc",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 245752,
-      "sha256": "16e0d0eed79ccae713e46dfaa411ce7e6f1d0bbc18637776ec70a42415975e55",
-      "jumlah_fungsi": 229,
+      "ukuran_byte": 250136,
+      "sha256": "02a8cee27fab85b37ac7375997b8d3707169d2688a8af90c64d0d21c473d9488",
+      "jumlah_fungsi": 232,
       "fungsi": [
         "absenBantuCekNama",
         "actionBantuDaftarCdp",
@@ -33,6 +33,8 @@
         "actionDeleteKegiatan",
         "actionDeleteUser",
         "actionDownloadMateri",
+        "actionExportIdentitas",
+        "actionExportIdentitasSaya",
         "actionGantiPassword",
         "actionKembalikanBarang",
         "actionLogout",
@@ -145,6 +147,7 @@
         "muatCdpForm",
         "muatCdpPantau",
         "muatDashboardLembut",
+        "muatIdentitasExport",
         "muatLeaderboardPotensi",
         "muatNilaiSeleksi",
         "muatPesanAlumni",
@@ -259,7 +262,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "d03acb8cbe88c0200dc94b2799e4a93f398f17b68b4558e95628652d320ac9cb",
+      "sha256": "8a5ca0497cf34c7de2097972e1c551e5e029b41e493e564c092875ba00f08d76",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -319,15 +322,15 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "8cbf54d86a714ca7fa9d97810b8d9f817b62f2a1fadc5c82fe162b0b8f55e66d",
+      "sha256": "7145ae2da6fb7749002b0cc81d7dd7b8278dc56ad4d864989b5c1e1fd9d2f548",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 437862,
-      "sha256": "3e850ef12c0f77ba7ba295607d0c950241e6f5e14f007bf9ba097dd9331778ba",
-      "jumlah_fungsi": 188,
+      "ukuran_byte": 441851,
+      "sha256": "9f8d2085d3a302e193077c81afde5776a0978671b47ff919d2dc27f9a8651707",
+      "jumlah_fungsi": 190,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
@@ -337,6 +340,7 @@
         "_barisUsulan_",
         "_blangkoCdpSheet_",
         "_blokirFinalCdp_",
+        "_bolehExportIdentitas_",
         "_bolehPantauCdp_",
         "_buildDashboardForSession",
         "_cdpBantu_",
@@ -419,6 +423,7 @@
         "ensureSheet_",
         "ensureSubFolder",
         "exportCdpList",
+        "exportIdentitasCdp",
         "exportLaporan",
         "exportLaporanDownload",
         "exportToDOC",
