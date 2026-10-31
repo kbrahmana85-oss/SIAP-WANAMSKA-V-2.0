@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!-- ============================================================
-     [KUNCI] SIAP WANAMSKA v3.39.0 - TERKUNCI (2026-10-31)
+     [KUNCI] SIAP WANAMSKA v3.40.0 - TERKUNCI (2026-10-31)
      Berkas  : index.html
      Fungsi  : Struktur halaman & antarmuka (PWA)
      Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -24,7 +24,7 @@
   <meta name="apple-mobile-web-app-title" content="PRADESKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.39.0">
+    <link rel="stylesheet" href="style.css?v=3.40.0">
 </head>
 <body>
 
@@ -224,6 +224,9 @@
             </div>
             <div class="menu-item role-restricted" id="menu-cdp-bantu" style="display:none;" onclick="switchSection('section-cdp-bantu', this)">
               <span class="icon">&#129309;</span><span class="menu-label">Bantu Daftar CDP</span>
+            </div>
+            <div class="menu-item" id="menu-identitas-export" style="display:none;" onclick="switchSection('section-identitas-export', this)">  <!-- [v3.40.0] Export PDF Identitas CDP: Admin + 10 petugas -->
+              <span class="icon">&#128190;</span><span class="menu-label">Export PDF Identitas CDP</span>
             </div>
           </div>
         </div>
@@ -1366,6 +1369,19 @@
         </section>
 
         <!-- ============ [v3.20.0] SECTION PROFIL LULUSAN ============ -->
+        <!-- [v3.40.0] SECTION: EXPORT PDF IDENTITAS CDP (Admin + 10 petugas Bantu Daftar CDP) -->
+        <section id="section-identitas-export" class="app-section" style="display:none;">
+          <div class="section-header">
+            <h1>Export PDF Identitas CDP</h1>
+            <span class="badge badge-hadir" id="identitas-export-jumlah" style="margin-left:8px;">0 pendaftar</span>
+            <p style="font-size:0.85rem; color:var(--color-text-muted); margin-top:4px;">Simpan PDF identitas pendaftar Calon Dewan Penggalang 2027 ke Drive (folder &quot;SIAP WANAMSKA - Export CDP/&lt;User ID Anda&gt;&quot;) — tautannya dapat langsung dikirim ke calon.</p>
+          </div>
+          <div id="identitas-export-link" style="display:none; margin-top:10px; font-size:0.8rem; background:#FBF3E4; border-left:4px solid var(--color-accent-gold); padding:10px 12px; border-radius:6px;"></div>
+          <div id="identitas-export-list" style="margin-top:6px;" aria-live="polite">
+            <p style="text-align:center; color:var(--color-text-muted);">Memuat daftar pendaftar...</p>
+          </div>
+        </section>
+
         <section id="section-profil-lulusan" class="app-section" style="display:none;">
           <div class="section-header">
             <h1>Profil Lulusan</h1>
@@ -2044,7 +2060,7 @@
 // [v3.23.0] Sumber logo terkunci = emblem header aplikasi (transparan)
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script src="script.js?v=3.39.0"></script>
+<script src="script.js?v=3.40.0"></script>
 <script>
 /* [v3.31.0] Parallax interaktif: ikon mengambang mengikuti gerak pointer/jari */
 (function () {
@@ -2109,5 +2125,5 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
 <script>
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a53445836ef34024',t:'MTc5MzQ2NjYwOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a53445836ef34024',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5345ca60cfd4024',t:'MTc5MzQ2NzU1Ng=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5345ca60cfd4024',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
