@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!-- ============================================================
-     [KUNCI] SIAP WANAMSKA v3.37.0 - TERKUNCI (2026-10-29)
+     [KUNCI] SIAP WANAMSKA v3.38.0 - TERKUNCI (2026-10-31)
      Berkas  : index.html
      Fungsi  : Struktur halaman & antarmuka (PWA)
      Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -24,7 +24,7 @@
   <meta name="apple-mobile-web-app-title" content="PRADESKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.37.0">
+    <link rel="stylesheet" href="style.css?v=3.38.0">
 </head>
 <body>
 
@@ -281,7 +281,7 @@
           </div>
 
           <!-- [v3.9.0] UCAPAN ULANG TAHUN (muncul hanya pada hari ulang tahun) -->
-          <!-- [v3.34.0] Notice wajib lengkapi profil utk user baru (CDP2026xx) -->
+          <!-- [v3.34.0] Notice wajib lengkapi profil utk user baru (CDP2027xx) -->
           <div id="notice-profil-wajib" style="display:none; margin:0 0 14px; padding:12px 14px; border-radius:14px; background:#FEF3C7; border:2px solid #D97706; color:#92400E; font-weight:700; font-size:0.86rem; text-align:center;">📝 Selamat datang! Silakan lengkapi <strong>Profil Diri</strong> Anda terlebih dahulu — selama profil belum lengkap, menu lain belum tersedia.</div>
           <!-- [v3.34.0] Banner pengumuman hasil seleksi CDP (berkedip, tiap masuk aplikasi) -->
           <div id="banner-seleksi" class="banner-seleksi" style="display:none;"></div>
@@ -670,16 +670,16 @@
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:2px;">Status Calon *</label>
             <select id="bd-mode" class="form-control" onchange="bantuCdpMode(this.value)">
               <option value="lama">Sudah punya akun SIAP — isi User ID</option>
-              <option value="baru">Belum punya akun — buatkan akun baru (CDP2026xx)</option>
+              <option value="baru">Belum punya akun — buatkan akun baru (CDP2027xx)</option>
             </select>
             <div id="bd-user-id-wrap">
               <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">User ID Calon *</label>
               <input type="text" id="bd-user-id" class="form-control" placeholder="User ID calon (contoh: PGW2026200)">
             </div>
             <div id="bd-akun-wrap" style="display:none;">
-              <p style="font-size:0.74rem; color:#8A6D4F; background:#FBF3E4; border-left:4px solid var(--color-accent-gold); padding:8px 10px; border-radius:6px; margin:10px 0 0;">Mekanisme seperti pendaftaran alumni: isi <strong>profil lengkap</strong> calon, lalu sistem <strong>membuatkan User ID otomatis</strong> berformat <strong>CDP2026xx</strong> (xx = nomor urut calon bantuan) beserta password awal.</p>
+              <p style="font-size:0.74rem; color:#8A6D4F; background:#FBF3E4; border-left:4px solid var(--color-accent-gold); padding:8px 10px; border-radius:6px; margin:10px 0 0;">Mekanisme seperti pendaftaran alumni: isi <strong>profil lengkap</strong> calon, lalu sistem <strong>membuatkan User ID otomatis</strong> berformat <strong>CDP2027xx</strong> (xx = nomor urut calon bantuan) beserta password awal.</p>
               <!-- [v3.32.0] Password awal OTOMATIS & TERKUNCI — tidak lagi diisi petugas -->
-              <p style="font-size:0.74rem; color:#155E75; background:#E0F2FE; border-left:4px solid #0E7490; padding:8px 10px; border-radius:6px; margin:8px 0 0;">🔑 Password awal calon <strong>OTOMATIS: 12345678</strong> — <strong>TERKUNCI</strong> (tidak dapat diubah) dan berlaku sama untuk seluruh akun CDP2026xx yang Anda daftarkan.</p>
+              <p style="font-size:0.74rem; color:#155E75; background:#E0F2FE; border-left:4px solid #0E7490; padding:8px 10px; border-radius:6px; margin:8px 0 0;">🔑 Password awal calon <strong>OTOMATIS: 12345678</strong> — <strong>TERKUNCI</strong> (tidak dapat diubah) dan berlaku sama untuk seluruh akun CDP2027xx yang Anda daftarkan.</p>
             </div>
             <label style="font-size:0.8rem; font-weight:600; display:block; margin-top:10px;">Nama Calon Dewan Penggalang *</label>
             <input type="text" id="bd-nama" class="form-control" placeholder="Nama lengkap calon">
@@ -2044,7 +2044,7 @@
 // [v3.23.0] Sumber logo terkunci = emblem header aplikasi (transparan)
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script src="script.js?v=3.37.0"></script>
+<script src="script.js?v=3.38.0"></script>
 <script>
 /* [v3.31.0] Parallax interaktif: ikon mengambang mengikuti gerak pointer/jari */
 (function () {
@@ -2109,5 +2109,5 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
 <script>
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a53401e23a42fe05',t:'MTc5MzQ2MzgzOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a53401e23a42fe05',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
