@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.39.0 - TERKUNCI (2026-10-31)
+// [KUNCI] SIAP WANAMSKA v3.40.0 - TERKUNCI (2026-10-31)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.39.0"; 
+const APP_VERSION = "3.40.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -756,6 +756,7 @@ function switchSection(sectionId, elementMenu) {
   else if (sectionId === 'section-users') loadUsers();
   else if (sectionId === 'section-logs') loadSystemLogs();
   else if (sectionId === 'section-laporan-admin') loadLaporanAdmin();
+  else if (sectionId === 'section-identitas-export') muatIdentitasExport();  // [v3.40.0]
 
   // [v3.22.0] alumni dengan foto belum diisi: overlay menutup semua menu KECUALI Profil Diri (agar bisa melengkapi)
   if (userRole === "Alumni" && alumniFotoBelum === true) {
@@ -3223,6 +3224,59 @@ function terapkanMenuCdp2027() {
   try { segarkanGrupMenu(); } catch (eG27) {}
 }
 
+// [v3.40.0] EXPORT PDF IDENTITAS CDP — menu Admin + 10 petugas Bantu Daftar CDP;
+// hasil tersimpan di Drive (folder per pengguna) agar mudah dibuka & dibagikan
+function muatIdentitasExport() {
+  const el = document.getElementById('identitas-export-list');
+  if (!el) return;
+  el.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Memuat daftar pendaftar...</p>';
+  callAPI('getCdpList', [sessionToken], { cache: false }).then(res => {
+    if (!res || !res.success) { el.innerHTML = '<p style="text-align:center; color:#7A1F1F;">' + escapeHtml((res && res.message) || 'Gagal memuat data.') + '</p>'; return; }
+    const list = res.list || [];
+    const jml = document.getElementById('identitas-export-jumlah');
+    if (jml) jml.innerText = list.length + ' pendaftar';
+    if (!list.length) { el.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada pendaftar Calon Dewan Penggalang.</p>'; return; }
+    el.innerHTML = list.map(c =>
+      '<div class="card" style="margin-top:10px; padding:12px 14px;">' +
+        '<div style="font-weight:700; font-size:0.92rem;">' + escapeHtml(c.nama_calon || '-') + '</div>' +
+        '<div style="font-size:0.78rem; color:var(--color-text-muted); margin:2px 0 8px;">User ID: <strong>' + escapeHtml(c.user_id || '-') + '</strong> — Kelas ' + escapeHtml(c.kelas || '-') + '</div>' +
+        '<button class="btn" style="padding:7px 14px; font-size:0.82rem; background:#0E7490; color:#FFFFFF;" onclick="actionExportIdentitas(\'' + String(c.user_id || '').replace(/'/g, "\\'") + '\')">⬇ Export PDF Identitas</button>' +
+      '</div>').join('');
+  }).catch(err => { el.innerHTML = '<p style="text-align:center; color:#7A1F1F;">' + escapeHtml(err.message || 'Gagal memuat.') + '</p>'; });
+}
+
+function actionExportIdentitas(uid) {
+  if (!uid) return;
+  showToast('Membuat PDF Identitas ' + uid + ' ...');
+  callAPI('exportIdentitasCdp', [sessionToken, uid]).then(r => {
+    if (r && r.success) {
+      showToast(r.message);
+      try { window.open(r.url, '_blank'); } catch (eW) {}
+      const chip = document.getElementById('identitas-export-link');
+      if (chip) {
+        chip.style.display = 'block';
+        chip.innerHTML = '✅ <strong>' + escapeHtml(r.file_name || '') + '</strong> tersimpan di folder "' + escapeHtml(r.folder || '') + '" — <a href="' + r.url + '" target="_blank" rel="noopener">buka di Drive</a> · <a href="' + r.unduh + '" download>unduh</a> (tautan dapat dikirim ke calon)';
+      }
+    } else { showToast((r && r.message) || 'Export gagal.', true); }
+  }).catch(err => showToast(err.message || 'Export gagal.', true));
+}
+
+// [v3.40.0] Calon: simpan PDF identitas pribadi ke Drive (folder sendiri) agar dapat dikirim
+function actionExportIdentitasSaya() {
+  const chip = document.getElementById('identitas-drive-link');
+  showToast('Menyimpan PDF Identitas ke Drive ...');
+  callAPI('exportIdentitasCdp', [sessionToken]).then(r => {
+    if (r && r.success) {
+      showToast(r.message);
+      try { window.open(r.url, '_blank'); } catch (eW) {}
+      if (chip) {
+        chip.style.display = 'block';
+        chip.innerHTML = '✅ <strong>' + escapeHtml(r.file_name || '') + '</strong> tersimpan di Drive Anda (folder "' + escapeHtml(r.folder || '') + '") — <a href="' + r.url + '" target="_blank" rel="noopener">buka</a> · <a href="' + r.unduh + '" download>unduh</a> — tautan siap dikirim';
+      }
+    } else { showToast((r && r.message) || 'Export gagal.', true); }
+  }).catch(err => showToast(err.message || 'Export gagal.', true));
+}
+
 // Status rilis CDP: atur menu, kartu headline dashboard & jumlah pendaftar (semua peran)
 function muatStatusCdp() {
   if (userRole === "Alumni") return;
@@ -3242,6 +3296,8 @@ function terapkanStatusCdp(st) {
   if (mPantau) mPantau.style.display = (isCdpPemantau() && (userRole === "Admin" || dirilis) && !blokirFinal) ? 'flex' : 'none';
   const mBantu = document.getElementById('menu-cdp-bantu');
   if (mBantu) mBantu.style.display = (isCdpBantu() && dirilis && !blokirFinal) ? 'flex' : 'none';  // [v3.27.0]
+  const mIdent = document.getElementById('menu-identitas-export');  // [v3.40.0] Export PDF Identitas CDP
+  if (mIdent) mIdent.style.display = ((userRole === "Admin" || isCdpBantu()) && (userRole === "Admin" || dirilis) && !blokirFinal) ? 'flex' : 'none';
   const mMaster = document.getElementById('menu-seleksi-master');  // [v3.34.0]
   if (mMaster) mMaster.style.display = (isPenetapSeleksi() && !blokirFinal) ? 'flex' : 'none';
   const mNilai = document.getElementById('menu-seleksi-nilai');  // [v3.35.0]
@@ -3344,7 +3400,8 @@ function muatCdpForm() {
           <p style="font-size:0.9rem; margin:6px 0;"><strong>${escapeHtml(d.nama_calon || "")}</strong> — Kelas ${escapeHtml(d.kelas || "")}</p>
           <p style="font-size:0.8rem; color:var(--color-text-muted);">User ID: <strong>${escapeHtml(d.user_id || "")}</strong> (otomatis dari akun Anda, terkunci)</p>
           ${d.pdf_url ? `<a href="${d.pdf_url}" target="_blank" rel="noopener" class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px;">📄 Lihat Blangko PDF</a>
-            <a href="${d.pdf_url}" download="Identitas-CDP-${escapeHtml(d.user_id || "pendaftar")}.pdf" class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px; background:#0E7490; color:#FFFFFF; border-color:#0E7490;">⬇ Export PDF Identitas</a>` : ""}`;  // [v3.38.0] export PDF identitas pendaftaran
+            <a href="${d.pdf_url}" download="Identitas-CDP-${escapeHtml(d.user_id || "pendaftar")}.pdf" class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px; background:#0E7490; color:#FFFFFF; border-color:#0E7490;">⬇ Export PDF Identitas</a>` : ""}` +
+        (d.user_id ? '<div style="margin-top:8px;"><button id="btn-identitas-drive" class="btn pg-btn-secondary" style="background:#7A1F1F; color:#FFFFFF; border-color:#7A1F1F;" onclick="actionExportIdentitasSaya()">💾 Simpan PDF ke Drive Saya</button><div id="identitas-drive-link" style="display:none; margin-top:8px; font-size:0.78rem; background:#FBF3E4; border-left:4px solid var(--color-accent-gold); padding:8px 10px; border-radius:6px;"></div></div>' : '');  // [v3.38.0] export PDF identitas pendaftaran
       }
     } else if (res && res.success) {
       if (kotak && userRole !== "Admin") kotak.style.display = 'block';
