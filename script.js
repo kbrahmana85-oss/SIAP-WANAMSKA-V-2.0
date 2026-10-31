@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.37.0 - TERKUNCI (2026-10-29)
+// [KUNCI] SIAP WANAMSKA v3.38.0 - TERKUNCI (2026-10-31)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.37.0"; 
+const APP_VERSION = "3.38.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3165,12 +3165,12 @@ function isPenetapSeleksi() {
   return userRole === "Admin" || SELEKSI_PENETAP_IDS.indexOf(String(userId).toUpperCase()) !== -1;
 }
 
-// [v3.34.0] GERBANG USER BARU: akun CDP2026xx dengan profil belum lengkap
+// [v3.34.0][v3.38.0] GERBANG USER BARU: akun CDP2026xx/CDP2027xx dengan profil belum lengkap
 // hanya melihat menu Dashboard & Profil Diri (aturan sheet/alur lain tak berubah).
 function hitungProfilWajib(res) {
   const u = (res && res.user) || {};
   window.__profilWajib = !!(res && res.profil_lengkap === false &&
-    /^CDP2026/i.test(String(u.user_id || "")) &&
+    /^(CDP2026|CDP2027)/i.test(String(u.user_id || "")) &&
     (u.role === "Penggalang" || u.role === "Dewan Penggalang"));
   try { sessionStorage.setItem('profil_wajib', window.__profilWajib ? '1' : '0'); } catch (e) {}
   return window.__profilWajib;
@@ -3190,6 +3190,30 @@ function terapkanGateProfilBaru() {
   });
   const np = document.getElementById('notice-profil-wajib');
   if (np) np.style.display = wajib ? 'block' : 'none';
+  try { terapkanMenuCdp2027(); } catch (eM27) {}  // [v3.38.0]
+}
+
+// [v3.38.0] MENU TERBATAS akun baru CDP2027xx (hasil Bantu Daftar): setelah profil
+// lengkap hanya tampil Dashboard, Pendaftaran CDP, Kenali Potensimu, Materi Kegiatan
+// (kepramukaan), Absensi Mandiri (+ Keluar Sesi). User lama tidak terpengaruh.
+function isCdp2027() {
+  return /^(CDP2027)/i.test(String(userId || "")) && (userRole === "Penggalang" || userRole === "Dewan Penggalang");
+}
+function terapkanMenuCdp2027() {
+  if (!isCdp2027()) { window.__cdpMenu2027 = false; return; }
+  if (window.__profilWajib) { window.__cdpMenu2027 = true; return; }  // [v3.38.0] gerbang profil wajib (Profil Diri harus tetap tampil)
+  window.__cdpMenu2027 = true;
+  const boleh = ["Dashboard", "Pendaftaran CDP", "Kenali Potensimu", "Materi Kegiatan", "Absensi Mandiri", "Keluar Sesi"];
+  document.querySelectorAll('.menu-item').forEach(mi => {
+    const t = (mi.textContent || "").trim();
+    if (!boleh.some(b => t.indexOf(b) !== -1)) {
+      if (!mi.hasAttribute('data-rbac')) mi.setAttribute('data-rbac', mi.style.display || "");
+      mi.style.display = 'none';
+    }
+  });
+  const mM27 = document.getElementById('menu-materi');
+  if (mM27) mM27.style.display = 'flex';  // [v3.38.0] Materi Kepramukaan wajib tampak utk user baru CDP2027xx
+  try { segarkanGrupMenu(); } catch (eG27) {}
 }
 
 // Status rilis CDP: atur menu, kartu headline dashboard & jumlah pendaftar (semua peran)
@@ -3312,7 +3336,8 @@ function muatCdpForm() {
         sudah.innerHTML = `<h3>✅ Anda Sudah Terdaftar</h3>
           <p style="font-size:0.9rem; margin:6px 0;"><strong>${escapeHtml(d.nama_calon || "")}</strong> — Kelas ${escapeHtml(d.kelas || "")}</p>
           <p style="font-size:0.8rem; color:var(--color-text-muted);">User ID: <strong>${escapeHtml(d.user_id || "")}</strong> (otomatis dari akun Anda, terkunci)</p>
-          ${d.pdf_url ? `<a href="${d.pdf_url}" target="_blank" rel="noopener" class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px;">📄 Lihat Blangko PDF</a>` : ""}`;
+          ${d.pdf_url ? `<a href="${d.pdf_url}" target="_blank" rel="noopener" class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px;">📄 Lihat Blangko PDF</a>
+            <a href="${d.pdf_url}" download="Identitas-CDP-${escapeHtml(d.user_id || "pendaftar")}.pdf" class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px; background:#0E7490; color:#FFFFFF; border-color:#0E7490;">⬇ Export PDF Identitas</a>` : ""}`;  // [v3.38.0] export PDF identitas pendaftaran
       }
     } else if (res && res.success) {
       if (kotak && userRole !== "Admin") kotak.style.display = 'block';
@@ -3745,7 +3770,7 @@ function muatBannerSeleksi() {
 // Formulir & alur sama seperti Pendaftaran CDP; User ID calon diisi petugas.
 let bdFotoBase64 = "", bdFotoDim = null;
 
-// [v3.30.0] Mode formulir Bantu Daftar CDP: lama = calon sudah punya akun (User ID); baru = buatkan akun CDP2026xx
+// [v3.30.0][v3.38.0] Mode formulir Bantu Daftar CDP: lama = calon sudah punya akun (User ID); baru = buatkan akun CDP2027xx
 let bdCdpMode = "lama";
 function bantuCdpMode(mode) {
   bdCdpMode = (mode === "baru") ? "baru" : "lama";
@@ -3820,7 +3845,7 @@ function actionBantuDaftarCdp() {
     foto_cdp_dim: bdFotoDim
   };
   if (modeBaru) {
-    // [v3.30.0] Mekanisme pendaftaran alumni: profil lengkap -> akun CDP2026xx dibuat otomatis
+    // [v3.30.0][v3.38.0] Mekanisme pendaftaran alumni: profil lengkap -> akun CDP2027xx dibuat otomatis
     // [v3.32.0] password awal OTOMATIS & TERKUNCI di sisi server (12345678) — tidak lagi diisi petugas
     if (!payload.nama_calon) { showToast("Nama Calon Dewan Penggalang wajib diisi.", true); return; }
     if (!payload.nta) { showToast("NTA wajib diisi — tulis - jika belum memiliki KTA.", true); return; }
@@ -3829,7 +3854,7 @@ function actionBantuDaftarCdp() {
     if (!payload.no_hp) { showToast("Nomor HP wajib diisi.", true); return; }
     if (!payload.foto_cdp) { showToast("Foto dengan baju pramuka WAJIB diunggah (frame 3x4, maks 2 MB).", true); return; }
     // [v3.32.0] password OTOMATIS & TERKUNCI di sisi server — tanpa validasi isian password
-    setLoader(true, "Membuatkan akun & mendaftarkan calon (CDP2026xx)...");
+    setLoader(true, "Membuatkan akun & mendaftarkan calon (CDP2027xx)...");
     callAPI('bantuDaftarCdpAkun', [sessionToken, payload], { cache: false })
       .then(res => {
         setLoader(false);
@@ -4587,7 +4612,7 @@ function actionSaveProfile() {
         try { sessionStorage.setItem('profil_wajib', '0'); } catch (e) {}
         try { setupRBACUI(userRole); } catch (e) {}
         try { terapkanGateProfilBaru(); } catch (e) {}
-        showToast("Profil lengkap! Seluruh menu telah terbuka. 🎉");
+        showToast(window.__cdpMenu2027 ? "Profil lengkap! Menu Pendaftaran Calon Dewan Penggalang telah terbuka. 🎉 [v3.38.0]" : "Profil lengkap! Seluruh menu telah terbuka. 🎉");  // [v3.38.0] menu ketat user baru CDP2027
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); if (err && err.message && String(err.message).indexOf("TERKUNCI") !== -1) loadProfileDiri(); });  // [v3.24.0] sinkron status kunci
