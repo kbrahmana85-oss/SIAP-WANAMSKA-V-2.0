@@ -1,11 +1,11 @@
 {
-  "versi": "3.37.0",
-  "tanggal_kunci": "2026-10-29",
+  "versi": "3.38.0",
+  "tanggal_kunci": "2026-10-31",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
       "ukuran_byte": 281424,
-      "sha256": "953637a608ae7b554ffc1a8003f50edd54bc82a88328d6b3459fe8903e496146",
+      "sha256": "d77b93071a80d2d6dd0be3ce6768a7805d343d72f57ce5c32bf9fbe2317b4395",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -15,15 +15,15 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 87192,
-      "sha256": "ef8382384d5144479c32a11907d78fea7f0da015a6e6f54f990d75f1d88f30eb",
+      "sha256": "c30eab56d0d11ce10b2f2d25540e019da8e265883cac51f5be7547f209193335",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 243178,
-      "sha256": "6668988e2685d259493fa8647a07b8f333ad19098c5240d77e1119c017a0550b",
-      "jumlah_fungsi": 227,
+      "ukuran_byte": 245041,
+      "sha256": "f3dea542471cad00eefd6727429a1d35b1dc714219c25bfe75586f94c450504b",
+      "jumlah_fungsi": 229,
       "fungsi": [
         "absenBantuCekNama",
         "actionBantuDaftarCdp",
@@ -111,6 +111,7 @@
         "hitungProfilWajib",
         "initCreativeCalendar",
         "initLiveTimer",
+        "isCdp2027",
         "isCdpBantu",
         "isCdpPemantau",
         "isFrontCameraActive",
@@ -234,6 +235,7 @@
         "terapkanGateAlumni",
         "terapkanGateProfilBaru",
         "terapkanKunciProfil",
+        "terapkanMenuCdp2027",
         "terapkanStatusCdp",
         "todayLocalInput",
         "toggleExportDropdown",
@@ -257,7 +259,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "daaa77b243c508f93cd9b570a995453b37b61916aae56748d7f627adef077279",
+      "sha256": "a3a9ebd458974a915a2645c872b208e4ec1af65ab004359dce8497e5ee85da8e",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -317,14 +319,14 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "bdb3e1df3466d1ca8e9e917b32a50d167d47157936c01c0c47cd39dc2290e97c",
+      "sha256": "28200572028a63ce69b516dd85e549f5155b472ee996eeb1f2f2ce4d663038ef",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 437574,
-      "sha256": "b1e40646d563231426d963b48f45730a16ed30762c6391278902f20a71305033",
+      "ukuran_byte": 437862,
+      "sha256": "56160ae0e976bb1a71dc142d8f75b64512612b7312bfc95491e4b7f5490e9003",
       "jumlah_fungsi": 188,
       "fungsi": [
         "_absenJam_",
