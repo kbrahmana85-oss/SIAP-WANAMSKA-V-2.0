@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.43.0 - TERKUNCI (2026-11-01)
+// [KUNCI] SIAP WANAMSKA v3.44.0 - TERKUNCI (2026-11-02)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.43.0"; 
+const APP_VERSION = "3.44.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -230,7 +230,7 @@ function renderDashboardData(res) {
     var cardKas = document.getElementById('card-dash-kas');
     if (res.saldo_kas !== undefined && res.saldo_kas !== null) {
       if (saldoEl) saldoEl.innerText = "Rp " + Number(res.saldo_kas).toLocaleString('id-ID');
-      if (cardKas && (userRole === "Admin" || userRole === "Pembina" || userRole === "Dewan Penggalang" || isKasSpecialUser(userId))) {
+      if (cardKas && (userRole === "Admin" || userRole === "Pembina" || userRole === "Dewan Penggalang" || isKasSpecialUser(userId)) && !(userRole === "Penggalang" || (typeof isCdp2027 === "function" && isCdp2027()))) {  // [v3.44.0] kas tidak utk Penggalang/CDP2027
         cardKas.style.display = 'flex';
       }
     }
@@ -1392,17 +1392,25 @@ function setupRBACUI(role) {
       document.getElementById('card-dash-kas').style.display = 'flex';
       
     } else if (role === "Dewan Penggalang") {
-      document.getElementById('menu-kas').style.display = 'flex';
+      document.getElementById('menu-kas').style.display = (typeof isCdp2027 === "function" && isCdp2027()) ? 'none' : 'flex';  // [v3.44.0] CDP2027 tanpa kas
       document.getElementById('btn-tambah-kegiatan-trigger').style.display = 'inline-block';
       document.getElementById('btn-tambah-agenda-trigger').style.display = 'inline-block';
       document.getElementById('btn-tambah-inventaris-trigger').style.display = 'inline-block';
       document.getElementById('card-dash-kas').style.display = 'flex';
     }
 
-    if (isSpecialKas) {
+    if (isSpecialKas && role !== "Penggalang" && !(typeof isCdp2027 === "function" && isCdp2027())) {  // [v3.44.0] kas tidak utk Penggalang/CDP2027
       document.getElementById('menu-kas').style.display = 'flex';
       document.getElementById('card-dash-kas').style.display = 'flex';
     }
+  }
+  // [v3.44.0] KAS DITUTUP utk user PGW2026 (role Penggalang — termasuk pengecualian kas khusus)
+  // dan seluruh user CDP2027xx (peran apa pun): menu & kartu kas tidak dimunculkan.
+  if (role === "Penggalang" || (typeof isCdp2027 === "function" && isCdp2027())) {
+    const mk44 = document.getElementById('menu-kas');
+    if (mk44) mk44.style.display = 'none';
+    const cd44 = document.getElementById('card-dash-kas');
+    if (cd44) cd44.style.display = 'none';
   }
   // Sinkronkan visibilitas tombol export per modul sesuai hak peran
   applyExportActionUI();
@@ -3222,6 +3230,13 @@ function terapkanMenuCdp2027() {
   // khusus) + MODUL MATERI KEPRAMUKAAN (menu-materi) yang selalu ditampilkan.
   const mM27 = document.getElementById('menu-materi');
   if (mM27) { if (!mM27.hasAttribute('data-rbac')) mM27.setAttribute('data-rbac', mM27.style.display || ""); mM27.style.display = 'flex'; }
+  // [v3.44.0] HAPUS seluruh menu grup "Sarana & Pendanaan" (Inventaris + Kas Pramuka) dr user CDP2027xx
+  ["menu-inventaris", "menu-kas"].forEach(function (idS) {
+    const elS = document.getElementById(idS);
+    if (elS) { if (!elS.hasAttribute('data-rbac')) elS.setAttribute('data-rbac', elS.style.display || ""); elS.style.display = 'none'; }
+  });
+  const gS27 = document.getElementById('mg-sarana');
+  if (gS27) gS27.style.display = 'none';
   try { segarkanGrupMenu(); } catch (eG27) {}
 }
 
