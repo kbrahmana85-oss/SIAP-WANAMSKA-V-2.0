@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.40.0 - TERKUNCI (2026-10-31)
+// [KUNCI] SIAP WANAMSKA v3.42.0 - TERKUNCI (2026-10-31)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.40.0"; 
+const APP_VERSION = "3.42.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -1299,7 +1299,7 @@ function setupRBACUI(role) {
   // [v3.12.0] Tab Bantu Absen hanya untuk Admin/Pembina/Dewan Penggalang
   const tabsAbsen = document.getElementById('absen-mode-tabs');
   if (tabsAbsen) {
-    const bolehBantu = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(role) !== -1 && !(typeof isCdp2027 === "function" && isCdp2027());  // [v3.39.0] user CDP2027xx tanpa Absensi Bantu
+    const bolehBantu = ["Admin", "Pembina", "Dewan Penggalang"].indexOf(role) !== -1;  // [v3.41.0] kembali murni peran (menu CDP2027 = sama spt PGW2026)
     tabsAbsen.style.display = bolehBantu ? 'flex' : 'none';
     if (!bolehBantu) switchAbsenMode('mandiri');
   }
@@ -3204,23 +3204,11 @@ function terapkanMenuCdp2027() {
   if (!isCdp2027()) { window.__cdpMenu2027 = false; return; }
   if (window.__profilWajib) { window.__cdpMenu2027 = true; return; }  // [v3.38.0] gerbang profil wajib (Profil Diri harus tetap tampil)
   window.__cdpMenu2027 = true;
-  // [v3.39.0] izin Admin 2026-10-31: modul wajib user CDP = Profil Diri, Materi Kegiatan,
-  // Dokumentasi Kegiatan, Absensi Mandiri (TANPA Absensi Bantu), Dashboard + Pendaftaran CDP (Export PDF Identitas)
-  const boleh = ["Dashboard", "Pendaftaran CDP", "Profil Diri", "Materi Kegiatan", "Dokumentasi Kegiatan", "Absensi Mandiri", "Keluar Sesi"];
-  document.querySelectorAll('.menu-item').forEach(mi => {
-    const t = (mi.textContent || "").trim();
-    if (!boleh.some(b => t.indexOf(b) !== -1)) {
-      if (!mi.hasAttribute('data-rbac')) mi.setAttribute('data-rbac', mi.style.display || "");
-      mi.style.display = 'none';
-    }
-  });
+  // [v3.41.0] PERBAIKAN TEMUAN ADMIN (pendaftaran berjalan): tampilan menu user CDP2027xx
+  // = SAMA dengan user PGW2026xx pada peran yang sama (RBAC standar, tanpa pembatasan
+  // khusus) + MODUL MATERI KEPRAMUKAAN (menu-materi) yang selalu ditampilkan.
   const mM27 = document.getElementById('menu-materi');
-  if (mM27) mM27.style.display = 'flex';  // [v3.38.0] Materi Kepramukaan wajib tampak utk user baru CDP2027xx
-  // [v3.39.0] Absensi MURNI mandiri: tab & panel Bantu Absen dipaksa tersembunyi utk seluruh user CDP2027xx
-  const tabs27 = document.getElementById('absen-mode-tabs');
-  if (tabs27) { tabs27.style.display = 'none'; try { switchAbsenMode('mandiri'); } catch (eA27) {} }
-  const panel27 = document.getElementById('absen-bantu-panel');
-  if (panel27) panel27.style.display = 'none';
+  if (mM27) { if (!mM27.hasAttribute('data-rbac')) mM27.setAttribute('data-rbac', mM27.style.display || ""); mM27.style.display = 'flex'; }
   try { segarkanGrupMenu(); } catch (eG27) {}
 }
 
@@ -3291,7 +3279,7 @@ function terapkanStatusCdp(st) {
   const blokirFinal = !!st.final && isPenetapSeleksi() && userRole !== "Admin";  // [v3.36.0] hanya DGW20261 & DGW20262 (Admin tetap)
   const mForm = document.getElementById('menu-cdp-daftar');
   const petugasCdp = isCdpBantu() && userRole !== "Admin";  // [v3.32.0] petugas: tanpa menu Pendaftaran CDP
-  if (mForm) mForm.style.display = ((userRole === "Admin" || ((userRole === "Penggalang" || userRole === "Dewan Penggalang") && dirilis)) && !petugasCdp && !blokirFinal) ? 'flex' : 'none';
+  if (mForm) mForm.style.display = (((userRole === "Admin" || ((userRole === "Penggalang" || userRole === "Dewan Penggalang") && dirilis)) && !petugasCdp && !blokirFinal) || (typeof isCdp2027 === "function" && isCdp2027())) ? 'flex' : 'none';  // [v3.41.0] CDP2027xx pasti sudah terdaftar — status pendaftarannya selalu tampak
   const mPantau = document.getElementById('menu-cdp-pantau');
   if (mPantau) mPantau.style.display = (isCdpPemantau() && (userRole === "Admin" || dirilis) && !blokirFinal) ? 'flex' : 'none';
   const mBantu = document.getElementById('menu-cdp-bantu');
@@ -3392,15 +3380,28 @@ function muatCdpForm() {
     const kotak = document.getElementById('cdp-kotak-form');
     const sudah = document.getElementById('cdp-sudah-daftar');
     if (res && res.success && res.sudah) {
-      if (kotak) kotak.style.display = 'none';
+      const mF27 = document.getElementById('menu-cdp-daftar');
+      if (mF27 && typeof isCdp2027 === "function" && isCdp2027()) mF27.style.display = 'flex';  // [v3.41.0] status pendaftaran tetap terlihat walau rilis ditutup
+      if (kotak && !window.__cdpModePerbaiki) kotak.style.display = 'none';  // [v3.42.0] mode perbaikan: form tetap terbuka
       if (sudah) {
         sudah.style.display = 'block';
         const d = res.data || {};
+        window.__cdpSayaData = d;  // [v3.42.0] sumber blangko cetak & prefill perbaikan
+        const vst42 = (d.validasi_status || "").toLowerCase();
+        const valBox42 = vst42 === "valid"
+          ? `<div style="margin-top:8px; font-size:0.8rem; color:#03543F; background:#ECFDF5; border-left:4px solid #03543F; padding:8px 10px; border-radius:6px;">✅ Berkas pendaftaran DIVALIDASI <strong>LENGKAP &amp; SESUAI</strong>${d.validasi_oleh ? " oleh " + escapeHtml(d.validasi_oleh) : ""}.</div>`
+          : (vst42 === "revisi"
+            ? `<div style="margin-top:8px; font-size:0.8rem; color:#B45309; background:#FFFBEB; border-left:4px solid #B45309; padding:8px 10px; border-radius:6px;">⚠️ Blangko <strong>PERLU PERBAIKAN</strong> — kolom/field yang harus diperbaiki: <strong>${escapeHtml(d.validasi_keterangan || "-")}</strong>${d.validasi_oleh ? " (oleh " + escapeHtml(d.validasi_oleh) + ")" : ""}</div>
+               <button id="btn-perbaiki-cdp" class="btn btn-full" style="margin-top:8px; background:#B45309; color:#FFF;" onclick="bukaPerbaikiCdp()">✏️ Perbaiki Pendaftaran</button>`
+            : "");
         sudah.innerHTML = `<h3>✅ Anda Sudah Terdaftar</h3>
           <p style="font-size:0.9rem; margin:6px 0;"><strong>${escapeHtml(d.nama_calon || "")}</strong> — Kelas ${escapeHtml(d.kelas || "")}</p>
           <p style="font-size:0.8rem; color:var(--color-text-muted);">User ID: <strong>${escapeHtml(d.user_id || "")}</strong> (otomatis dari akun Anda, terkunci)</p>
+          <button class="btn pg-btn-secondary" style="display:inline-block; margin-top:8px; background:#1E429F; color:#FFFFFF; border-color:#1E429F;" onclick="lihatBlangkoCdp()">🖨 Lihat &amp; Cetak Blangko</button>
+          ${valBox42}
           ${d.pdf_url ? `<a href="${d.pdf_url}" target="_blank" rel="noopener" class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px;">📄 Lihat Blangko PDF</a>
-            <a href="${d.pdf_url}" download="Identitas-CDP-${escapeHtml(d.user_id || "pendaftar")}.pdf" class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px; background:#0E7490; color:#FFFFFF; border-color:#0E7490;">⬇ Export PDF Identitas</a>` : ""}` +
+            <a href="${d.pdf_url}" download="Identitas-CDP-${escapeHtml(d.user_id || "pendaftar")}.pdf" class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px; background:#0E7490; color:#FFFFFF; border-color:#0E7490;">⬇ Export PDF Identitas</a>`
+            : (d.user_id ? `<button class="btn pg-btn-secondary" style="display:inline-block; margin-top:6px;" onclick="unduhCdp('${String(d.user_id).replace(/'/g, "\\'")}', 'pdf')">📄 Unduh Blangko PDF (A4)</button>` : "")}` +
         (d.user_id ? '<div style="margin-top:8px;"><button id="btn-identitas-drive" class="btn pg-btn-secondary" style="background:#7A1F1F; color:#FFFFFF; border-color:#7A1F1F;" onclick="actionExportIdentitasSaya()">💾 Simpan PDF ke Drive Saya</button><div id="identitas-drive-link" style="display:none; margin-top:8px; font-size:0.78rem; background:#FBF3E4; border-left:4px solid var(--color-accent-gold); padding:8px 10px; border-radius:6px;"></div></div>' : '');  // [v3.38.0] export PDF identitas pendaftaran
       }
     } else if (res && res.success) {
@@ -3444,6 +3445,7 @@ function previewFotoCdp(event) {
 }
 
 function actionDaftarCdp() {
+  if (window.__cdpModePerbaiki) return actionPerbaikiCdp();  // [v3.42.0] mode perbaikan validasi
   const payload = {
     nama_calon: (document.getElementById('cdp-nama').value || "").trim(),
     nama_panggilan: (document.getElementById('cdp-panggilan') ? document.getElementById('cdp-panggilan').value || "" : "").trim(),  // [v3.34.1]
@@ -3489,6 +3491,183 @@ function rilisCdp(jadiRilis) {
 }
 
 // Menu Daftar Calon Dewan Penggalang: tampilan DETAILS (klik -> blangko lengkap)
+// ===== [v3.42.0] BLANGKO: LIHAT & CETAK, PERBAIKAN, VALIDASI, EXPORT GABUNGAN =====
+function _blangkoRowsHtml(r) {
+  const baris = [
+    ["User ID", r.user_id], ["Nama Calon Dewan Penggalang", r.nama_calon], ["Nama Panggilan", r.nama_panggilan || "-"],
+    ["Kelas", r.kelas], ["NTA (sesuai KTA)", r.nta || "-"], ["Alamat Lengkap", r.alamat_lengkap],
+    ["Nomor HP", r.no_hp], ["Riwayat Sakit", r.riwayat_sakit], ["Sakit Yang Diderita", r.sakit_diderita || "-"],
+    ["Terdaftar pada", (r.waktu_daftar || "").replace("T", " ").substring(0, 16) || "-"]
+  ];
+  return baris.map(b => `<tr><td style="padding:5px 8px; color:#5D4037; width:44%; border-bottom:1px solid #F0E7DC;">${escapeHtml(b[0])}</td><td style="padding:5px 8px; font-weight:600; border-bottom:1px solid #F0E7DC;">${escapeHtml(String(b[1] === undefined || b[1] === null || b[1] === "" ? "-" : b[1]))}</td></tr>`).join("");
+}
+
+// Tampilan blangko milik sendiri (semua field yang pernah diisi) + cetak/PDF
+function lihatBlangkoCdp() {
+  const d = window.__cdpSayaData;
+  if (!d) { showToast("Data pendaftaran belum termuat.", true); return; }
+  tampilBlangkoOverlay({
+    judul: "BLANGKO PENDAFTARAN CALON DEWAN PENGALANG 2027",
+    nama: d.nama_calon, user_id: d.user_id, rows: _blangkoRowsHtml(d),
+    foto: d.foto || "",
+    validasi: (d.validasi_status || "").toLowerCase(), validasi_keterangan: d.validasi_keterangan || "", validasi_oleh: d.validasi_oleh || ""
+  });
+}
+
+// Tampilan blangko pendaftar oleh Admin/DGW20261/DGW20262 (modul Daftar Calon) + cetak/PDF
+function lihatBlangkoPantau(uid) {
+  const lst = (window.__cdpListData || []).filter(x => String(x.user_id).toLowerCase() === String(uid).toLowerCase());
+  if (!lst.length) { showToast("Data pendaftar tidak ditemukan.", true); return; }
+  const r = lst[0];
+  tampilBlangkoOverlay({
+    judul: "BLANGKO PENDAFTARAN CALON DEWAN PENGALANG 2027",
+    nama: r.nama_calon, user_id: r.user_id, rows: _blangkoRowsHtml(r),
+    foto: r.foto || "",
+    validasi: (r.validasi_status || "").toLowerCase(), validasi_keterangan: r.validasi_keterangan || "", validasi_oleh: r.validasi_oleh || ""
+  });
+}
+
+function tampilBlangkoOverlay(b) {
+  const ov = document.getElementById('blangko-overlay');
+  if (!ov) { showToast("Komponen blangko tidak tersedia.", true); return; }
+  const vHtml = b.validasi === "valid"
+    ? '<div style="margin-top:10px; color:#03543F; font-weight:700;">✅ DIVALIDASI LENGKAP &amp; SESUAI' + (b.validasi_oleh ? " — " + escapeHtml(b.validasi_oleh) : "") + '</div>'
+    : (b.validasi === "revisi"
+      ? '<div style="margin-top:10px; color:#B45309; font-weight:700;">⚠️ PERLU PERBAIKAN: ' + escapeHtml(b.validasi_keterangan || "-") + '</div>'
+      : '<div style="margin-top:10px; color:#8A6D4F;">⏳ Menunggu validasi Admin/DGW20261/DGW20262</div>');
+  document.getElementById('blangko-isi').innerHTML = `
+    <div style="text-align:center; border-bottom:3px double #7A1F1F; padding-bottom:8px; margin-bottom:10px;">
+      <div style="font-weight:800; font-size:1.05rem; color:#7A1F1F;">PRADESKA — SIAP WANAMSKA</div>
+      <div style="font-size:0.78rem; color:#5D4037;">Pramuka SMP Negeri 26 Kota Surakarta</div>
+      <div style="font-weight:800; font-size:0.92rem; margin-top:6px;">${escapeHtml(b.judul)}</div>
+    </div>
+    <table style="width:100%; border-collapse:collapse; font-size:0.86rem;">${b.rows}
+      <tr><td style="padding:5px 8px; color:#5D4037; border-bottom:1px solid #F0E7DC;">Foto Calon (3x4, baju pramuka)</td><td style="padding:5px 8px; border-bottom:1px solid #F0E7DC;">${b.foto ? `<img src="${b.foto}" alt="Foto" style="width:90px; height:120px; object-fit:cover; border-radius:6px; border:2px solid #D9A441;">` : "Tidak ada"}</td></tr>
+    </table>
+    ${vHtml}
+    <div style="margin-top:14px; font-size:0.8rem; color:#5D4037; display:flex; justify-content:space-between;"><span>Tanda tangan calon: ____________________</span></div>
+    <div style="margin-top:8px; font-size:0.72rem; color:#8A6D4F;">🔒 Data pendaftaran TERKUNCI — tidak dapat diubah melalui formulir${b.validasi === "revisi" ? ", kecuali melalui tombol Perbaiki Pendaftaran" : ""}.</div>`;
+  document.getElementById('blangko-nama-unduh').textContent = "Blangko_CDP_" + (b.user_id || "");
+  ov.style.display = 'flex';
+  try { document.body.style.overflow = 'hidden'; } catch (eB) {}
+}
+
+function tutupBlangkoOverlay() {
+  const ov = document.getElementById('blangko-overlay');
+  if (ov) ov.style.display = 'none';
+  try { document.body.style.overflow = ''; } catch (eB) {}
+}
+
+// Cetak langsung (dialog cetak browser: pilih printer, atau Simpan sebagai PDF)
+function cetakBlangko() {
+  try { window.print(); } catch (eP) { showToast("Cetak tidak didukung perangkat ini.", true); }
+}
+
+// Mode perbaikan: formulir dibuka TERISI data lama; hanya dimungkinkan saat status "revisi"
+function bukaPerbaikiCdp() {
+  const d = window.__cdpSayaData;
+  if (!d) { showToast("Data belum termuat.", true); return; }
+  if ((d.validasi_status || "").toLowerCase() !== "revisi") { showToast("Pendaftaran TERKUNCI — perubahan hanya saat status perlu perbaikan.", true); return; }
+  window.__cdpModePerbaiki = true;
+  const setV = (id, v) => { const el = document.getElementById(id); if (el) el.value = v === undefined || v === null ? "" : v; };
+  setV('cdp-nama', d.nama_calon); setV('cdp-panggilan', d.nama_panggilan); setV('cdp-kelas', d.kelas);
+  setV('cdp-nta', d.nta); setV('cdp-alamat', d.alamat_lengkap); setV('cdp-hp', d.no_hp);
+  setV('cdp-riwayat', d.riwayat_sakit); setV('cdp-sakit', (d.sakit_diderita && d.sakit_diderita !== "-") ? d.sakit_diderita : "");
+  const uEl = document.getElementById('cdp-user-id'); if (uEl) uEl.value = d.user_id;
+  const kotak = document.getElementById('cdp-kotak-form');
+  if (kotak) {
+    kotak.style.display = 'block';
+    const judul = kotak.querySelector('h2, h3');
+    if (judul && !judul.dataset.asli) judul.dataset.asli = judul.textContent;
+    if (judul) judul.textContent = "✏️ PERBAIKI PENDAFTARAN (sesuai keterangan validasi)";
+  }
+  try { switchSection('section-cdp', document.getElementById('menu-cdp-daftar')); } catch (eS) {}
+  showToast("Mode perbaikan aktif — ubah kolom yang ditandai, lalu simpan. [v3.42.0]");
+}
+
+function actionPerbaikiCdp() {
+  const payload = {
+    nama_calon: (document.getElementById('cdp-nama').value || "").trim(),
+    nama_panggilan: (document.getElementById('cdp-panggilan').value || "").trim(),
+    kelas: (document.getElementById('cdp-kelas').value || "").trim(),
+    nta: (document.getElementById('cdp-nta').value || "").trim(),
+    alamat_lengkap: (document.getElementById('cdp-alamat').value || "").trim(),
+    no_hp: (document.getElementById('cdp-hp').value || "").trim(),
+    riwayat_sakit: (document.getElementById('cdp-riwayat').value || "").trim(),
+    sakit_diderita: (document.getElementById('cdp-sakit').value || "").trim(),
+    foto_cdp: cdpFotoBase64, foto_cdp_dim: cdpFotoDim
+  };
+  if (!payload.nama_calon) { showToast("Nama Calon wajib diisi.", true); return; }
+  if (!payload.alamat_lengkap) { showToast("Alamat Lengkap wajib diisi.", true); return; }
+  if (!payload.no_hp) { showToast("Nomor HP wajib diisi.", true); return; }
+  setLoader(true, "Menyimpan perbaikan...");
+  callAPI('perbaikiCdp', [sessionToken, payload], { cache: false }).then(res => {
+    setLoader(false);
+    showToast(res.message || "Selesai.", !(res && res.success));
+    if (res && res.success) {
+      window.__cdpModePerbaiki = false;
+      muatCdpForm();
+    }
+  }).catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// Validasi blangko oleh Admin/DGW20261/DGW20262 (poin 4): OK = centang hijau; Cancel = revisi + keterangan
+function actionValidasiCdp(uid, nama) {
+  if (!confirm("Validasi blangko " + nama + " (" + uid + ")?\n\nOK = LENGKAP & SESUAI (tampil tanda centang hijau)\nCancel = tandai PERLU PERBAIKAN (isi keterangan)")) {
+    const ket = prompt("Tuliskan kolom/field yang HARUS DIPERBAIKI oleh " + uid + ":", "");
+    if (!ket || !ket.trim()) { showToast("Validasi revisi dibatalkan — keterangan wajib diisi.", true); return; }
+    kirimValidasiCdp(uid, "revisi", ket.trim());
+  } else {
+    kirimValidasiCdp(uid, "valid", "");
+  }
+}
+
+function kirimValidasiCdp(uid, status, ket) {
+  setLoader(true, "Menyimpan validasi...");
+  callAPI('validasiCdp', [sessionToken, uid, status, ket], { cache: false }).then(res => {
+    setLoader(false);
+    showToast(res.message || "Selesai.", !(res && res.success));
+    if (res && res.success) muatCdpPantau();
+  }).catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+// Kotak centang export blangko (poin 6)
+function centangSemuaBlangko(cek) {
+  document.querySelectorAll('.exp-blanko-chk').forEach(ch => { ch.checked = cek; });
+  jmlBlangkoTerpilih();
+}
+
+function jmlBlangkoTerpilih() {
+  const n = document.querySelectorAll('.exp-blanko-chk:checked').length;
+  const sp = document.getElementById('exp-blanko-jml');
+  if (sp) sp.textContent = n;
+  const bt = document.getElementById('btn-export-blangko-terpilih');
+  if (bt) bt.style.display = n > 0 ? 'inline-flex' : 'none';
+}
+
+// Export PDF blangko SATU FILE: 'semua' = seluruh pendaftar; 'pilih' = kotak centang
+function actionExportBlangkoCdp(mode) {
+  let ids = [];
+  if (mode === 'pilih') {
+    ids = Array.from(document.querySelectorAll('.exp-blanko-chk:checked')).map(ch => ch.value);
+    if (!ids.length) { showToast("Centang dulu blangko yang akan diekspor.", true); return; }
+  }
+  setLoader(true, "Menyusun PDF blangko gabungan...");
+  callAPI('exportBlangkoCdp', [sessionToken, ids], { cache: false }).then(res => {
+    setLoader(false);
+    if (res && res.success && res.url) {
+      showToast(res.message);
+      const chip = document.getElementById('cdp-export-chip');
+      if (chip) {
+        chip.style.display = 'block';
+        chip.innerHTML = '✅ <strong>' + escapeHtml(res.file_name || '') + '</strong> (' + res.jumlah + ' blangko) tersimpan di folder "' + escapeHtml(res.arsip_folder || '') + '" — <a href="' + res.url + '" target="_blank" rel="noopener">buka di Drive</a> · <a href="' + res.unduh + '" download>unduh</a> (bisa langsung dicetak/dikirim)';
+      }
+      try { window.open(res.url, '_blank'); } catch (eW) {}
+    } else showToast((res && res.message) || "Export gagal.", true);
+  }).catch(err => { setLoader(false); showToast(err.message, true); });
+}
+// ===== akhir blok v3.42.0 =====
+
 function muatCdpPantau() {
   const kotak = document.getElementById('cdp-daftar-kontainer');
   if (!kotak) return;
@@ -3507,10 +3686,11 @@ function muatCdpPantau() {
       terapkanStatusCdp(res);
       const rkHasil = (window.__seleksiRekap && window.__seleksiRekap.hasil) || {};  // [v3.35.0]
       const aktif = res.list.filter(r => { const h = rkHasil[r.user_id]; return !(h && h.hasil === "TIDAK_LOLOS"); });  // tidak lolos = dihapus dari tampilan
+      window.__cdpListData = aktif;  // [v3.42.0] sumber blangko cetak petugas
       const chip = document.getElementById('cdp-pantau-jumlah');
       if (chip) chip.innerText = aktif.length + " pendaftar";
-      const expAksi = document.getElementById('cdp-export-aksi');  // [v3.33.0] export khusus Admin
-      if (expAksi) expAksi.style.display = (userRole === "Admin") ? "flex" : "none";
+      const expAksi = document.getElementById('cdp-export-aksi');  // [v3.42.0] export blangko: Admin/DGW20261/DGW20262
+      if (expAksi) expAksi.style.display = isPenetapSeleksi() ? "flex" : "none";
       const fk = document.getElementById('cdp-final-kotak');  // [v3.36.0] keputusan final khusus Admin
       if (fk) fk.style.display = (userRole === "Admin") ? "block" : "none";
       const fb = document.getElementById('btn-keputusan-final');
@@ -3530,7 +3710,7 @@ function muatCdpPantau() {
           grid.innerHTML = aktif.map((r) => `
             <div class="cdp-kartu">
               ${r.foto ? `<img src="${r.foto}" alt="Foto ${escapeHtml(r.nama_calon)}" onclick="viewFullImage('${r.foto}')">` : `<div class="cdp-kartu-inisial">${escapeHtml((r.nama_calon || "?").substring(0, 1).toUpperCase())}</div>`}
-              <div class="cdp-kartu-nama">${escapeHtml(r.nama_calon)}</div>
+              <div class="cdp-kartu-nama">${escapeHtml(r.nama_calon)}${r.validasi_status === "valid" ? ' <span title="Berkas DIVALIDASI lengkap & sesuai" style="color:#03543F;">✅</span>' : ""}</div>
               <div class="cdp-kartu-sub">Kelas ${escapeHtml(r.kelas)} • ${escapeHtml(r.user_id)}</div>
               ${r.akun_cdp ? `<div class="cdp-kartu-pwd" title="Password otomatis & terkunci">🔑 ${escapeHtml(r.password_awal || "12345678")} (terkunci)</div>` : ""}
               ${badgeSeleksiHtml(r.user_id)}
@@ -3544,7 +3724,7 @@ function muatCdpPantau() {
       kotak.innerHTML = aktif.map((r, i) => `
         <details class="cdp-detail" style="background:#FFFFFF; border-radius:12px; box-shadow:var(--shadow-soft); margin-bottom:10px; overflow:hidden;">
           <summary style="padding:12px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; list-style:none;">
-            <span><strong>${i + 1}. ${escapeHtml(r.nama_calon)}</strong> <span class="badge badge-hadir" style="margin-left:6px;">Kelas ${escapeHtml(r.kelas)}</span></span>
+            <span>${isPenetapSeleksi() ? `<input type="checkbox" class="exp-blanko-chk" value="${escapeHtml(r.user_id)}" style="margin-right:8px; transform:scale(1.2);" onchange="jmlBlangkoTerpilih()" title="Pilih utk export blangko">` : ""}<strong>${i + 1}. ${escapeHtml(r.nama_calon)}</strong> <span class="badge badge-hadir" style="margin-left:6px;">Kelas ${escapeHtml(r.kelas)}</span>${r.validasi_status === "valid" ? ' <span title="Berkas DIVALIDASI lengkap & sesuai' + (r.validasi_oleh ? " oleh " + escapeHtml(r.validasi_oleh) : "") + '" style="color:#03543F; font-size:1rem;">✅</span>' : (r.validasi_status === "revisi" ? ' <span title="Perlu perbaikan" style="color:#B45309; font-size:1rem;">⚠️</span>' : "")}</span>
             <span style="font-size:0.78rem; color:var(--color-text-muted);">${escapeHtml(r.user_id)} ▾</span>
           </summary>
           <div style="padding:0 14px 14px; border-top:1px solid #F0E7DC;">
@@ -3561,10 +3741,14 @@ function muatCdpPantau() {
               ${r.akun_cdp ? `<tr><td style="padding:3px 0; color:var(--color-text-muted);">Password Awal (terkunci)</td><td><strong>${escapeHtml(r.password_awal || "12345678")}</strong></td></tr>` : ""}
               <tr><td style="padding:3px 0; color:var(--color-text-muted);">Waktu Daftar</td><td>${escapeHtml((r.waktu_daftar || "").replace("T", " ").substring(0, 16))}</td></tr>
             </table>
+            ${r.validasi_status === "revisi" ? `<div style="margin-top:10px; font-size:0.8rem; color:#B45309; background:#FFFBEB; border-left:4px solid #B45309; padding:8px 10px; border-radius:6px;">⚠️ <strong>PERLU PERBAIKAN</strong>${r.validasi_oleh ? " (oleh " + escapeHtml(r.validasi_oleh) + ")" : ""}: ${escapeHtml(r.validasi_keterangan || "-")}</div>` : ""}
+            ${r.validasi_status === "valid" ? `<div style="margin-top:10px; font-size:0.8rem; color:#03543F; background:#ECFDF5; border-left:4px solid #03543F; padding:8px 10px; border-radius:6px;">✅ <strong>Berkas DIVALIDASI LENGKAP &amp; SESUAI</strong>${r.validasi_oleh ? " oleh " + escapeHtml(r.validasi_oleh) + (r.validasi_waktu ? " • " + escapeHtml(String(r.validasi_waktu).replace("T", " ").substring(0, 16)) : "") : ""}</div>` : ""}
             <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;">
               ${isPenetapSeleksi() ? seleksiAksiHtml(r.user_id, r.nama_calon) : ""}
+              <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#1E429F; color:#FFF;" onclick="lihatBlangkoPantau('${escapeHtml(r.user_id)}')">🖨 Cetak / Lihat Blangko</button>
               <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#1E429F; color:#FFF;" onclick="unduhCdp('${escapeHtml(r.user_id)}', 'pdf')">📄 Unduh PDF (A4)</button>
               <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#03543F; color:#FFF;" onclick="unduhCdp('${escapeHtml(r.user_id)}', 'doc')">📝 Unduh Word</button>
+              ${isPenetapSeleksi() ? `<button class="btn" style="padding:6px 12px; font-size:0.8rem; background:${r.validasi_status === "valid" ? "#03543F" : "#7A1F1F"}; color:#FFF;" onclick="actionValidasiCdp('${escapeHtml(r.user_id)}', '${escapeHtml(r.nama_calon)}')">${r.validasi_status === "valid" ? "✅ Valid (Validasi Ulang)" : "✔ Validasi Blangko"}</button>` : ""}
             </div>
           </div>
         </details>`).join("");
@@ -4676,7 +4860,7 @@ function actionSaveProfile() {
         try { sessionStorage.setItem('profil_wajib', '0'); } catch (e) {}
         try { setupRBACUI(userRole); } catch (e) {}
         try { terapkanGateProfilBaru(); } catch (e) {}
-        showToast(window.__cdpMenu2027 ? "Profil lengkap! Menu Pendaftaran Calon Dewan Penggalang telah terbuka. 🎉 [v3.39.0]" : "Profil lengkap! Seluruh menu telah terbuka. 🎉");  // [v3.38.0] menu ketat user baru CDP2027
+        showToast("Profil lengkap! Seluruh menu telah terbuka. 🎉");  // [v3.41.0] menu CDP2027 = standar anggota + Materi Kepramukaan
       }
     })
     .catch(err => { setLoader(false); showToast(err.message, true); if (err && err.message && String(err.message).indexOf("TERKUNCI") !== -1) loadProfileDiri(); });  // [v3.24.0] sinkron status kunci
