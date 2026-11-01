@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.42.0 - TERKUNCI (2026-10-31)
+// [KUNCI] SIAP WANAMSKA v3.43.0 - TERKUNCI (2026-11-01)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.42.0"; 
+const APP_VERSION = "3.43.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -1295,6 +1295,19 @@ function setupRBACUI(role) {
   if (role === "Admin" || role === "Dewan Penggalang") document.getElementById('menu-usulan').style.display = 'flex';  // [v3.17.0/v3.18.0] Admin validasi, Dewan melihat hasil tervalidasi
   // [v3.20.0] Profil Lulusan: Admin, Pembina, Dewan Penggalang, Penggalang (Alumni tidak)
   if (["Admin", "Pembina", "Dewan Penggalang", "Penggalang"].indexOf(role) !== -1) document.getElementById('menu-lulusan').style.display = 'flex';
+
+  // [v3.43.0] Profil Admin ringkas: hanya Foto Profil, Keamanan Biometrik/Passkey & Ganti Password
+  const pFields = document.getElementById('prof-data-fields');
+  if (pFields) {
+    pFields.style.display = (role === "Admin") ? 'none' : 'block';
+    if (role === "Admin") {
+      try {  // rapikan kartu: judul disesuaikan (tombol simpan tetap utk menyimpan foto)
+        const kartuP = pFields.closest('.card');
+        const h3P = kartuP ? kartuP.querySelector('h3') : null;
+        if (h3P && h3P.childNodes && h3P.childNodes[0]) h3P.childNodes[0].nodeValue = "🔐 Simpan Foto Profil ";
+      } catch (ePA) {}
+    }
+  }
 
   // [v3.12.0] Tab Bantu Absen hanya untuk Admin/Pembina/Dewan Penggalang
   const tabsAbsen = document.getElementById('absen-mode-tabs');
@@ -3285,7 +3298,10 @@ function terapkanStatusCdp(st) {
   const mBantu = document.getElementById('menu-cdp-bantu');
   if (mBantu) mBantu.style.display = (isCdpBantu() && dirilis && !blokirFinal) ? 'flex' : 'none';  // [v3.27.0]
   const mIdent = document.getElementById('menu-identitas-export');  // [v3.40.0] Export PDF Identitas CDP
-  if (mIdent) mIdent.style.display = ((userRole === "Admin" || isCdpBantu()) && (userRole === "Admin" || dirilis) && !blokirFinal) ? 'flex' : 'none';
+  // [v3.43.0] DIMILIK Admin: modul menu ini DIHAPUS dari Admin, DGW20261 & DGW20262 — fitur cetak/export
+  // blangko sudah tersedia di menu Daftar Calon Dewan Penggalang; tetap dipakai 7 petugas lainnya & calon.
+  const petugasIdent = userRole !== "Admin" && isCdpBantu() && !isPenetapSeleksi();
+  if (mIdent) mIdent.style.display = (petugasIdent && dirilis && !blokirFinal) ? 'flex' : 'none';
   const mMaster = document.getElementById('menu-seleksi-master');  // [v3.34.0]
   if (mMaster) mMaster.style.display = (isPenetapSeleksi() && !blokirFinal) ? 'flex' : 'none';
   const mNilai = document.getElementById('menu-seleksi-nilai');  // [v3.35.0]
@@ -3824,7 +3840,7 @@ function muatSeleksiMaster() {
       if (!res.master.length) { kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada tahapan seleksi — tambahkan lewat formulir di atas.</p>'; return; }
       kotak.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; background:#FFF; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);">
         <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Tahap</th><th style="padding:8px 10px; text-align:left;">Nama Kegiatan Seleksi</th><th style="padding:8px 10px; text-align:left;">Nilai</th><th style="padding:8px 10px; text-align:left;">KKM (Ketuntasan)</th><th style="padding:8px 10px; text-align:left;">Tanggal Pelaksanaan</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
-        ${res.master.map(m => `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px; font-weight:700; color:#155E75;">Tahap ${escapeHtml(String(m.tahap))}</td><td style="padding:8px 10px; font-weight:600;">${escapeHtml(m.nama_kegiatan)}</td><td style="padding:8px 10px;">${escapeHtml(String(m.nilai || "-"))}</td><td style="padding:8px 10px; font-weight:800; color:#B45309;">${escapeHtml(String(m.kkm !== undefined && m.kkm !== "" ? m.kkm : "-"))}</td><td style="padding:8px 10px; font-weight:600; color:#155E75;">${escapeHtml(String(m.tanggal_pelaksanaan || "-"))}</td><td style="padding:8px 10px;">${escapeHtml(String(m.keterangan || "-"))}</td><td style="padding:8px 10px; text-align:center;"><button class="btn" style="padding:4px 10px; font-size:0.75rem; background:var(--color-danger-red); color:#FFF;" onclick="hapusSeleksiMaster('${escapeHtml(m.id)}')">Hapus</button></td></tr>`).join("")}
+        ${res.master.map(m => `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px; font-weight:700; color:#155E75;">Tahap ${escapeHtml(String(m.tahap))}</td><td style="padding:8px 10px; font-weight:600;">${escapeHtml(m.nama_kegiatan)}</td><td style="padding:8px 10px;">${escapeHtml(String(m.nilai || "-"))}</td><td style="padding:8px 10px; font-weight:800; color:#B45309;">${escapeHtml(String(m.kkm !== undefined && m.kkm !== "" ? m.kkm : "-"))}</td><td style="padding:8px 10px; font-weight:600; color:#155E75;">${escapeHtml(String(m.tanggal_pelaksanaan || "-"))}</td><td style="padding:8px 10px;">${escapeHtml(String(m.keterangan || "-"))}</td><td style="padding:8px 10px; text-align:center;"><button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#B45309; color:#FFF;" onclick="editSeleksiMaster('${escapeHtml(m.id)}')">✏️ Edit</button> <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:var(--color-danger-red); color:#FFF;" onclick="hapusSeleksiMaster('${escapeHtml(m.id)}')">Hapus</button></td></tr>`).join("")}
       </table></div>`;
     })
     .catch(err => { kotak.innerHTML = `<p style="text-align:center; color:var(--color-danger-red);">${escapeHtml(err.message || "Gagal memuat.")}</p>`; });
@@ -3842,15 +3858,41 @@ function simpanSeleksiMaster() {
   const kkmN = parseFloat(kkm);  // [v3.35.0]
   if (isNaN(kkmN) || kkmN < 0 || kkmN > 100) { showToast("Nilai Ketuntasan (KKM) wajib diisi angka 0-100 — dasar kelulusan otomatis.", true); return; }
   if (!tgl) { showToast("Tanggal Pelaksanaan wajib diisi — akan tampil pada pengumuman di dashboard calon.", true); return; }  // [v3.37.0]
-  callAPI('simpanSeleksiMaster', [sessionToken, { tahap: tahap, nama_kegiatan: nama, nilai: nilai, kkm: kkmN, keterangan: ket, tanggal_pelaksanaan: tgl }], { cache: false })  // [v3.37.0]
+  callAPI('simpanSeleksiMaster', [sessionToken, { id: window.__smEditId || "", tahap: tahap, nama_kegiatan: nama, nilai: nilai, kkm: kkmN, keterangan: ket, tanggal_pelaksanaan: tgl }], { cache: false })  // [v3.37.0][v3.43.0] +id utk edit
     .then(res => {
       showToast(res.message || "Gagal menyimpan.", !res.success);
       if (res.success) {
-        ["sm-nama", "sm-nilai", "sm-kkm", "sm-ket", "sm-tanggal"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        batalEditSeleksiMaster();
         muatSeleksiMaster();
       }
     })
     .catch(err => showToast(err.message, true));
+}
+
+// [v3.43.0] EDIT Master Seleksi: isi formulir dgn data entri utk diedit (bukan membuat baru)
+function editSeleksiMaster(id) {
+  const m = (window.__seleksiMaster || []).find(x => String(x.id) === String(id));
+  if (!m) { showToast("Entri Master Seleksi tidak ditemukan.", true); return; }
+  window.__smEditId = String(id);
+  const setV = (eid, v) => { const el = document.getElementById(eid); if (el) el.value = v === undefined || v === null ? "" : String(v); };
+  setV("sm-tahap", m.tahap); setV("sm-nama", m.nama_kegiatan); setV("sm-nilai", m.nilai);
+  setV("sm-kkm", m.kkm); setV("sm-tanggal", m.tanggal_pelaksanaan); setV("sm-ket", m.keterangan);
+  const j = document.getElementById("sm-form-judul");
+  if (j) j.textContent = "✏️ Edit Tahap Seleksi — " + m.nama_kegiatan;
+  const bb = document.getElementById("sm-batal-edit");
+  if (bb) bb.style.display = "inline-block";
+  try { switchSection('section-seleksi-master', document.getElementById('menu-seleksi-master')); } catch (eS) {}
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  showToast("Mode edit: ubah data lalu klik Simpan Tahap Seleksi. [v3.43.0]");
+}
+
+function batalEditSeleksiMaster() {
+  window.__smEditId = "";
+  ["sm-nama", "sm-nilai", "sm-kkm", "sm-ket", "sm-tanggal"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+  const j = document.getElementById("sm-form-judul");
+  if (j) j.textContent = "+ Tambah Tahap Seleksi";
+  const bb = document.getElementById("sm-batal-edit");
+  if (bb) bb.style.display = "none";
 }
 
 function hapusSeleksiMaster(id) {
