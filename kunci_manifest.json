@@ -1,11 +1,11 @@
 {
-  "versi": "3.43.0",
-  "tanggal_kunci": "2026-11-01",
+  "versi": "3.44.0",
+  "tanggal_kunci": "2026-11-02",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
       "ukuran_byte": 285682,
-      "sha256": "fc575327951811fa850a50fa69ac772e548652392ce782a29ad45957574705d3",
+      "sha256": "a569ebbf63220f90668af96dac784cd1bbede8c360f11dce41f27819e8728180",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -15,14 +15,14 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 87192,
-      "sha256": "9d61f5554940f67f4751631ae8650a364c7f5335056d383c3ff56e820a9b6fc7",
+      "sha256": "c45b621669e31019a78e71e80553878f8cfb018970657d3a1615aec406fae9b3",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 266482,
-      "sha256": "656001dc2348ad28861bcbd67204b4822cb2144323fc8d611896227b63b7b0e4",
+      "ukuran_byte": 267747,
+      "sha256": "8740a5b51ded81de0a5436f82d6ed50dbf13b2ceffbf55c573c76407dc369fca",
       "jumlah_fungsi": 247,
       "fungsi": [
         "_blangkoRowsHtml",
@@ -277,7 +277,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "52c62a2b912c2234bc28bcf80452e41aebc1f892fc9d0090cc9239637345a966",
+      "sha256": "a7f4b4157f126e9ed5a53093f61fb40fe9641093552b631f4ad096cd9158191f",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -337,14 +337,14 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "8f7fc408cdc89b353f0f1151a1e5ce47193243e8b9ba6a031ba643bf5fb99652",
+      "sha256": "79f9b117af475eff6b1cd4aae4607559882401e670f88d25532fce2c15e5f872",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 457170,
-      "sha256": "534a5b675526bf10835f0b3007ff07a476c98821fa3b1f8fb32068b6ff3ce0d2",
+      "ukuran_byte": 457342,
+      "sha256": "a684c0c1e22229b2546980eadc8e2a361b8765d83541a2360bbea5819a2ab954",
       "jumlah_fungsi": 196,
       "fungsi": [
         "_absenJam_",
