@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.42.0 - TERKUNCI (2026-10-31)
+// [KUNCI] SIAP WANAMSKA v3.43.0 - TERKUNCI (2026-11-01)
 // Berkas  : potensi-game.js
 // Fungsi  : Mesin game Kenali Potensimu (berjenjang + arena)
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
