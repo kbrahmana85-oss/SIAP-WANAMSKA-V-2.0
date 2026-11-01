@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!-- ============================================================
-     [KUNCI] SIAP WANAMSKA v3.42.0 - TERKUNCI (2026-10-31)
+     [KUNCI] SIAP WANAMSKA v3.43.0 - TERKUNCI (2026-11-01)
      Berkas  : index.html
      Fungsi  : Struktur halaman & antarmuka (PWA)
      Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -24,7 +24,7 @@
   <meta name="apple-mobile-web-app-title" content="PRADESKA">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/kbrahmana85-oss/SIAP-WANAMSKA-V-2.0/daf1eb8a16b1699d6c49974502f799defefe1d93/logo_pwa.png">
 
-    <link rel="stylesheet" href="style.css?v=3.42.0">
+    <link rel="stylesheet" href="style.css?v=3.43.0">
 </head>
 <body>
 
@@ -728,7 +728,7 @@
             <p style="font-size:0.85rem; color:var(--color-text-muted); margin-top:4px;">Tahapan seleksi Calon Dewan Penggalang (Tahap 1-5): nama kegiatan, nilai &amp; keterangan — khusus Admin, DGW20261 &amp; DGW20262</p>
           </div>
           <div id="seleksi-master-form" class="card" style="margin-bottom:16px;">
-            <h3 style="margin:0 0 12px; color:var(--color-deep-teal);">+ Tambah Tahap Seleksi</h3>
+            <h3 id="sm-form-judul" style="margin:0 0 12px; color:var(--color-deep-teal);">+ Tambah Tahap Seleksi</h3>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px;">
               <div>
                 <label style="font-size:0.78rem; font-weight:700; color:var(--color-text);">Tahap</label>
@@ -763,7 +763,8 @@
                 <input type="text" id="sm-ket" placeholder="keterangan tambahan" style="width:100%; padding:9px 10px; border-radius:10px; border:1.5px solid #D8CFC0; font-family:inherit;">
               </div>
             </div>
-            <button class="btn btn-primary" style="margin-top:12px;" onclick="simpanSeleksiMaster()">💾 Simpan Tahap Seleksi</button>
+            <button class="btn btn-primary" id="sm-simpan-btn" style="margin-top:12px;" onclick="simpanSeleksiMaster()">💾 Simpan Tahap Seleksi</button>
+            <button class="btn" id="sm-batal-edit" style="display:none; margin-top:12px; background:#5D4037; color:#FFF;" onclick="batalEditSeleksiMaster()">✕ Batal Edit</button>  <!-- [v3.43.0] edit Master Seleksi -->
           </div>
           <div id="seleksi-master-tabel"></div>
         </section>
@@ -1245,6 +1246,7 @@
                 <button class="btn pg-btn-secondary" id="btn-kunci-profil" onclick="toggleKunciProfil()" style="display:none; float:right; padding:5px 12px; font-size:0.8rem;">🔓 Buka Profil</button>
               </h3>
               <input type="hidden" id="prof-user-id">
+              <div id="prof-data-fields">  <!-- [v3.43.0] disembunyikan utk Admin: profil ringkas -->
               <div class="form-group">
                 <label>Nomor Tanda Anggota (NTA)</label>
                 <input type="text" id="prof-nta" class="form-control">
@@ -1305,6 +1307,7 @@
                 </div>
               </div>
 
+              </div>  <!-- /prof-data-fields [v3.43.0] -->
               <button class="btn btn-gold btn-full" id="btn-simpan-profil" onclick="actionSaveProfile()">SIMPAN PROFIL</button>
               <p id="prof-kunci-catatan" style="display:none; font-size:0.8rem; color:var(--color-text-muted); text-align:center; margin:8px 0 0;">🔒 Data profil dikunci oleh Admin.</p>
             </div>
@@ -2089,7 +2092,7 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
   </div>
 </div>
 
-<script src="script.js?v=3.42.0"></script>
+<script src="script.js?v=3.43.0"></script>
 <script>
 /* [v3.31.0] Parallax interaktif: ikon mengambang mengikuti gerak pointer/jari */
 (function () {
@@ -2154,5 +2157,5 @@ window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo')
 <script>
 window.LOGO_PRADESKA_TERKUNCI = (document.querySelector('.header-logo img.logo') || document.querySelector('img.logo') || {}).src || '';
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a53c2f713f12fdc8',t:'MTc5MzU0OTU5MQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a53c2f713f12fdc8',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a53caacd7ac8ae45',t:'MTc5MzU1NDY0NA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a53caacd7ac8ae45',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
