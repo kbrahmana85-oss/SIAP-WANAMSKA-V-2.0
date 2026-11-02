@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.44.0 - TERKUNCI (2026-11-02)
+// [KUNCI] SIAP WANAMSKA v3.44.1 - TERKUNCI (2026-11-02)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.44.0"; 
+const APP_VERSION = "3.44.1"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3644,6 +3644,7 @@ function actionPerbaikiCdp() {
 
 // Validasi blangko oleh Admin/DGW20261/DGW20262 (poin 4): OK = centang hijau; Cancel = revisi + keterangan
 function actionValidasiCdp(uid, nama) {
+  if (!nama) { const f441 = (window.__cdpListData || []).find(x => String(x.user_id) === String(uid)); nama = f441 ? (f441.nama_calon || uid) : uid; }  // [v3.44.1] nama dr data list — atribut onclick tdk lagi memuat nama (nama berkutip merusak JS inline)
   if (!confirm("Validasi blangko " + nama + " (" + uid + ")?\n\nOK = LENGKAP & SESUAI (tampil tanda centang hijau)\nCancel = tandai PERLU PERBAIKAN (isi keterangan)")) {
     const ket = prompt("Tuliskan kolom/field yang HARUS DIPERBAIKI oleh " + uid + ":", "");
     if (!ket || !ket.trim()) { showToast("Validasi revisi dibatalkan — keterangan wajib diisi.", true); return; }
@@ -3779,7 +3780,7 @@ function muatCdpPantau() {
               <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#1E429F; color:#FFF;" onclick="lihatBlangkoPantau('${escapeHtml(r.user_id)}')">🖨 Cetak / Lihat Blangko</button>
               <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#1E429F; color:#FFF;" onclick="unduhCdp('${escapeHtml(r.user_id)}', 'pdf')">📄 Unduh PDF (A4)</button>
               <button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#03543F; color:#FFF;" onclick="unduhCdp('${escapeHtml(r.user_id)}', 'doc')">📝 Unduh Word</button>
-              ${isPenetapSeleksi() ? `<button class="btn" style="padding:6px 12px; font-size:0.8rem; background:${r.validasi_status === "valid" ? "#03543F" : "#7A1F1F"}; color:#FFF;" onclick="actionValidasiCdp('${escapeHtml(r.user_id)}', '${escapeHtml(r.nama_calon)}')">${r.validasi_status === "valid" ? "✅ Valid (Validasi Ulang)" : "✔ Validasi Blangko"}</button>` : ""}
+              ${isPenetapSeleksi() ? `<button class="btn" style="padding:6px 12px; font-size:0.8rem; background:${r.validasi_status === "valid" ? "#03543F" : "#7A1F1F"}; color:#FFF;" onclick="actionValidasiCdp('${escapeHtml(r.user_id)}')">${r.validasi_status === "valid" ? "✅ Valid (Validasi Ulang)" : "✔ Validasi Blangko"}</button>` : ""}
             </div>
           </div>
         </details>`).join("");
@@ -3836,7 +3837,7 @@ function badgeSeleksiHtml(uid) {
   return `<div class="cdp-kartu-hasil lulus">🎉 LOLOS Tahap ${escapeHtml(String(rk.tahap))} — ${escapeHtml(rk.mata_uji)}</div>`;
 }
 function seleksiAksiHtml(uid, nama) {
-  return `<button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#B45309; color:#FFF;" onclick="bukaModalNilai('${escapeHtml(uid)}', '${escapeHtml(nama)}')">🎯 Input Nilai Uji Seleksi</button>`;  // [v3.35.0]
+  return `<button class="btn" style="padding:6px 12px; font-size:0.8rem; background:#B45309; color:#FFF;" onclick="bukaModalNilai('${escapeHtml(uid)}')">🎯 Input Nilai Uji Seleksi</button>`;  // [v3.44.1] nama dr data list — aman thd nama berkutip
 }
 
 function muatSeleksiMaster() {
@@ -3918,6 +3919,7 @@ function hapusSeleksiMaster(id) {
 
 // --- Modal INPUT NILAI uji seleksi (hasil otomatis via KKM) [v3.35.0] ---
 function bukaModalNilai(uid, nama) {
+  if (!nama) { const f441 = (window.__cdpListData || []).find(x => String(x.user_id) === String(uid)); nama = f441 ? (f441.nama_calon || uid) : uid; }  // [v3.44.1] aman thd nama berkutip
   const ov = document.getElementById('modal-seleksi-overlay');
   if (!ov) return;
   document.getElementById('ms-user-id').value = uid;
