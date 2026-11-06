@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.47.0 - TERKUNCI (2026-11-06)
+// [KUNCI] SIAP WANAMSKA v3.48.0 - TERKUNCI (2026-11-06)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.47.0"; 
+const APP_VERSION = "3.48.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3743,7 +3743,7 @@ function renderLolosAdminDaftar() {
   if (!kotak) return;
   const d = window.__laDaftar || [];
   if (!d.length) { kotak.innerHTML = '<p style="font-size:0.8rem; color:var(--color-text-muted); margin:0;">Belum ada pendaftar yang ditandai lolos administrasi.</p>'; return; }
-  kotak.innerHTML = '<div style="font-size:0.8rem; font-weight:700; margin-bottom:6px;">Sudah ditandai (' + d.length + '):</div>' + d.map(r =>
+  kotak.innerHTML = '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;"><span style="font-size:0.8rem; font-weight:700;">Sudah ditandai (' + d.length + '):</span><button class="btn" style="padding:5px 10px; font-size:0.75rem; background:#7A1F1F; color:#FFF;" onclick="hapusSemuaLolosAdmin()">🗑 Batal Semua</button></div>' + d.map(r =>
     '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border:1.5px solid #EFE3CE; border-radius:10px; margin-bottom:6px; font-size:0.82rem; background:#FFFBF2;">' +
     '<span>✅ <b>' + escapeHtml(r.user_id) + '</b> — ' + escapeHtml(r.nama_calon || "") + (r.kelas ? ' (' + escapeHtml(r.kelas) + ')' : '') + ' · 🗓 Uji Tulis: <b>' + escapeHtml(formatTanggalId(r.tanggal_uji_tulis)) + '</b></span>' +
     '<button class="btn" style="padding:5px 10px; font-size:0.75rem; background:#7A1F1F; color:#FFF;" onclick="hapusLolosAdmin(\'' + escapeHtml(r.user_id) + '\')">🗑 Batal</button></div>').join("");
@@ -3779,10 +3779,28 @@ function hapusLolosAdmin(uid) {
   }).catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
+// [v3.48.0] Akun pendaftar Calon DP: seri CDP2026/CDP2027 dan PGW2026xx (produksi)
+function isAkunPendaftarCdp(uid) { return /^(CDP|PGW)20/i.test(String(uid || "")); }
+
+// [v3.48.0] BATAL SEMUA: hapus seluruh pengumuman lolos administrasi
+function hapusSemuaLolosAdmin() {
+  const n = (window.__laDaftar || []).length;
+  if (!n) { showToast("Belum ada pendaftar yang ditandai.", true); return; }
+  if (!confirm("Batalkan SELURUH pengumuman lolos administrasi (" + n + " pendaftar)?\n\nKartu pengumuman akan hilang dari dashboard SELURUH pendaftar.")) return;
+  setLoader(true, "Membatalkan seluruh pengumuman...");
+  callAPI('hapusSemuaCdpLolosAdmin', [sessionToken], { cache: false }).then(res => {
+    setLoader(false);
+    showToast(res.message || "Selesai.", !(res && res.success));
+    if (res && res.success) muatLolosAdminData(true);
+  }).catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
 function formatTanggalId(str) {
   const m = /^((\d{4})-(\d{2})-(\d{2}))/.exec(String(str || ""));
   if (!m) return String(str || "");
   const BULAN = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const m2 = /[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/.exec(String(str || ""));  // [v3.48.0] fallback string Date mentah (cth. Wed Nov 18 2026 ...)
+  if (m2) { const B48 = { Jan: "Januari", Feb: "Februari", Mar: "Maret", Apr: "April", Mei: "Mei", May: "Mei", Jun: "Juni", Jul: "Juli", Agu: "Agustus", Aug: "Agustus", Sep: "September", Okt: "Oktober", Oct: "Oktober", Nov: "November", Des: "Desember", Dec: "Desember" }; return parseInt(m2[2], 10) + " " + (B48[m2[1]] || m2[1]) + " " + m2[3]; }
   return parseInt(m[4], 10) + " " + BULAN[parseInt(m[3], 10)] + " " + m[2];
 }
 
@@ -3790,7 +3808,7 @@ function formatTanggalId(str) {
 function muatPengumumanCdpSaya() {
   const kartu = document.getElementById('pengumuman-lolos-card');
   if (!kartu) return;
-  if (!/^(CDP2026|CDP2027)/i.test(String(userId || ""))) { kartu.style.display = 'none'; return; }
+  if (!isAkunPendaftarCdp(userId)) { kartu.style.display = 'none'; return; }  // [v3.48.0] akun pendaftar produksi juga PGW2026xx
   callAPI('getPengumumanCdpSaya', [sessionToken], { cache: false }).then(res => {
     if (res && res.success && res.lolos) {
       const elN = document.getElementById('pl-nama');
