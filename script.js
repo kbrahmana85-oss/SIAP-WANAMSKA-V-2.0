@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.45.0 - TERKUNCI (2026-11-02)
+// [KUNCI] SIAP WANAMSKA v3.46.0 - TERKUNCI (2026-11-06)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.45.0"; 
+const APP_VERSION = "3.46.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3729,7 +3729,7 @@ function muatLolosAdminData(paksa) {
       const sel = document.getElementById('la-uid');
       if (sel) {
         const nilaiLama = sel.value;
-        sel.innerHTML = '<option value="">— pilih pendaftar —</option>' + window.__laPendaftar.map(r =>
+        sel.innerHTML = '<option value="">— pilih pendaftar —</option><option value="__SEMUA__">👥 Pilih Semua (tandai seluruh pendaftar)</option>' + window.__laPendaftar.map(r =>
           '<option value="' + escapeHtml(r.user_id) + '">' + escapeHtml(r.user_id + " — " + (r.nama_calon || "") + (r.kelas ? " (" + r.kelas + ")" : "")) + '</option>').join("");
         if (nilaiLama) sel.value = nilaiLama;
       }
@@ -3754,6 +3754,11 @@ function actionTandaiLolosAdmin() {
   const tgl = (document.getElementById('la-tanggal') || {}).value || "";
   if (!uid) { showToast("Pilih dulu pendaftar Calon Dewan Penggalang.", true); return; }
   if (!tgl) { showToast("Tentukan tanggal pelaksanaan Uji Tulis (Tahap 1).", true); return; }
+  if (uid === "__SEMUA__") {  // [v3.46.0] Pilih Semua: satu panggilan utk seluruh pendaftar
+    const n46 = (window.__laPendaftar || []).length;
+    if (!n46) { showToast("Belum ada pendaftar Calon Dewan Penggalang.", true); return; }
+    if (!confirm("Tandai SELURUH " + n46 + " pendaftar Calon Dewan Penggalang sebagai LOLOS ADMINISTRASI?\n\nPengumuman Uji Tulis (Tahap 1): " + formatTanggalId(tgl) + "\nPengumuman berkelip akan tampil di dashboard seluruh pendaftar.")) return;
+  }
   setLoader(true, "Menandai lolos administrasi...");
   callAPI('setCdpLolosAdmin', [sessionToken, uid, tgl], { cache: false }).then(res => {
     setLoader(false);
