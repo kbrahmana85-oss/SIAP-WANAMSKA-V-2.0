@@ -1,5 +1,5 @@
 /* ============================================================
-   [KUNCI] SIAP WANAMSKA v3.44.1 - TERKUNCI (2026-11-02)
+   [KUNCI] SIAP WANAMSKA v3.45.0 - TERKUNCI (2026-11-02)
    Berkas  : style.css
    Fungsi  : Gaya tampilan seluruh modul
    Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -2584,3 +2584,34 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
 
 /* [v3.35.0] Input Nilai Seleksi: baris status "sudah dinilai" */
 .cdp-seleksi-gugur { display: none; }  /* label gugur tak lagi dipakai — calon gugur disembunyikan dari daftar */
+
+/* ===== [v3.45.0] PENGUMUMAN LOLOS ADMINISTRASI + PANGGILAN UJI TULIS (berkelip) ===== */
+.pengumuman-lolos {
+  background: linear-gradient(135deg, #7A1F1F 0%, #A8322F 55%, #D9A441 130%);
+  color: #FFF7EC;
+  border: 3px solid #D9A441;
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin: 0 0 16px;
+  box-shadow: 0 10px 24px rgba(122, 31, 31, 0.28);
+  animation: plTepiBerkelip 0.9s steps(2, jump-none) infinite;
+}
+.pengumuman-lolos .pl-judul { font-weight: 800; letter-spacing: 2px; font-size: 0.85rem; margin-bottom: 8px; color: #FFE7BE; }
+.pengumuman-lolos .pl-isi { font-size: 1rem; line-height: 1.5; margin-bottom: 8px; }
+.pengumuman-lolos .pl-isi b { color: #FFE7BE; }
+.pengumuman-lolos .pl-jadwal { font-size: 1.05rem; margin-bottom: 6px; color: #FFFFFF; }
+.pengumuman-lolos .pl-jadwal b { color: #FFE7BE; }
+.pengumuman-lolos .pl-catatan { font-size: 0.78rem; opacity: 0.92; }
+.pengumuman-lolos .pl-berkelip { display: inline-block; animation: plIkonBerkelip 0.9s steps(2, jump-none) infinite; }
+.pengumuman-lolos .pl-teks-berkelip { animation: plIkonBerkelip 0.9s steps(2, jump-none) infinite; }
+@keyframes plIkonBerkelip {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+@keyframes plTepiBerkelip {
+  0%, 100% { border-color: #D9A441; }
+  50% { border-color: #FFF7EC; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pengumuman-lolos, .pengumuman-lolos .pl-berkelip, .pengumuman-lolos .pl-teks-berkelip { animation: none; }
+}
