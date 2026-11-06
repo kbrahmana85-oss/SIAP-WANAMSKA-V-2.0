@@ -1,5 +1,5 @@
 /* ============================================================
-   [KUNCI] SIAP WANAMSKA v3.48.0 - TERKUNCI (2026-11-06)
+   [KUNCI] SIAP WANAMSKA v3.48.1 - TERKUNCI (2026-11-06)
    Berkas  : style.css
    Fungsi  : Gaya tampilan seluruh modul
    Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -2200,6 +2200,8 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
   color: #24120B;
   box-shadow: 0 6px 18px rgba(226,167,69,.45);
   animation: ultahKedip 1.4s ease-in-out infinite;
+  position: relative;
+  z-index: 1;  /* [v3.48.1] JAMINAN: kartu ucapan ultah selalu terlihat penuh, tidak tertutup kartu kelulusan */
 }
 @keyframes ultahKedip {
   0%, 100% { box-shadow: 0 0 8px 2px rgba(226,167,69,.35); filter: brightness(1); }
@@ -2592,9 +2594,11 @@ button.pg-opsi.pg-salah { background: rgba(244,67,54,.3); border-color: #f44336;
   border: 3px solid #D9A441;
   border-radius: 18px;
   padding: 16px 18px;
-  margin: 0 0 16px;
-  box-shadow: 0 10px 24px rgba(122, 31, 31, 0.28);
+  margin: 0 0 24px;  /* [v3.48.1] jarak 24px >= rentang bayangan -> kartu ucapan ultah di bawahnya tidak tersambar */
+  box-shadow: 0 8px 16px rgba(122, 31, 31, 0.25);  /* [v3.48.1] bayangan terkurung (8+16=24px) */
   animation: plTepiBerkelip 0.9s steps(2, jump-none) infinite;
+  position: relative;
+  z-index: 0;  /* [v3.48.1] kartu pengumuman selalu di lapis bawah */
 }
 .pengumuman-lolos .pl-judul { font-weight: 800; letter-spacing: 2px; font-size: 0.85rem; margin-bottom: 8px; color: #FFE7BE; }
 .pengumuman-lolos .pl-isi { font-size: 1rem; line-height: 1.5; margin-bottom: 8px; }
