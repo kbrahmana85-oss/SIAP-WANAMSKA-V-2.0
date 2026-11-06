@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.46.0 - TERKUNCI (2026-11-06)
+// [KUNCI] SIAP WANAMSKA v3.47.0 - TERKUNCI (2026-11-06)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.46.0"; 
+const APP_VERSION = "3.47.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -4114,9 +4114,15 @@ function renderNilaiTahap() {
   const mata = bagian.slice(1).join("|");
   const m = (window.__seleksiMaster || []).find(x => String(x.tahap) === String(tahap) && x.nama_kegiatan === mata);
   const hasil = (window.__seleksiRekap && window.__seleksiRekap.hasil) || {};
-  const aktif = ((window.__cdpSemua = window.__cdpSemua || []), window.__cdpSemua).filter(r => { const h = hasil[r.user_id]; return !(h && h.hasil === "TIDAK_LOLOS"); });
-  if (!aktif.length) { kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Tidak ada calon aktif untuk dinilai.</p>'; return; }
-  kotak.innerHTML = `<p style="font-size:0.84rem; color:var(--color-text-muted); margin:0 0 10px;">Mata uji: <strong>${escapeHtml(mata)}</strong> (Tahap ${escapeHtml(tahap)}) — KKM <strong style="color:#B45309;">${escapeHtml(String(m && m.kkm !== undefined && m.kkm !== "" ? m.kkm : "?"))}</strong>. Nilai ≥ KKM otomatis <strong>LOLOS</strong>; di bawah KKM otomatis <strong>TIDAK LOLOS</strong> (nama dihapus dari daftar; berkas tetap tersimpan).</p>
+  const tpN = parseInt(tahap, 10);
+  const riw47 = window.__seleksiRiwayat || [];
+  const aktif = ((window.__cdpSemua = window.__cdpSemua || []), window.__cdpSemua).filter(r => {
+    const h = hasil[r.user_id];
+    if (tpN === 1) return !(h && h.hasil === "TIDAK_LOLOS");  // Tahap 1: perilaku tetap (semua calon aktif)
+    return riw47.some(w => String(w.user_id) === String(r.user_id) && parseInt(w.tahap, 10) === tpN - 1 && String(w.hasil).toUpperCase() === "LOLOS");  // [v3.47.0] tahap > 1: HANYA calon LOLOS tahap sebelumnya
+  });
+  if (!aktif.length) { kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Tidak ada calon untuk dinilai' + (tpN > 1 ? ' — hanya calon yang LOLOS Tahap ' + (tpN - 1) + ' yang muncul di sini. [v3.47.0]' : '.') + '</p>'; return; }
+  kotak.innerHTML = `<p style="font-size:0.84rem; color:var(--color-text-muted); margin:0 0 10px;">Mata uji: <strong>${escapeHtml(mata)}</strong> (Tahap ${escapeHtml(tahap)}) — KKM <strong style="color:#B45309;">${escapeHtml(String(m && m.kkm !== undefined && m.kkm !== "" ? m.kkm : "?"))}</strong>. Nilai ≥ KKM otomatis <strong>LOLOS</strong>; di bawah KKM otomatis <strong>TIDAK LOLOS</strong> (nama dihapus dari daftar; berkas tetap tersimpan).${tpN > 1 ? " Daftar ini <strong>hanya calon yang LOLOS Tahap " + escapeHtml(String(tpN - 1)) + "</strong>. [v3.47.0]" : ""}</p>
     <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; background:#FFF; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);">
       <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Calon</th><th style="padding:8px 10px; text-align:left;">Nilai (0-100)</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
       ${aktif.map(r => {
@@ -4161,6 +4167,21 @@ function muatBannerSeleksi() {
       if (!res || !res.success || !res.ada) { el.style.display = "none"; return; }
       const nama = res.nama || "Calon";
       if (res.hasil === "LOLOS") {
+        // [v3.47.0] Pengumuman LOLOS kini memakai kartu berkelip gaya "Lolos Administrasi" —
+        // alur & aturan kelulusan (KKM) dari Input Nilai TIDAK berubah.
+        el.style.display = "none";
+        const k47 = document.getElementById('pengumuman-seleksi-card');
+        if (k47) {
+          const elN47 = document.getElementById('ps-nama'); if (elN47) elN47.textContent = nama;
+          const elTh47 = document.getElementById('ps-tahap-l'); if (elTh47) elTh47.textContent = String(res.tahap);
+          const elM47 = document.getElementById('ps-mata'); if (elM47) elM47.textContent = res.mata_uji;  // nama mata uji di Master sudah lengkap (tanpa prefix)
+          const elP47 = document.getElementById('ps-tgl'); if (elP47) elP47.textContent = res.tanggal_pelaksanaan ? " yang dilaksanakan pada " + res.tanggal_pelaksanaan : "";
+          const elB47 = document.getElementById('ps-berikut'); if (elB47) elB47.textContent = res.tanggal_tahap_berikut_master || (res.tanggal_tahap_berikut && res.tanggal_tahap_berikut !== "-" ? res.tanggal_tahap_berikut : "") || "akan diinformasikan";
+          k47.style.display = "block";
+        }
+        return;
+      }
+      if (res.hasil === "LOLOS_LAMA") {
         el.className = "banner-seleksi lulus";
         const tglP = res.tanggal_pelaksanaan ? ` YANG DILAKSANAKAN PADA TANGGAL ${escapeHtml(res.tanggal_pelaksanaan)}` : "";  // [v3.37.0]
         el.innerHTML = `<span class="bs-ikon">🎉</span>SELAMAT (${escapeHtml(nama)}) ANDA LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)}${tglP}, SELANJUTNYA SIAPKAN DIRI UNTUK MENGIKUTI SELEKSI TAHAP SELANJUTNYA PADA TANGGAL ${escapeHtml(res.tanggal_tahap_berikut || "-")}`;
