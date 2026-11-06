@@ -1,11 +1,11 @@
 {
-  "versi": "3.45.0",
-  "tanggal_kunci": "2026-11-02",
+  "versi": "3.46.0",
+  "tanggal_kunci": "2026-11-06",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 288215,
-      "sha256": "931adeea5420d44205cc24a048a5f4ef43e87f180c67c7a2d485884fe9f5064f",
+      "ukuran_byte": 288296,
+      "sha256": "07b11bbcf3830035666557f033ff886ac0b56cceeb626fe249c2aebb090f3e77",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -15,14 +15,14 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 88636,
-      "sha256": "debc669b0bc82a27e2c7f0c6b00841e0534e6c1bc3b430b89d958ab7ca65839d",
+      "sha256": "15ec31d14cb7a54bbbb07d9c4f5c46ecd434b39108ab688e145feda7dea04ff8",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 273805,
-      "sha256": "59bbe0ff06e9abdc0d79d19a90e5124eda20d43b837e64c019b5c6e06f16e1ac",
+      "ukuran_byte": 274369,
+      "sha256": "3152c80258282e4c35fa62d1ee6e42de0b66117d1e273cfc44ae041eeeaf7e88",
       "jumlah_fungsi": 254,
       "fungsi": [
         "_blangkoRowsHtml",
@@ -284,7 +284,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "f3bb69cb1ae9c0f6ee15773cc4ca1ff5c59dab818e4062110b23112c3d96e427",
+      "sha256": "a6e17e7426097c94143f81a359f2eb6d8c18ef0c4e3dcb960a6522b9c4ae0ddf",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -344,14 +344,14 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "f9038120859aff12e8bfd2a44c407f5ca4553da3e8f276a7e2b053a037ea5bd8",
+      "sha256": "10613fedea6ca67bacba90a8a9158528707faeb80932bcad6aa2bfc960b59a63",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 462088,
-      "sha256": "2510c61210bf6f543d52c4626feef3551f5df0f2752c3e7735f618f0d5d4d817",
+      "ukuran_byte": 463751,
+      "sha256": "97aec551b1f9d45e0b9c1d42e277d92fcb3ab94a6ee4b6efc9237893841136b4",
       "jumlah_fungsi": 201,
       "fungsi": [
         "_absenJam_",
