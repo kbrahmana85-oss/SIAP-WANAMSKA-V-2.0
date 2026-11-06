@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.44.1 - TERKUNCI (2026-11-02)
+// [KUNCI] SIAP WANAMSKA v3.45.0 - TERKUNCI (2026-11-02)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.44.1"; 
+const APP_VERSION = "3.45.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -1414,6 +1414,7 @@ function setupRBACUI(role) {
   }
   // Sinkronkan visibilitas tombol export per modul sesuai hak peran
   applyExportActionUI();
+  try { initLolosAdminUI(); muatPengumumanCdpSaya(); } catch (eLA45) {}  // [v3.45.0] panel Admin Master Seleksi + pengumuman dashboard pendaftar
   muatStatusCdp();  // [v3.26.0] atur menu CDP + kartu headline & jumlah pendaftar di dashboard
   segarkanGrupMenu();  // [v3.28.0]
   try { terapkanGateProfilBaru(); } catch (eTGP) {}  // [v3.34.0] gerbang user baru diterapkan di SETIAP penyegaran RBAC
@@ -3699,6 +3700,103 @@ function actionExportBlangkoCdp(mode) {
   }).catch(err => { setLoader(false); showToast(err.message, true); });
 }
 // ===== akhir blok v3.42.0 =====
+
+// ===== [v3.45.0] LOLOS ADMINISTRASI & PANGGILAN UJI TULIS =====
+// Admin (Master Seleksi): tandai pendaftar lolos administrasi + tanggal Uji Tulis (Tahap 1).
+// Pendaftar: kartu pengumuman berkelip di dashboard, tepat di atas kartu ucapan ulang tahun.
+function initLolosAdminUI() {
+  const kotak = document.getElementById('lolos-admin-box');
+  if (!kotak) return;
+  const isAdmin = userRole === "Admin";
+  kotak.style.display = isAdmin ? 'block' : 'none';
+  if (!isAdmin) return;
+  const mnu = document.getElementById('menu-seleksi-master');
+  if (mnu && !mnu.dataset.laHook) {  // muat data hanya saat Admin membuka Master Seleksi (hemat panggilan)
+    mnu.dataset.laHook = "1";
+    mnu.addEventListener('click', function () { muatLolosAdminData(); });
+  }
+}
+
+function muatLolosAdminData(paksa) {
+  if (!window.__laDimuat || paksa) {
+    window.__laDimuat = true;
+    Promise.all([
+      callAPI('getCdpList', [sessionToken], { cache: false }).catch(() => null),
+      callAPI('getCdpLolosAdmin', [sessionToken], { cache: false }).catch(() => null)
+    ]).then(([lst, lls]) => {
+      window.__laPendaftar = (lst && lst.success && lst.list) ? lst.list : [];
+      window.__laDaftar = (lls && lls.success && lls.list) ? lls.list : [];
+      const sel = document.getElementById('la-uid');
+      if (sel) {
+        const nilaiLama = sel.value;
+        sel.innerHTML = '<option value="">— pilih pendaftar —</option>' + window.__laPendaftar.map(r =>
+          '<option value="' + escapeHtml(r.user_id) + '">' + escapeHtml(r.user_id + " — " + (r.nama_calon || "") + (r.kelas ? " (" + r.kelas + ")" : "")) + '</option>').join("");
+        if (nilaiLama) sel.value = nilaiLama;
+      }
+      renderLolosAdminDaftar();
+    });
+  } else renderLolosAdminDaftar();
+}
+
+function renderLolosAdminDaftar() {
+  const kotak = document.getElementById('la-daftar');
+  if (!kotak) return;
+  const d = window.__laDaftar || [];
+  if (!d.length) { kotak.innerHTML = '<p style="font-size:0.8rem; color:var(--color-text-muted); margin:0;">Belum ada pendaftar yang ditandai lolos administrasi.</p>'; return; }
+  kotak.innerHTML = '<div style="font-size:0.8rem; font-weight:700; margin-bottom:6px;">Sudah ditandai (' + d.length + '):</div>' + d.map(r =>
+    '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border:1.5px solid #EFE3CE; border-radius:10px; margin-bottom:6px; font-size:0.82rem; background:#FFFBF2;">' +
+    '<span>✅ <b>' + escapeHtml(r.user_id) + '</b> — ' + escapeHtml(r.nama_calon || "") + (r.kelas ? ' (' + escapeHtml(r.kelas) + ')' : '') + ' · 🗓 Uji Tulis: <b>' + escapeHtml(formatTanggalId(r.tanggal_uji_tulis)) + '</b></span>' +
+    '<button class="btn" style="padding:5px 10px; font-size:0.75rem; background:#7A1F1F; color:#FFF;" onclick="hapusLolosAdmin(\'' + escapeHtml(r.user_id) + '\')">🗑 Batal</button></div>').join("");
+}
+
+function actionTandaiLolosAdmin() {
+  const uid = (document.getElementById('la-uid') || {}).value || "";
+  const tgl = (document.getElementById('la-tanggal') || {}).value || "";
+  if (!uid) { showToast("Pilih dulu pendaftar Calon Dewan Penggalang.", true); return; }
+  if (!tgl) { showToast("Tentukan tanggal pelaksanaan Uji Tulis (Tahap 1).", true); return; }
+  setLoader(true, "Menandai lolos administrasi...");
+  callAPI('setCdpLolosAdmin', [sessionToken, uid, tgl], { cache: false }).then(res => {
+    setLoader(false);
+    showToast(res.message || "Selesai.", !(res && res.success));
+    if (res && res.success) muatLolosAdminData(true);
+  }).catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function hapusLolosAdmin(uid) {
+  const f = (window.__laDaftar || []).find(x => String(x.user_id) === String(uid));
+  const nama = f ? (f.nama_calon || uid) : uid;
+  if (!confirm("Batalkan pengumuman lolos administrasi untuk " + nama + " (" + uid + ")?\nKartu pengumuman akan hilang dari dashboard pendaftar.")) return;
+  setLoader(true, "Membatalkan pengumuman...");
+  callAPI('hapusCdpLolosAdmin', [sessionToken, uid], { cache: false }).then(res => {
+    setLoader(false);
+    showToast(res.message || "Selesai.", !(res && res.success));
+    if (res && res.success) muatLolosAdminData(true);
+  }).catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
+function formatTanggalId(str) {
+  const m = /^((\d{4})-(\d{2})-(\d{2}))/.exec(String(str || ""));
+  if (!m) return String(str || "");
+  const BULAN = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  return parseInt(m[4], 10) + " " + BULAN[parseInt(m[3], 10)] + " " + m[2];
+}
+
+// Pendaftar: ambil pengumuman (hanya utk akun calon CDP — user lain tanpa panggilan, hemat API)
+function muatPengumumanCdpSaya() {
+  const kartu = document.getElementById('pengumuman-lolos-card');
+  if (!kartu) return;
+  if (!/^(CDP2026|CDP2027)/i.test(String(userId || ""))) { kartu.style.display = 'none'; return; }
+  callAPI('getPengumumanCdpSaya', [sessionToken], { cache: false }).then(res => {
+    if (res && res.success && res.lolos) {
+      const elN = document.getElementById('pl-nama');
+      const elT = document.getElementById('pl-tanggal');
+      if (elN) elN.textContent = res.nama_calon || res.user_id;
+      if (elT) elT.textContent = formatTanggalId(res.tanggal_uji_tulis);
+      kartu.style.display = 'block';
+    } else kartu.style.display = 'none';
+  }).catch(() => {});
+}
+// ===== akhir blok v3.45.0 =====
 
 function muatCdpPantau() {
   const kotak = document.getElementById('cdp-daftar-kontainer');
