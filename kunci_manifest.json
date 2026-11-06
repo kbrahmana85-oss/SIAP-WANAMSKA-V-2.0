@@ -1,11 +1,11 @@
 {
-  "versi": "3.47.0",
+  "versi": "3.48.0",
   "tanggal_kunci": "2026-11-06",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
       "ukuran_byte": 289082,
-      "sha256": "47c1ae5f3b606b965e1676301940ef0d1c769a0dbf33e49466798d6b8bd7f624",
+      "sha256": "322413994cecd85c4607cae8a02df5e72e9d2fa4866be6a7d47469d441bccaf9",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -15,15 +15,15 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 88636,
-      "sha256": "d13340597b0abd494fa228118f06fc195e0d25c5f800d530d09ad66b0c021e53",
+      "sha256": "bcf4459c1fc9b7ebe361ce434df8c9676f5b738e5c68a37540975724ac420dab",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 276174,
-      "sha256": "138fdcd505b89df3b4e8c30490fd6e827b84c9042b71fa2c2b8ef9cebd9a5e65",
-      "jumlah_fungsi": 254,
+      "ukuran_byte": 277877,
+      "sha256": "62c4692591e44be7e3371c06d51dcf3c4212304d6124d496a13009ecb253dd3d",
+      "jumlah_fungsi": 256,
       "fungsi": [
         "_blangkoRowsHtml",
         "absenBantuCekNama",
@@ -121,11 +121,13 @@
         "hapusLolosAdmin",
         "hapusSeleksiMaster",
         "hapusSemuaAbsensi",
+        "hapusSemuaLolosAdmin",
         "hentikanTimerStatistik",
         "hitungProfilWajib",
         "initCreativeCalendar",
         "initLiveTimer",
         "initLolosAdminUI",
+        "isAkunPendaftarCdp",
         "isCdp2027",
         "isCdpBantu",
         "isCdpPemantau",
@@ -284,7 +286,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "179fda5cf14b0a5437ba53ad618d2403bde357599928e9c66321013e3b340fbc",
+      "sha256": "1b94207bfb9dec537808617df172df6d5f508ec88d72ac2cdabe1e79073893ab",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -344,15 +346,15 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "abd32a907e4bafaf8d60dbc4f9dfe1b7af1a24665eb8de79c3f7a44ba9213636",
+      "sha256": "4c37449151b1426b7aeb7fb26e0d6fa14a0b48aea804790d28acc37e5adebc19",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 465472,
-      "sha256": "cc27e4285ec062165f682964e8a37e68f34e4513c061eecfe090693ad0efec4f",
-      "jumlah_fungsi": 201,
+      "ukuran_byte": 466658,
+      "sha256": "5857fb028d000d494dec6c23a6b6660dfb66a33523a3eecf524827b68c3690c1",
+      "jumlah_fungsi": 203,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
@@ -419,6 +421,7 @@
         "_tanggalPanjangID_",
         "_templateDefaultGlobal",
         "_templateRowToObj",
+        "_tglStr_",
         "_thousand",
         "_tolakFotoBelum_",
         "_uploadFotoLulusan_",
@@ -505,6 +508,7 @@
         "hapusAbsensiSemua",
         "hapusCdpLolosAdmin",
         "hapusSeleksiMaster",
+        "hapusSemuaCdpLolosAdmin",
         "hashPassword",
         "initializeDatabase",
         "inputNilaiSeleksi",
