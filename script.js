@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.48.1 - TERKUNCI (2026-11-06)
+// [KUNCI] SIAP WANAMSKA v3.49.0 - TERKUNCI (2026-11-06)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.48.1"; 
+const APP_VERSION = "3.49.0"; 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -3702,11 +3702,13 @@ function actionExportBlangkoCdp(mode) {
 // ===== akhir blok v3.42.0 =====
 
 // ===== [v3.45.0] LOLOS ADMINISTRASI & PANGGILAN UJI TULIS =====
+const LOLos_ADMIN_FITUR_AKTIF = false;  // [v3.49.0] SESESUAI PERMINTAAN ADMIN: fitur DISEMBUNYIKAN (bukan dihapus) mulai rilis ini; ubah menjadi true utk menampilkannya kembali
 // Admin (Master Seleksi): tandai pendaftar lolos administrasi + tanggal Uji Tulis (Tahap 1).
 // Pendaftar: kartu pengumuman berkelip di dashboard, tepat di atas kartu ucapan ulang tahun.
 function initLolosAdminUI() {
   const kotak = document.getElementById('lolos-admin-box');
   if (!kotak) return;
+  if (typeof LOLos_ADMIN_FITUR_AKTIF !== "undefined" && !LOLos_ADMIN_FITUR_AKTIF) { kotak.style.display = 'none'; return; }  // [v3.49.0] disembunyikan (fitur utuh, tinggal nyalakan ulang)
   const isAdmin = userRole === "Admin";
   kotak.style.display = isAdmin ? 'block' : 'none';
   if (!isAdmin) return;
@@ -4121,6 +4123,7 @@ function muatNilaiSeleksi() {
     sel.innerHTML = master.map(m => `<option value="${escapeHtml(String(m.tahap))}|${escapeHtml(m.nama_kegiatan)}">Tahap ${escapeHtml(String(m.tahap))} — ${escapeHtml(m.nama_kegiatan)} (KKM: ${escapeHtml(String(m.kkm !== undefined && m.kkm !== "" ? m.kkm : "?"))})</option>`).join("");
     if (tahapTerpilih && Array.prototype.some.call(sel.options, function (o) { return o.value === tahapTerpilih; })) sel.value = tahapTerpilih;
     renderNilaiTahap();
+    try { muatRilisSeleksiUI(); } catch (eR49) {}  // [v3.49.0] kotak rilis (Admin)
   });
 }
 function renderNilaiTahap() {
@@ -4142,7 +4145,7 @@ function renderNilaiTahap() {
   if (!aktif.length) { kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Tidak ada calon untuk dinilai' + (tpN > 1 ? ' — hanya calon yang LOLOS Tahap ' + (tpN - 1) + ' yang muncul di sini. [v3.47.0]' : '.') + '</p>'; return; }
   kotak.innerHTML = `<p style="font-size:0.84rem; color:var(--color-text-muted); margin:0 0 10px;">Mata uji: <strong>${escapeHtml(mata)}</strong> (Tahap ${escapeHtml(tahap)}) — KKM <strong style="color:#B45309;">${escapeHtml(String(m && m.kkm !== undefined && m.kkm !== "" ? m.kkm : "?"))}</strong>. Nilai ≥ KKM otomatis <strong>LOLOS</strong>; di bawah KKM otomatis <strong>TIDAK LOLOS</strong> (nama dihapus dari daftar; berkas tetap tersimpan).${tpN > 1 ? " Daftar ini <strong>hanya calon yang LOLOS Tahap " + escapeHtml(String(tpN - 1)) + "</strong>. [v3.47.0]" : ""}</p>
     <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; background:#FFF; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);">
-      <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Calon</th><th style="padding:8px 10px; text-align:left;">Nilai (0-100)</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
+      <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Calon</th><th style="padding:8px 10px; text-align:left;">Nilai (0-100)</th></tr>
       ${aktif.map(r => {
         const h = hasil[r.user_id];
         const rv = (window.__seleksiRiwayat || []).find(w => String(w.user_id) === String(r.user_id) && parseInt(w.tahap, 10) === parseInt(tahap, 10) && String(w.mata_uji || "") === mata);  // [v3.35.0] cek riwayat per tahap+mata
@@ -4152,11 +4155,10 @@ function renderNilaiTahap() {
         return `<tr style="border-top:1px solid #F0E7DC;">
           <td style="padding:8px 10px;"><strong>${escapeHtml(r.nama_calon)}</strong><br><span style="font-size:0.74rem; color:var(--color-text-muted);">${escapeHtml(r.user_id)} • Kelas ${escapeHtml(r.kelas)}</span></td>
           <td style="padding:8px 10px;"><input type="number" min="0" max="100" id="sn-nilai-${escapeHtml(r.user_id)}" placeholder="cth. 80" style="width:100px; padding:8px; border-radius:8px; border:1.5px solid #D8CFC0; font-family:inherit;"></td>
-          <td style="padding:8px 10px;"><input type="text" id="sn-ket-${escapeHtml(r.user_id)}" placeholder="keterangan" style="width:100%; min-width:120px; padding:8px; border-radius:8px; border:1.5px solid #D8CFC0; font-family:inherit;"></td>
-          <td style="padding:8px 10px; text-align:center;"><button class="btn btn-primary" style="padding:6px 12px; font-size:0.78rem;" onclick="simpanNilaiBaris('${escapeHtml(r.user_id)}', '${escapeHtml(tahap)}')">💾 Simpan</button></td>
         </tr>`;
       }).join("")}
-    </table></div>`;
+    </table>
+    <div style="text-align:center; margin-top:12px;"><button class="btn btn-primary" id="btn-simpan-nilai-semua" style="padding:10px 18px;" onclick="simpanSemuaNilai()">💾 Simpan Semua Nilai</button><p style="font-size:0.74rem; color:var(--color-text-muted); margin:8px 0 0;">Setelah nilai tersimpan, Rilis Pengumuman Hasil dilakukan Admin pada kotak di bawah. [v3.49.0]</p></div></div>`;
 }
 function simpanNilaiBaris(uid, tahap) {
   const sel = document.getElementById('sn-tahap');
@@ -4174,6 +4176,57 @@ function simpanNilaiBaris(uid, tahap) {
       if (res.success) muatNilaiSeleksi();
     })
     .catch(err => showToast(err.message, true));
+}
+
+// [v3.49.0] SIMPAN SEMUA NILAI: satu tombol di akhir tabel menyimpan seluruh isian
+function simpanSemuaNilai() {
+  const sel = document.getElementById('sn-tahap');
+  if (!sel || !sel.value) return;
+  const tahap = sel.value.split("|")[0];
+  const baris = Array.from(document.querySelectorAll('#sn-tabel input[type=number][id^="sn-nilai-"]'))
+    .filter(inp => inp.value.trim() !== "");
+  if (!baris.length) { showToast("Isi nilai minimal satu calon terlebih dahulu.", true); return; }
+  setLoader(true, "Menyimpan " + baris.length + " nilai...");
+  let sukses = 0, gagal = 0, pesanGagal = "";
+  let rantai = Promise.resolve();
+  baris.forEach(inp => {
+    const uid = inp.id.replace("sn-nilai-", "");
+    rantai = rantai.then(() => callAPI('inputNilaiSeleksi', [sessionToken, { user_id: uid, tahap: parseInt(tahap, 10), mata_uji: sel.value.split("|").slice(1).join("|"), nilai: parseFloat(inp.value), keterangan: "" }], { cache: false })
+      .then(res => { if (res && res.success) { sukses++; } else { gagal++; pesanGagal = (res && res.message) || pesanGagal; } })
+      .catch(() => { gagal++; }));
+  });
+  rantai.then(() => {
+    setLoader(false);
+    if (gagal === 0) showToast("💾 " + sukses + " nilai berhasil disimpan. Pengumuman belum tampil — lakukan Rilis Pengumuman (Admin).");
+    else showToast(sukses + " tersimpan, " + gagal + " gagal. " + pesanGagal, true);
+    muatNilaiSeleksi();
+  });
+}
+
+// [v3.49.0] RILIS PENGUMUMAN HASIL SELEKSI (khusus Admin)
+function muatRilisSeleksiUI() {
+  const kotak = document.getElementById('rilis-box');
+  if (!kotak) return;
+  if (userRole !== "Admin") { kotak.style.display = 'none'; return; }
+  kotak.style.display = 'block';
+  callAPI('getSeleksiRilisStatus', [sessionToken], { cache: false }).then(res => {
+    const el = document.getElementById('rilis-info');
+    if (el && res && res.success) el.textContent = res.total === 0 ? "Belum ada nilai yang disimpan." : ("Hasil tersimpan: " + res.total + " — belum dirilis: " + res.belum + ", sudah dirilis: " + res.sudah + ".");
+  }).catch(() => {});
+}
+
+function actionRilisPengumumanSeleksi() {
+  callAPI('getSeleksiRilisStatus', [sessionToken], { cache: false }).then(st => {
+    const belum = (st && st.success) ? st.belum : 0;
+    if (!belum) { showToast("Tidak ada hasil baru untuk dirilis.", true); return; }
+    if (!confirm("Rilis " + belum + " pengumuman hasil seleksi?\n\nPengumuman akan langsung tampil di dashboard calon yang bersangkutan (LOLOS maupun TIDAK LOLOS). User yang tidak mendaftar tidak menerima apa pun.")) return;
+    setLoader(true, "Merilis pengumuman...");
+    callAPI('rilisPengumumanSeleksi', [sessionToken], { cache: false }).then(res => {
+      setLoader(false);
+      showToast(res.message || "Selesai.", !(res && res.success));
+      muatRilisSeleksiUI();
+    }).catch(err => { setLoader(false); showToast(err.message, true); });
+  });
 }
 
 // --- Banner pengumuman di dashboard (berkedip; tampil setiap kali user masuk) ---
