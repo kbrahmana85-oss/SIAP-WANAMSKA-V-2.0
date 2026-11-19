@@ -1,11 +1,11 @@
 {
-  "versi": "3.48.1",
+  "versi": "3.49.0",
   "tanggal_kunci": "2026-11-06",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 289082,
-      "sha256": "a5cdf7417b28bee0f00a3ac6a01a371d7b5618ed24ba3463771e0a929221829a",
+      "ukuran_byte": 290183,
+      "sha256": "d9a7cdc561c7e519bab15b38684ca5303a4d742743e35ea83fdc8556840dead1",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -15,15 +15,15 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 89008,
-      "sha256": "9ba0154b9d21d376b87e0d08e559151205e73e250380b98f54d48fa0ff3ffb49",
+      "sha256": "0c82aab148e89402851ec895d697118dae01a4f7331bac9e7ec9cbbbc7fa696a",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 277877,
-      "sha256": "53c29b166711974bbd92178cedcca6fad85273f971d0f8b29adc5373e5f0dc54",
-      "jumlah_fungsi": 256,
+      "ukuran_byte": 281006,
+      "sha256": "1f371f9cb9d7ff0aef1b0f306f323ae4eccfeda49e2ed523071a152ccbc712f5",
+      "jumlah_fungsi": 259,
       "fungsi": [
         "_blangkoRowsHtml",
         "absenBantuCekNama",
@@ -42,6 +42,7 @@
         "actionLogout",
         "actionPerbaikiCdp",
         "actionRegisterPasskey",
+        "actionRilisPengumumanSeleksi",
         "actionSaveAgenda",
         "actionSaveInventaris",
         "actionSaveKas",
@@ -173,6 +174,7 @@
         "muatPengumumanCdpSaya",
         "muatPesanAlumni",
         "muatProfilLulusan",
+        "muatRilisSeleksiUI",
         "muatSeleksiMaster",
         "muatStatistikPengguna",
         "muatStatusCdp",
@@ -244,6 +246,7 @@
         "simpanNilaiBaris",
         "simpanNilaiSeleksi",
         "simpanSeleksiMaster",
+        "simpanSemuaNilai",
         "sinkronTombolAlumni",
         "startCamera",
         "stopCamera",
@@ -286,7 +289,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "76da05e57373166404c81359f0eed5695d62e2205dfbc99fdf119a0762b7989e",
+      "sha256": "01cfd0d6c7c6eee4261d8df66cc951e2323f65f825d01adbc2f5d3e285a6471f",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -346,15 +349,15 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "03653320f43f0ba5bf28ee501635b11c7ac0906c12a41d71d28ad4f7642ea197",
+      "sha256": "02c441efffbe695227a4799ef4ef5ee6d16c2c7b73ca48a908e8407855ae4d31",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 466658,
-      "sha256": "cd7563e4e11ecf475916750640c0cdbe6a28703dee567dab3c1337408be2da78",
-      "jumlah_fungsi": 203,
+      "ukuran_byte": 471049,
+      "sha256": "5341082f529544c38647eb4c069f78d2d46b88a4c74bc8c6919dae05f52c7ae7",
+      "jumlah_fungsi": 206,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
@@ -417,6 +420,7 @@
         "_sheetSeleksiFolder_",
         "_sheetSeleksiHasil_",
         "_sheetSeleksiMaster_",
+        "_sheetSeleksiRilis_",
         "_statTglKey_",
         "_tanggalPanjangID_",
         "_templateDefaultGlobal",
@@ -493,6 +497,7 @@
         "getReportTemplate",
         "getSeleksiMaster",
         "getSeleksiRekap",
+        "getSeleksiRilisStatus",
         "getSpreadsheet",
         "getStatistikPengguna",
         "getStatusCdp",
@@ -530,6 +535,7 @@
         "refreshPotensiMonitor_",
         "registerPasskey",
         "repairDatabaseSchema",
+        "rilisPengumumanSeleksi",
         "saveAgenda",
         "saveInventaris",
         "saveKedaiBarang",
