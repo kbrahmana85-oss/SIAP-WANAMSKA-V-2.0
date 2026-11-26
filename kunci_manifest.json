@@ -1,11 +1,11 @@
 {
-  "versi": "3.49.0",
+  "versi": "3.50.0",
   "tanggal_kunci": "2026-11-06",
   "berkas": {
     "index.html": {
       "keterangan": "Struktur halaman & antarmuka (PWA)",
-      "ukuran_byte": 290183,
-      "sha256": "d9a7cdc561c7e519bab15b38684ca5303a4d742743e35ea83fdc8556840dead1",
+      "ukuran_byte": 290331,
+      "sha256": "1bb5bbe8900447a1b2a875641a6f9e3cbf6a22b19014013429b2d8ed0031a030",
       "jumlah_fungsi": 2,
       "fungsi": [
         "c",
@@ -15,14 +15,14 @@
     "style.css": {
       "keterangan": "Gaya tampilan seluruh modul",
       "ukuran_byte": 89008,
-      "sha256": "0c82aab148e89402851ec895d697118dae01a4f7331bac9e7ec9cbbbc7fa696a",
+      "sha256": "961d70bdd878f4db593d2ff6aeeb0d535faf3d675ce30998de14b1f81773847d",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "script.js": {
       "keterangan": "Logika frontend: modul, RBAC, API, game hook",
-      "ukuran_byte": 281006,
-      "sha256": "1f371f9cb9d7ff0aef1b0f306f323ae4eccfeda49e2ed523071a152ccbc712f5",
+      "ukuran_byte": 282675,
+      "sha256": "53045028eafdb0d110fb418ff401306d45b51a13b74c878ce2e6e758c58c06c6",
       "jumlah_fungsi": 259,
       "fungsi": [
         "_blangkoRowsHtml",
@@ -289,7 +289,7 @@
     "potensi-game.js": {
       "keterangan": "Mesin game Kenali Potensimu (berjenjang + arena)",
       "ukuran_byte": 50856,
-      "sha256": "01cfd0d6c7c6eee4261d8df66cc951e2323f65f825d01adbc2f5d3e285a6471f",
+      "sha256": "310b3d5e63ac192010a53e7aa306b8d0fb62dbe1b3976a798dfa2be29d825d82",
       "jumlah_fungsi": 52,
       "fungsi": [
         "$",
@@ -349,15 +349,15 @@
     "sw.js": {
       "keterangan": "Service worker: cache offline PWA (v42)",
       "ukuran_byte": 2971,
-      "sha256": "02c441efffbe695227a4799ef4ef5ee6d16c2c7b73ca48a908e8407855ae4d31",
+      "sha256": "379238833040d0dfd59887ece134fb92834a843a434c044a253f2c458162c91b",
       "jumlah_fungsi": 0,
       "fungsi": []
     },
     "code.gs": {
       "keterangan": "Backend Apps Script: API, Drive, Spreadsheet, log",
-      "ukuran_byte": 471049,
-      "sha256": "5341082f529544c38647eb4c069f78d2d46b88a4c74bc8c6919dae05f52c7ae7",
-      "jumlah_fungsi": 206,
+      "ukuran_byte": 480218,
+      "sha256": "c7052ce9d6cf904187127ff6cb759d0a871d4c3b59e81362fa964b19b3027a86",
+      "jumlah_fungsi": 213,
       "fungsi": [
         "_absenJam_",
         "_absenTanggal_",
@@ -399,10 +399,13 @@
         "_folderSeleksiInduk_",
         "_getTemplateRow",
         "_hitungIdAlumniBerikut_",
+        "_imbasTanggalV350_",
         "_isiBlangkoSheet_",
         "_migrasiPwdCdp_",
         "_mimeExport",
+        "_normEksporSel_",
         "_parseLahir_",
+        "_parseTanggalV350_",
         "_penetapSeleksi_",
         "_pgBuatSoal_",
         "_pgInt_",
@@ -422,9 +425,12 @@
         "_sheetSeleksiMaster_",
         "_sheetSeleksiRilis_",
         "_statTglKey_",
+        "_stempelLokal_",
         "_tanggalPanjangID_",
         "_templateDefaultGlobal",
         "_templateRowToObj",
+        "_tglIndoJam_",
+        "_tglIndo_",
         "_tglStr_",
         "_thousand",
         "_tolakFotoBelum_",
@@ -531,6 +537,7 @@
         "normalisasiUrlFotoDrive_",
         "parseNotifRoles",
         "perbaikiCdp",
+        "perbaikiFormatTanggalSheet",
         "pindai",
         "refreshPotensiMonitor_",
         "registerPasskey",
