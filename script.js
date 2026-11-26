@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.49.0 - TERKUNCI (2026-11-06)
+// [KUNCI] SIAP WANAMSKA v3.50.0 - TERKUNCI (2026-11-06)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.49.0"; 
+const APP_VERSION = "3.50.0"; // [v3.50.0] normalisasi tanggal/waktu global (tampilan, ekspor & sheet) 
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -1843,12 +1843,24 @@ function loadNotifications(markAsRead = false) {
 
 function formatDateString(dateStr) {
   try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString('id-ID', {
-      day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
+    // [v3.50.0] seluruh tampilan waktu/tanggal diselaraskan gaya menu absensi:
+    // "Jumat, 20 November 2026" (+ " 07:30" bila sumber memiliki jam).
+    const st = String(dateStr == null ? "" : dateStr).trim();
+    if (!st) return "";
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/.exec(st);
+    if (m) {
+      let th = +m[1], bl = +m[2], tg = +m[3], jam = "", men = "";
+      const berZona = m[4] && st.indexOf("T") !== -1 && /([zZ]|[+-]\d{2}:\d{2})$/.test(st);
+      if (berZona) {  // ISO UTC -> konversi ke waktu lokal agar tidak lompat hari
+        const d = new Date(st);
+        if (!isNaN(d.getTime())) { th = d.getFullYear(); bl = d.getMonth() + 1; tg = d.getDate(); jam = String(d.getHours()).padStart(2, "0"); men = String(d.getMinutes()).padStart(2, "0"); }
+      } else if (m[4]) { jam = m[4]; men = m[5]; }
+      const tgl = HARI_ID[new Date(th, bl - 1, tg).getDay()] + ", " + tg + " " + BULAN_ID[bl - 1] + " " + th;
+      return (jam && !(jam === "00" && men === "00")) ? tgl + " " + jam + ":" + men : tgl;
+    }
+    const d2 = new Date(st);
+    if (isNaN(d2.getTime())) return dateStr;
+    return HARI_ID[d2.getDay()] + ", " + d2.getDate() + " " + BULAN_ID[d2.getMonth()] + " " + d2.getFullYear();
   } catch (e) {
     return dateStr;
   }
@@ -3798,12 +3810,19 @@ function hapusSemuaLolosAdmin() {
 }
 
 function formatTanggalId(str) {
-  const m = /^((\d{4})-(\d{2})-(\d{2}))/.exec(String(str || ""));
-  if (!m) return String(str || "");
+  // [v3.50.0] kini menyertakan NAMA HARI, konsisten dengan menu absensi (cth. "Jumat, 18 Desember 2026")
   const BULAN = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  const m2 = /[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/.exec(String(str || ""));  // [v3.48.0] fallback string Date mentah (cth. Wed Nov 18 2026 ...)
-  if (m2) { const B48 = { Jan: "Januari", Feb: "Februari", Mar: "Maret", Apr: "April", Mei: "Mei", May: "Mei", Jun: "Juni", Jul: "Juli", Agu: "Agustus", Aug: "Agustus", Sep: "September", Okt: "Oktober", Oct: "Oktober", Nov: "November", Des: "Desember", Dec: "Desember" }; return parseInt(m2[2], 10) + " " + (B48[m2[1]] || m2[1]) + " " + m2[3]; }
-  return parseInt(m[4], 10) + " " + BULAN[parseInt(m[3], 10)] + " " + m[2];
+  const B48 = { Jan: "Januari", Feb: "Februari", Mar: "Maret", Apr: "April", Mei: "Mei", May: "Mei", Jun: "Juni", Jul: "Juli", Agu: "Agustus", Aug: "Agustus", Sep: "September", Okt: "Oktober", Oct: "Oktober", Nov: "November", Des: "Desember", Dec: "Desember" };
+  const st = String(str || "");
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(st);
+  const m2 = /[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/.exec(st);  // [v3.48.0] fallback string Date mentah (cth. Wed Nov 18 2026 ...)
+  let th = 0, bl = 0, tg = 0;
+  if (m) { th = +m[1]; bl = +m[2]; tg = parseInt(m[3], 10); }
+  else if (m2) { const nm = B48[m2[1]] || m2[1]; bl = BULAN.indexOf(nm); th = +m2[3]; tg = parseInt(m2[2], 10); }
+  else return st;
+  if (bl < 1 || bl > 12 || !th || !tg) return st;
+  const d = new Date(th, bl - 1, tg);
+  return HARI_ID[d.getDay()] + ", " + tg + " " + BULAN[bl] + " " + th;
 }
 
 // Pendaftar: ambil pengumuman (hanya utk akun calon CDP — user lain tanpa panggilan, hemat API)
@@ -3979,7 +3998,7 @@ function muatSeleksiMaster() {
       if (!res.master.length) { kotak.innerHTML = '<p style="text-align:center; color:var(--color-text-muted);">Belum ada tahapan seleksi — tambahkan lewat formulir di atas.</p>'; return; }
       kotak.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:0.84rem; background:#FFF; border-radius:10px; overflow:hidden; box-shadow:var(--shadow-soft);">
         <tr style="background:#0E7490; color:#FFF;"><th style="padding:8px 10px; text-align:left;">Tahap</th><th style="padding:8px 10px; text-align:left;">Nama Kegiatan Seleksi</th><th style="padding:8px 10px; text-align:left;">Nilai</th><th style="padding:8px 10px; text-align:left;">KKM (Ketuntasan)</th><th style="padding:8px 10px; text-align:left;">Tanggal Pelaksanaan</th><th style="padding:8px 10px; text-align:left;">Keterangan</th><th style="padding:8px 10px;">Aksi</th></tr>
-        ${res.master.map(m => `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px; font-weight:700; color:#155E75;">Tahap ${escapeHtml(String(m.tahap))}</td><td style="padding:8px 10px; font-weight:600;">${escapeHtml(m.nama_kegiatan)}</td><td style="padding:8px 10px;">${escapeHtml(String(m.nilai || "-"))}</td><td style="padding:8px 10px; font-weight:800; color:#B45309;">${escapeHtml(String(m.kkm !== undefined && m.kkm !== "" ? m.kkm : "-"))}</td><td style="padding:8px 10px; font-weight:600; color:#155E75;">${escapeHtml(String(m.tanggal_pelaksanaan || "-"))}</td><td style="padding:8px 10px;">${escapeHtml(String(m.keterangan || "-"))}</td><td style="padding:8px 10px; text-align:center;"><button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#B45309; color:#FFF;" onclick="editSeleksiMaster('${escapeHtml(m.id)}')">✏️ Edit</button> <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:var(--color-danger-red); color:#FFF;" onclick="hapusSeleksiMaster('${escapeHtml(m.id)}')">Hapus</button></td></tr>`).join("")}
+        ${res.master.map(m => `<tr style="border-top:1px solid #F0E7DC;"><td style="padding:8px 10px; font-weight:700; color:#155E75;">Tahap ${escapeHtml(String(m.tahap))}</td><td style="padding:8px 10px; font-weight:600;">${escapeHtml(m.nama_kegiatan)}</td><td style="padding:8px 10px;">${escapeHtml(String(m.nilai || "-"))}</td><td style="padding:8px 10px; font-weight:800; color:#B45309;">${escapeHtml(String(m.kkm !== undefined && m.kkm !== "" ? m.kkm : "-"))}</td><td style="padding:8px 10px; font-weight:600; color:#155E75;">${escapeHtml(m.tanggal_pelaksanaan ? formatTanggalId(m.tanggal_pelaksanaan) : "-")}</td><td style="padding:8px 10px;">${escapeHtml(String(m.keterangan || "-"))}</td><td style="padding:8px 10px; text-align:center;"><button class="btn" style="padding:4px 10px; font-size:0.75rem; background:#B45309; color:#FFF;" onclick="editSeleksiMaster('${escapeHtml(m.id)}')">✏️ Edit</button> <button class="btn" style="padding:4px 10px; font-size:0.75rem; background:var(--color-danger-red); color:#FFF;" onclick="hapusSeleksiMaster('${escapeHtml(m.id)}')">Hapus</button></td></tr>`).join("")}
       </table></div>`;
     })
     .catch(err => { kotak.innerHTML = `<p style="text-align:center; color:var(--color-danger-red);">${escapeHtml(err.message || "Gagal memuat.")}</p>`; });
@@ -4246,19 +4265,19 @@ function muatBannerSeleksi() {
           const elN47 = document.getElementById('ps-nama'); if (elN47) elN47.textContent = nama;
           const elTh47 = document.getElementById('ps-tahap-l'); if (elTh47) elTh47.textContent = String(res.tahap);
           const elM47 = document.getElementById('ps-mata'); if (elM47) elM47.textContent = res.mata_uji;  // nama mata uji di Master sudah lengkap (tanpa prefix)
-          const elP47 = document.getElementById('ps-tgl'); if (elP47) elP47.textContent = res.tanggal_pelaksanaan ? " yang dilaksanakan pada " + res.tanggal_pelaksanaan : "";
-          const elB47 = document.getElementById('ps-berikut'); if (elB47) elB47.textContent = res.tanggal_tahap_berikut_master || (res.tanggal_tahap_berikut && res.tanggal_tahap_berikut !== "-" ? res.tanggal_tahap_berikut : "") || "akan diinformasikan";
+          const elP47 = document.getElementById('ps-tgl'); if (elP47) elP47.textContent = res.tanggal_pelaksanaan ? " yang dilaksanakan pada " + formatTanggalId(res.tanggal_pelaksanaan) : "";  // [v3.50.0]
+          const elB47 = document.getElementById('ps-berikut'); if (elB47) elB47.textContent = (res.tanggal_tahap_berikut_master ? formatTanggalId(res.tanggal_tahap_berikut_master) : "") || (res.tanggal_tahap_berikut && res.tanggal_tahap_berikut !== "-" ? formatTanggalId(res.tanggal_tahap_berikut) : "") || "akan diinformasikan";  // [v3.50.0]
           k47.style.display = "block";
         }
         return;
       }
       if (res.hasil === "LOLOS_LAMA") {
         el.className = "banner-seleksi lulus";
-        const tglP = res.tanggal_pelaksanaan ? ` YANG DILAKSANAKAN PADA TANGGAL ${escapeHtml(res.tanggal_pelaksanaan)}` : "";  // [v3.37.0]
-        el.innerHTML = `<span class="bs-ikon">🎉</span>SELAMAT (${escapeHtml(nama)}) ANDA LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)}${tglP}, SELANJUTNYA SIAPKAN DIRI UNTUK MENGIKUTI SELEKSI TAHAP SELANJUTNYA PADA TANGGAL ${escapeHtml(res.tanggal_tahap_berikut || "-")}`;
+        const tglP = res.tanggal_pelaksanaan ? ` YANG DILAKSANAKAN PADA TANGGAL ${escapeHtml(formatTanggalId(res.tanggal_pelaksanaan))}` : "";  // [v3.50.0]  // [v3.37.0]
+        el.innerHTML = `<span class="bs-ikon">🎉</span>SELAMAT (${escapeHtml(nama)}) ANDA LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)}${tglP}, SELANJUTNYA SIAPKAN DIRI UNTUK MENGIKUTI SELEKSI TAHAP SELANJUTNYA PADA TANGGAL ${escapeHtml(formatTanggalId(res.tanggal_tahap_berikut || "-"))}`;  // [v3.50.0]
       } else {
         el.className = "banner-seleksi gugur";
-        const tglP2 = res.tanggal_pelaksanaan ? ` YANG DILAKSANAKAN PADA TANGGAL ${escapeHtml(res.tanggal_pelaksanaan)}` : "";  // [v3.37.0]
+        const tglP2 = res.tanggal_pelaksanaan ? ` YANG DILAKSANAKAN PADA TANGGAL ${escapeHtml(formatTanggalId(res.tanggal_pelaksanaan))}` : "";  // [v3.50.0]  // [v3.37.0]
         el.innerHTML = `<span class="bs-ikon">💪</span>MOHON MAAF (${escapeHtml(nama)}) ANDA TIDAK LOLOS TAHAP ${escapeHtml(String(res.tahap))} MATA UJI ${escapeHtml(res.mata_uji)}${tglP2} DAN TERIMA KASIH TELAH BERPARTISIPASI, SEMANGAT DAN COBA LAGI SELAMA MASIH ADA KESEMPATAN`;
       }
       el.style.display = "block";
@@ -4625,7 +4644,7 @@ function loadAgenda() {
             <tr>
               <td><strong>${escapeHtml(agd.kegiatan)}</strong></td>
               <td>${escapeHtml(agd.jenis_kegiatan)}</td>
-              <td>${escapeHtml(agd.tanggal_pelaksanaan)}</td>
+              <td>${escapeHtml(formatTanggalId(agd.tanggal_pelaksanaan || ""))}</td>
               <td>${escapeHtml(agd.waktu)}</td>
               <td>${escapeHtml(agd.penanggung_jawab)}</td>
               <td>${escapeHtml(agd.keterangan) || "-"}</td>
@@ -4755,7 +4774,7 @@ function loadKas() {
           res.list.forEach(row => {
             tbody.innerHTML += `
               <tr>
-                <td>${row.tanggal}</td>
+                <td>${formatTanggalId(row.tanggal || "")}</td>
                 <td><strong>${row.jenis}</strong></td>
                 <td>${row.kategori}</td>
                 <td>Rp ${Number(row.jumlah).toLocaleString('id-ID')}</td>
