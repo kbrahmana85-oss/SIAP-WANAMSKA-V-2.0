@@ -1,5 +1,5 @@
 // ============================================================
-// [KUNCI] SIAP WANAMSKA v3.50.0 - TERKUNCI (2026-11-06)
+// [KUNCI] SIAP WANAMSKA v3.52.0 - TERKUNCI (2026-11-06)
 // Berkas  : script.js
 // Fungsi  : Logika frontend: modul, RBAC, API, game hook
 // Aturan  : PERUBAHAN WAJIB IZIN TERTULIS ADMIN (Pemilik Sistem).
@@ -12,7 +12,7 @@
 
 // URL Web App Apps Script resmi SIAP WANAMSKA
 const API_URL = "https://script.google.com/macros/s/AKfycbzRPxxOjTXvd2w9pkpXISJFa7lL_NwPf788F19qU5Omu8mGv39COrdiNpPm5Z633lQC-A/exec";
-const APP_VERSION = "3.50.0"; // [v3.50.0] normalisasi tanggal/waktu global (tampilan, ekspor & sheet) 
+const APP_VERSION = "3.52.0"; // [v3.50.0] normalisasi tanggal/waktu global; [v3.51.0] foto profil alumni folder per-user; [v3.52.0] Simpan/Kunci Profil per-user + folder profil <Peran>/<UserID_Nama User> + foto absensi per-user
 
 // =========================================================================
 // === HELPER WAKTU LOKAL & FORMAT (FIX BUG WAKTU / TIMEZONE)             ===
@@ -117,7 +117,7 @@ const READ_ONLY_FUNCS = new Set([
 ]);
 
 function isWriteFunc(name) {
-  return /^(save|add|submit|delete|change|logout|export|initialize|kembalikan|register|kurangi|repair)/.test(name);
+  return /^(save|add|submit|delete|change|logout|export|initialize|kembalikan|register|kurangi|repair|kunci)/.test(name);  // [v3.52.0] +kunci: kunciProfilUser menghapus cache profil
 }
 
 function isKasSpecialUser(uid) {
@@ -4925,7 +4925,8 @@ function renderUcapanUlangTahun(res) {
 
 // [v3.9.0] KUNCI PROFIL — status dari server; Admin dapat membuka/kunci ulang
 let profilTerbuka = null; // null = belum diketahui
-let alumniProfilTerkunci = false; // [v3.24.0] profil alumni TERKUNCI otomatis setelah profil+foto lengkap
+let alumniProfilTerkunci = false; // [v3.24.0] tak lagi mengunci — diganti kunci per-user v3.52.0
+let kunciProfilUserAktif = false; // [v3.52.0] Kunci Profil PER-USER aktif (tombol "Kunci Profil")
 
 function muatStatusKunciProfil() {
   callAPI('getStatusKunciProfil', [sessionToken], { cache: false })
@@ -4933,11 +4934,13 @@ function muatStatusKunciProfil() {
     .catch(() => {});
 }
 
-function terapkanKunciProfil(terbuka, isAdmin, alumniTerkunci) {
+function terapkanKunciProfil(terbuka, isAdmin, alumniTerkunci, kunciUser) {
   profilTerbuka = terbuka;
-  alumniProfilTerkunci = !!alumniTerkunci;  // [v3.24.0]
-  // [v3.24.0] profil alumni yang sudah LENGKAP terkunci walau status global terbuka (Admin tetap bisa lewat jalur Admin)
-  const bolehEdit = (terbuka || isAdmin || window.__profilWajib === true) && !alumniProfilTerkunci;  // [v3.34.0] user baru wajib lengkapi profil
+  alumniProfilTerkunci = !!alumniTerkunci;  // [v3.24.0] dipertahankan utk kompatibilitas (tidak lagi mengunci)
+  kunciProfilUserAktif = (kunciUser === undefined) ? kunciProfilUserAktif : !!kunciUser;  // [v3.52.0] kunci per-user
+  const gerbangGlobal = (terbuka || isAdmin || window.__profilWajib === true);  // [v3.34.0] user baru wajib lengkapi profil
+  const blokirKunciUser = kunciProfilUserAktif && !isAdmin;  // [v3.52.0] kunci profil oleh user; Admin tetap dapat meninjau/mengubah
+  const bolehEdit = gerbangGlobal && !blokirKunciUser;
   ['prof-nta', 'prof-nama', 'prof-tempat-lahir', 'prof-tanggal-lahir', 'prof-jk',
    'prof-golongan', 'prof-regu', 'prof-alamat', 'prof-hp',
    'prof-tahun-lulus', 'prof-sekolah', 'prof-foto-lulusan'].forEach(id => {
@@ -4947,14 +4950,19 @@ function terapkanKunciProfil(terbuka, isAdmin, alumniTerkunci) {
   const file = document.getElementById('prof-file');
   if (file) file.disabled = !bolehEdit;
   const simpan = document.getElementById('btn-simpan-profil');
-  if (simpan) simpan.style.display = bolehEdit ? 'inline-block' : 'none';
+  // [v3.52.0] Simpan Profil SELALU tampil: saat Kunci Profil aktif, fungsinya MEMBUKA kunci agar info dapat diedit kembali
+  if (simpan) simpan.style.display = gerbangGlobal ? 'inline-block' : 'none';
   const catatan = document.getElementById('prof-kunci-catatan');
   if (catatan) {
-    catatan.style.display = bolehEdit ? 'none' : 'block';
-    // [v3.24.0] alasan kunci: profil alumni sudah lengkap vs dikunci Admin
-    catatan.textContent = alumniProfilTerkunci
-      ? "🔒 Profil sudah LENGKAP & TERKUNCI — data tidak dapat diubah lagi. Hubungi Admin bila ada perubahan data."
-      : "🔒 Data profil dikunci oleh Admin.";
+    catatan.style.display = (bolehEdit && !kunciProfilUserAktif) ? 'none' : 'block';
+    // [v3.52.0] alasan kunci: kunci per-user > kunci global Admin
+    catatan.textContent = !gerbangGlobal
+      ? "🔒 Data profil dikunci oleh Admin."
+      : (blokirKunciUser
+        ? "🔒 Profil TERKUNCI (Kunci Profil aktif) — info profil tidak dapat diedit. Tekan SIMPAN PROFIL untuk membuka kunci & mengedit. Penggantian password tetap bebas. [v3.52.0]"
+        : (kunciProfilUserAktif
+          ? "🔒 Profil user ini TERKUNCI (Kunci Profil oleh user) — Admin tetap dapat mengubah data. [v3.52.0]"
+          : "🔒 Data profil dikunci oleh Admin."));
   }
   const btn = document.getElementById('btn-kunci-profil');
   if (btn) {
@@ -4964,6 +4972,13 @@ function terapkanKunciProfil(terbuka, isAdmin, alumniTerkunci) {
     } else {
       btn.style.display = 'none'; // hanya Admin yang melihat tombol ini
     }
+  }
+  // [v3.52.0] tombol "Kunci Profil" PER-USER: seluruh peran (bukan akun pendaftar CDP/PGW20xx)
+  const btnU = document.getElementById('btn-kunci-profil-user');
+  if (btnU) {
+    const bolehKunciUser = ["Admin", "Pembina", "Dewan Penggalang", "Penggalang", "Alumni"].indexOf(userRole) !== -1
+      && !isAkunPendaftarCdp(userId) && gerbangGlobal && !kunciProfilUserAktif;
+    btnU.style.display = bolehKunciUser ? 'inline-block' : 'none';
   }
 }
 
@@ -4981,12 +4996,28 @@ function toggleKunciProfil() {
     .catch(err => { setLoader(false); showToast(err.message, true); });
 }
 
+// [v3.52.0] KUNCI PROFIL PER-USER: kunci/buka kunci data profil sendiri (semua peran).
+// Server membuatkan folder profil <Peran>/<UserID_Nama User> saat tombol ditekan;
+// penggantian password TIDAK terpengaruh aturan kunci profil.
+function toggleKunciProfilUser() {
+  const jadi = !kunciProfilUserAktif;
+  if (!confirm(jadi ? "Kunci profil Anda? Info profil tidak dapat diedit sampai kunci dibuka (penggantian password tetap bebas)." : "Buka kunci profil agar info profil dapat diedit kembali?")) return;
+  setLoader(true, jadi ? "Mengunci profil..." : "Membuka kunci profil...");
+  callAPI('kunciProfilUser', [sessionToken, jadi], { cache: false })
+    .then(res => {
+      setLoader(false);
+      showToast(res.message || (jadi ? "Profil dikunci." : "Kunci profil dibuka."), !(res && res.success));
+      if (res && res.success) loadProfileDiri();  // muat ulang: terapkan status kunci terbaru dari server
+    })
+    .catch(err => { setLoader(false); showToast(err.message, true); });
+}
+
 function loadProfileDiri() {
   callAPI('getUserProfile', [sessionToken, userId])
     .then(res => {
       if (res.success) {
         // [v3.11.0] status kunci disertakan respons -> tanpa eksekusi ke-2
-        if (res.kunci) terapkanKunciProfil(!!res.kunci.terbuka, !!res.kunci.admin, !!res.kunci.alumni_terkunci);  // [v3.24.0]
+        if (res.kunci) terapkanKunciProfil(!!res.kunci.terbuka, !!res.kunci.admin, !!res.kunci.alumni_terkunci, !!res.kunci.kunci_user);  // [v3.52.0] +kunci per-user
         else muatStatusKunciProfil(); // kompatibel backend lama
         const p = res.profile;
         document.getElementById('prof-user-id').value = p.user_id;
@@ -5093,8 +5124,23 @@ function previewAndResizeProfilePhoto(event) {
 }
 
 function actionSaveProfile() {
-  // [v3.24.0] profil alumni yang sudah lengkap TERKUNCI — tolak sebelum kirim
-  if (userRole === "Alumni" && alumniProfilTerkunci) { showToast("Profil sudah LENGKAP & TERKUNCI — hubungi Admin untuk perubahan data.", true); return; }
+  // [v3.52.0] Kunci Profil aktif -> tekan SIMPAN PROFIL = BUKA KUNCI (alur Admin
+  // 2026-11-06: klik Simpan Profil => info profil dapat diedit kembali), lalu simpan ulang.
+  if (kunciProfilUserAktif && userRole !== "Admin") {
+    setLoader(true, "Membuka kunci profil...");
+    callAPI('kunciProfilUser', [sessionToken, false], { cache: false })
+      .then(res => {
+        setLoader(false);
+        if (res && res.success) {
+          kunciProfilUserAktif = false;
+          showToast("🔓 Kunci profil dibuka — silakan ubah info profil, lalu tekan SIMPAN PROFIL lagi untuk menyimpan.");
+          terapkanKunciProfil(profilTerbuka, userRole === "Admin", false, false);
+          loadProfileDiri();
+        } else showToast((res && res.message) || "Gagal membuka kunci profil.", true);
+      })
+      .catch(err => { setLoader(false); showToast(err.message, true); });
+    return;
+  }
   const payload = {
     user_id: document.getElementById('prof-user-id').value,
     nta: document.getElementById('prof-nta').value,
@@ -5140,6 +5186,7 @@ function actionSaveProfile() {
 }
 
 function actionGantiPassword() {
+  // [v3.52.0] Kunci Profil TIDAK berpengaruh pada penggantian password (aturan Admin 2026-11-06)
   if (userRole === "Alumni" && alumniFotoBelum) { showToast("Foto profil lulusan WAJIB diisi dahulu di Profil Diri.", true); return; }
   const lama = document.getElementById('pass-lama').value;
   const baru = document.getElementById('pass-baru').value;
